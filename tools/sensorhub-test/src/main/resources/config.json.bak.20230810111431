@@ -1,0 +1,161 @@
+[
+  {
+    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+    "httpPort": 8282,
+    "httpsPort": 0,
+    "staticDocRootUrl": "web",
+    "servletsRootUrl": "/sensorhub",
+    "authMethod": "BASIC",
+    "keyStorePath": ".keystore/ssl_keys",
+    "trustStorePath": ".keystore/ssl_trust",
+    "enableCORS": true,
+    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "moduleClass": "org.sensorhub.impl.service.HttpServer",
+    "name": "HTTP Server",
+    "autoStart": true
+  },
+  {
+    "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
+    "users": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "admin",
+        "name": "Administrator",
+        "password": "admin",
+        "roles": [
+          "admin"
+        ]
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "anonymous",
+        "name": "Anonymous User",
+        "password": "",
+        "roles": [
+          "anon"
+        ]
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "sensor",
+        "name": "Smart Sensors",
+        "password": "pwd",
+        "roles": [
+          "sost"
+        ]
+      }
+    ],
+    "roles": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "admin",
+        "allow": [
+          "*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "anon",
+        "allow": [
+          "sos[*]/get/*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "sost",
+        "allow": [
+          "sos[*]/get/*",
+          "sos[*]/insert/*",
+          "sos[*]/update/*"
+        ],
+        "deny": []
+      }
+    ],
+    "id": "bd112969-8838-4f62-8d10-1edf1baa6669",
+    "moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
+    "name": "Users",
+    "autoStart": true
+  },
+  {
+    "objClass": "org.sensorhub.ui.AdminUIConfig",
+    "widgetSet": "org.sensorhub.ui.SensorHubWidgetSet",
+    "customPanels": [],
+    "customForms": [],
+    "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
+    "moduleClass": "org.sensorhub.ui.AdminUIModule",
+    "name": "Admin UI",
+    "autoStart": true
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
+    "enableTransactional": true,
+    "maxObsCount": 100,
+    "maxRecordCount": 100000,
+    "defaultLiveTimeout": 600.0,
+    "dataProviders": [
+    ],
+    "dataConsumers": [],
+    "customFormats": [
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/mp4",
+        "className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
+      },
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/x-motion-jpeg",
+        "className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
+      }
+    ],
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": true,
+      "requireAuth": false
+    },
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "title": "SOS Service",
+      "description": "An SOS service automatically deployed by OpenSensorHub",
+      "keywords": [
+        "SensorHub",
+        "GPS",
+        "weather"
+      ],
+      "fees": "NONE",
+      "accessConstraints": "NONE",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "individualName": "NAME",
+        "organizationName": "ORGANIZATION",
+        "positionName": "",
+        "voiceNumbers": [
+          "+1 800 123 4567"
+        ],
+        "faxNumbers": [
+          "+1 800 123 4568"
+        ],
+        "deliveryPoints": [
+          "1 Main Street"
+        ],
+        "city": "CITY",
+        "administrativeArea": "ST",
+        "postalCode": "12345",
+        "country": "United States of America",
+        "emails": [
+          "admin@bobby.com"
+        ],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/sos",
+    "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
+    "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
+    "name": "SOS Service",
+    "autoStart": true
+  }
+]

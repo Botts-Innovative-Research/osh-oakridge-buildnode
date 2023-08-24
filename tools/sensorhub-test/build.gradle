@@ -9,5 +9,11 @@ dependencies {
   implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
 
-  implementation project(':sensorhub-driver-rs350')
+
+
+  implementation project(':sensorhub-driver-onvif')
+//  implementation project(':sensorhub-driver-ffmpeg')
+//  implementation project(':sensorhub-driver-axis')
+  implementation project(':sensorhub-driver-dahua')
+
 }

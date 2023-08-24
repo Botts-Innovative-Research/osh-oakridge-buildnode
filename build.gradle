@@ -24,10 +24,15 @@ dependencies {
     implementation project(':sensorhub-process-ffmpeg')
     implementation project(':sensorhub-driver-fakegps')
     implementation project(':sensorhub-service-video')
+   // implementation project(':sensorhub-driver-ffmpeg')
+    implementation project(':sensorhub-driver-onvif')
+
+//    implementation project(':sensorhub-driver-axis')
+    implementation project(':sensorhub-driver-dahua')
 
     // FROM OSH-OAKRIDGE-MODULES
-    implementation project(':sensorhub-driver-kromek-d3s')
-    implementation project(':sensorhub-driver-rs350')
+
+
 }
 
 configurations {
