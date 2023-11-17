@@ -9,5 +9,5 @@ dependencies {
   implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
 
-  implementation project(':sensorhub-driver-rs350')
+//  implementation project(':sensorhub-driver-rs350')
 }
