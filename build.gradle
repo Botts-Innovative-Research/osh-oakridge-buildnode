@@ -19,20 +19,25 @@ dependencies {
     implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
 
     // FROM OSH-ADDONS
-    implementation project(':sensorhub-driver-videocam')
-    implementation project(':sensorhub-driver-rtpcam')
-    implementation project(':sensorhub-process-ffmpeg')
-    implementation project(':sensorhub-driver-fakegps')
-    implementation project(':sensorhub-service-video')
-    implementation project(':sensorhub-driver-dahua')
-    implementation project(':sensorhub-driver-axis')
+//    implementation project(':sensorhub-driver-videocam')
+//    implementation project(':sensorhub-driver-rtpcam')
+//    implementation project(':sensorhub-process-ffmpeg')
+//    implementation project(':sensorhub-driver-fakegps')
+//    implementation project(':sensorhub-service-video')
+//    implementation project(':sensorhub-driver-dahua')
+//    implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-onvif')
+    implementation project(':sensorhub-comm-rxtx')
 
     // FROM OSH-OAKRIDGE-MODULES
-    implementation project(':sensorhub-driver-kromek-d3s')
-    implementation project(':sensorhub-driver-rs350')
-    implementation project(':sensorhub-driver-kromek-d5')
-    implementation project(':sensorhub-driver-rapiscan')
+//    implementation project(':sensorhub-driver-kromek-d3s')
+//    implementation project(':sensorhub-driver-rs350')
+//    implementation project(':sensorhub-driver-kromek-d5')
+//    implementation project(':sensorhub-driver-rapiscan')
+    //    implementation project(':sensorhub-driver-zw100-multisensor-6')
+    implementation project(':sensorhub-driver-wadwaz-1')
+//    implementation project(':sensorhub-driver-wapirz-1')
+    implementation project(':sensorhub-zwave-comms')
 }
 
 configurations {
@@ -58,8 +63,11 @@ distributions{
             into('lib') {
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
-
             }
+            //  into('lib') {
+//                from project.configurations.runtimeClasspath
+//                from project(':sensorhub-zwave-comms').configurations.runtimeClasspath
+//            }
         }
     }
 }
