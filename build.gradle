@@ -5,6 +5,12 @@ allprojects {
     version = 0.1
 }
 
+repositories {
+    maven {
+        url "https://openhab.jfrog.io/artifactory/libs-release"
+    }
+}
+
 subprojects {
     repositories.addAll(rootProject.repositories)
 }
@@ -36,7 +42,6 @@ dependencies {
 //    implementation project(':sensorhub-driver-rapiscan')
     //    implementation project(':sensorhub-driver-zw100-multisensor-6')
     implementation project(':sensorhub-driver-wadwaz-1')
-//    implementation project(':sensorhub-driver-wapirz-1')
     implementation project(':sensorhub-zwave-comms')
 }
 
@@ -64,7 +69,7 @@ distributions{
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
             }
-            //  into('lib') {
+//              into('lib') {
 //                from project.configurations.runtimeClasspath
 //                from project(':sensorhub-zwave-comms').configurations.runtimeClasspath
 //            }
