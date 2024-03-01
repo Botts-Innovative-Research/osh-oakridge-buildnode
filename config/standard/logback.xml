@@ -23,10 +23,10 @@
         </encoder>
     </appender>
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="STDOUT" />
     </root>
-    <logger name="org.sensorhub" level="debug">
+    <logger name="org.sensorhub" level="info">
         <appender-ref ref="MODULE_FILE" />
     </logger>
     <logger name="org.eclipse.jetty" level="warn" />

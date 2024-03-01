@@ -1,6 +1,13 @@
 apply plugin: 'java'
 description = 'Main Test Project'
-targetCompatibility = 11
+targetCompatibility = 17
+
+repositories {
+  mavenCentral()
+  maven {
+    url "https://openhab.jfrog.io/artifactory/libs-release"
+  }
+}
 
 dependencies {
   implementation 'org.sensorhub:sensorhub-core:' + oshCoreVersion
@@ -9,5 +16,9 @@ dependencies {
   implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
 
-//  implementation project(':sensorhub-driver-rs350')
+  implementation project(':sensorhub-zwave-comms')
+  implementation project(':sensorhub-comm-rxtx')
+  implementation project(':sensorhub-driver-wadwaz-1')
+
+
 }
