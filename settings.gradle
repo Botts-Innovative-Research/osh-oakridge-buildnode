@@ -17,6 +17,9 @@ project(':sensorhub-service-video').projectDir = "$gradle.oshAddonsDir/services/
 include 'sensorhub-driver-videocam'
 project(':sensorhub-driver-videocam').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-videocam" as File
 
+include 'sensorhub-driver-ffmpeg'
+project(':sensorhub-driver-ffmpeg').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-ffmpeg" as File
+
 include 'sensorhub-driver-v4l'
 project(':sensorhub-driver-v4l').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-v4l" as File
 
