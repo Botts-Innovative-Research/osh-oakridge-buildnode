@@ -13,7 +13,7 @@ public class TestSensorHub
     {        
     }
     
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
     {
         SensorHub.main(new String[] {"tools/sensorhub-test/src/main/resources/config.json", "storage"});
     }

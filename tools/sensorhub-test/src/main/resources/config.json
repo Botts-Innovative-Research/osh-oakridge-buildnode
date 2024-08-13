@@ -166,49 +166,5 @@
     "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
     "name": "SOS Service",
     "autoStart": true
-  },
-  {
-    "objClass": "com.botts.impl.sensor.rapiscan.RapiscanConfig",
-    "serialNumber": "rpm001",
-    "commSettings": {
-      "objClass": "org.sensorhub.impl.comm.TCPCommProviderConfig",
-      "connection": {
-        "objClass": "org.sensorhub.impl.comm.RobustIPConnectionConfig",
-        "checkReachability": true,
-        "connectTimeout": 3000,
-        "reconnectPeriod": 10000,
-        "reconnectAttempts": 0
-      },
-      "protocol": {
-        "objClass": "org.sensorhub.impl.comm.TCPConfig",
-        "remotePort": 1600,
-        "enableTLS": false,
-        "remoteHost": "localhost",
-        "localAddress": "AUTO"
-      },
-      "moduleClass": "org.sensorhub.impl.comm.TCPCommProvider",
-      "autoStart": false
-    },
-    "positionConfig": {
-      "objClass": "org.sensorhub.api.sensor.PositionConfig"
-    },
-    "laneID": 0,
-    "setupGammaConfig": {
-      "objClass": "com.botts.impl.sensor.rapiscan.SetupGammaConfig",
-      "intervals": 5,
-      "occupancyHoldin": 10,
-      "nsigma": 7.0
-    },
-    "emlConfig": {
-      "objClass": "com.botts.impl.sensor.rapiscan.EMLConfig",
-      "emlEnabled": false,
-      "isCollimated": false,
-      "laneWidth": 0.0
-    },
-    "lastUpdated": "2024-07-29T16:05:37.184-0500",
-    "id": "78bccd30-268c-4711-b033-e92488fb292a",
-    "moduleClass": "com.botts.impl.sensor.rapiscan.RapiscanSensor",
-    "name": "New Rapiscan Sensor Driver",
-    "autoStart": true
   }
 ]

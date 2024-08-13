@@ -23,12 +23,12 @@ dependencies {
     // FROM OSH-ADDONS
     implementation project(':sensorhub-driver-videocam')
     implementation project(':sensorhub-driver-rtpcam')
-    implementation project(':sensorhub-process-ffmpeg')
+//    implementation project(':sensorhub-process-ffmpeg')
     implementation project(':sensorhub-driver-fakegps')
     implementation project(':sensorhub-service-video')
     implementation project(':sensorhub-driver-dahua')
     implementation project(':sensorhub-driver-axis')
-    implementation project(':sensorhub-driver-ffmpeg')
+//    implementation project(':sensorhub-driver-ffmpeg')
 //    implementation project(':sensorhub-driver-openhab')
 //    implementation project(':sensorhub-driver-onvif')
 
