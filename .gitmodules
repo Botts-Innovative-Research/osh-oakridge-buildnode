@@ -1,14 +1,13 @@
 [submodule "include/osh-oakridge-modules"]
 	path = include/osh-oakridge-modules
-	url = git@github.com:Botts-Innovative-Research/osh-oakridge-modules.git
+	url = https://github.com/Botts-Innovative-Research/osh-oakridge-modules.git
 	branch = main
 [submodule "include/osh-core"]
 	path = include/osh-core
-	url = https://github.com/earocorn/osh-core
-	branch = ORNL-v2
+	url = https://github.com/opensensorhub/osh-core.git
 [submodule "include/osh-addons"]
 	path = include/osh-addons
-	url = git@github.com:opensensorhub/osh-addons.git
+	url = https://github.com/opensensorhub/osh-addons.git
 [submodule "web/oscar-viewer"]
 	path = web/oscar-viewer
 	url = https://github.com/Botts-Innovative-Research/oscar-viewer.git
