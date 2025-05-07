@@ -12,9 +12,9 @@
     "trustStorePath": ".keystore/ssl_trust",
     "enableCORS": true,
     "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.service.HttpServer",
-    "name": "HTTP Server",
-    "autoStart": true
+    "name": "HTTP Server"
   },
   {
     "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
@@ -82,9 +82,9 @@
       }
     ],
     "id": "bd112969-8838-4f62-8d10-1edf1baa6669",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
-    "name": "Users",
-    "autoStart": true
+    "name": "Users"
   },
   {
     "objClass": "org.sensorhub.ui.AdminUIConfig",
@@ -93,9 +93,9 @@
     "customPanels": [],
     "customForms": [],
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.ui.AdminUIModule",
-    "name": "Admin UI",
-    "autoStart": true
+    "name": "Admin UI"
   },
   {
     "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
@@ -164,9 +164,9 @@
     "enableSOAP": true,
     "endPoint": "/sos",
     "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
-    "name": "SOS Service",
-    "autoStart": true
+    "name": "SOS Service"
   },
   {
     "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
@@ -182,8 +182,8 @@
       "useCompression": false,
       "readOnly": false,
       "compactOnClose": false,
-      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-      "autoStart": false
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
     },
     "systemUIDs": [],
     "autoPurgeConfig": [
@@ -191,16 +191,19 @@
         "objClass": "org.sensorhub.impl.database.system.MaxAgeAutoPurgeConfig",
         "maxRecordAge": 604800.0,
         "enabled": true,
-        "purgePeriod": 3600.0
+        "purgePeriod": 3600.0,
+        "systemUIDs": [
+          "*"
+        ]
       }
     ],
     "minCommitPeriod": 10000,
     "databaseNum": 3,
     "id": "75b9edfc-68e9-4de4-ab3e-430b465d5d81",
-    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
-    "name": "SOS Database",
     "description": "Database to store data pushed from OSH Android",
-    "autoStart": true
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "SOS Database"
   },
   {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
@@ -230,9 +233,9 @@
     "enableSOAP": true,
     "endPoint": "/api",
     "id": "6697cb4a-2e99-4fee-bba6-d1202d24dea5",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
-    "name": "Connected Systems API Service",
-    "autoStart": true
+    "name": "Connected Systems API Service"
   },
   {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
@@ -261,9 +264,9 @@
     "enableSOAP": true,
     "endPoint": "/configs",
     "id": "18984b54-c9a0-44b9-b822-74f47e6155fd",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
-    "name": "Config API Service",
-    "autoStart": true
+    "name": "Config API Service"
   },
   {
     "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
@@ -279,15 +282,154 @@
       "useCompression": false,
       "readOnly": false,
       "compactOnClose": false,
-      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-      "autoStart": false
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
     },
     "systemUIDs": [],
+    "autoPurgeConfig": [],
     "minCommitPeriod": 10000,
     "databaseNum": 4,
     "id": "c5fef937-ac3e-48b7-a233-749d8fb4f02f",
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
-    "name": "Connected Systems Database",
-    "autoStart": true
+    "name": "Connected Systems Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+      "indexObsLocation": false,
+      "storagePath": "akfalefjk",
+      "memoryCacheSize": 5120,
+      "autoCommitBufferSize": 1024,
+      "autoCommitPeriod": 10,
+      "autoCompactFillRate": 40,
+      "idProviderType": "SEQUENTIAL",
+      "useCompression": false,
+      "readOnly": false,
+      "compactOnClose": false,
+      "id": "f1d073dd-606a-450c-854b-5cfaa3e41727",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "urn:osh:system:fsdlkfjasdf"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 5,
+    "id": "e51b4292-8964-4450-9c7d-05ffc391235f",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "New System Driver Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig",
+    "uniqueID": "fsdlkfjasdf",
+    "subsystems": [
+      {
+        "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig$SystemMember",
+        "config": {
+          "objClass": "com.botts.impl.sensor.aspect.AspectConfig",
+          "serialNumber": "sensor001",
+          "commSettings": {
+            "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPCommProviderConfig",
+            "connection": {
+              "objClass": "org.sensorhub.impl.comm.RobustIPConnectionConfig",
+              "checkReachability": true,
+              "connectTimeout": 3000,
+              "reconnectPeriod": 10000,
+              "reconnectAttempts": 10000
+            },
+            "protocol": {
+              "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPConfig",
+              "remoteHost": "localhost",
+              "remotePort": 502,
+              "addressRange": {
+                "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPConfig$AddressRange",
+                "from": 1,
+                "to": 32
+              }
+            },
+            "id": "064afb42-bb2b-4942-a6cc-d98f562c1180",
+            "autoStart": false,
+            "moduleClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPCommProvider"
+          },
+          "positionConfig": {
+            "objClass": "org.sensorhub.api.sensor.PositionConfig"
+          },
+          "laneId": 0,
+          "lastUpdated": "2025-04-29T09:37:49.713-0500",
+          "id": "69c3abed-218a-482f-8e96-1223f4eab2d7",
+          "autoStart": true,
+          "moduleClass": "com.botts.impl.sensor.aspect.AspectSensor",
+          "name": "New AspectSensor"
+        }
+      }
+    ],
+    "lastUpdated": "2025-04-03T18:38:54.159-0500",
+    "id": "cb5bab46-a732-402a-ba7a-553f8267b6c8",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.sensor.SensorSystem",
+    "name": "New Sensor System"
+  },
+  {
+    "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig",
+    "uniqueID": "lane2",
+    "subsystems": [
+      {
+        "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig$SystemMember",
+        "config": {
+          "objClass": "com.botts.impl.sensor.rapiscan.RapiscanConfig",
+          "serialNumber": "rpm001",
+          "commSettings": {
+            "objClass": "org.sensorhub.impl.comm.TCPCommProviderConfig",
+            "connection": {
+              "objClass": "org.sensorhub.impl.comm.RobustIPConnectionConfig",
+              "checkReachability": true,
+              "connectTimeout": 3000,
+              "reconnectPeriod": 10000,
+              "reconnectAttempts": 10000
+            },
+            "protocol": {
+              "objClass": "org.sensorhub.impl.comm.TCPConfig",
+              "remotePort": 1601,
+              "enableTLS": false,
+              "remoteHost": "localhost",
+              "localAddress": "AUTO"
+            },
+            "id": "891ce988-4af8-4247-95f7-f16c57925cbb",
+            "autoStart": false,
+            "moduleClass": "org.sensorhub.impl.comm.TCPCommProvider"
+          },
+          "positionConfig": {
+            "objClass": "org.sensorhub.api.sensor.PositionConfig"
+          },
+          "laneID": 0,
+          "setupGammaConfig": {
+            "objClass": "com.botts.impl.sensor.rapiscan.SetupGammaConfig",
+            "intervals": 5,
+            "occupancyHoldin": 10,
+            "nsigma": 7.0
+          },
+          "emlConfig": {
+            "objClass": "com.botts.impl.sensor.rapiscan.EMLConfig",
+            "emlEnabled": false,
+            "isCollimated": false,
+            "laneWidth": 4.820000171661377
+          },
+          "lastUpdated": "2025-04-29T10:01:41.719-0500",
+          "id": "f8cdc8cd-53d8-4e8c-bdfd-1315c35e07aa",
+          "autoStart": true,
+          "moduleClass": "com.botts.impl.sensor.rapiscan.RapiscanSensor",
+          "name": "New Rapiscan Sensor Driver"
+        }
+      }
+    ],
+    "lastUpdated": "2025-04-29T10:01:34.135-0500",
+    "id": "c4982549-8fc9-42e4-9665-38fe38993ce6",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.sensor.SensorSystem",
+    "name": "New Sensor System"
   }
 ]

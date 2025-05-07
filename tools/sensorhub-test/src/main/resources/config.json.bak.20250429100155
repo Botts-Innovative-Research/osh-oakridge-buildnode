@@ -1,0 +1,376 @@
+[
+  {
+    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+    "httpPort": 8282,
+    "httpsPort": 0,
+    "staticDocsRootUrl": "/",
+    "staticDocsRootDir": "web",
+    "servletsRootUrl": "/sensorhub",
+    "authMethod": "BASIC",
+    "keyStorePath": ".keystore/ssl_keys",
+    "keyAlias": "jetty",
+    "trustStorePath": ".keystore/ssl_trust",
+    "enableCORS": true,
+    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.HttpServer",
+    "name": "HTTP Server"
+  },
+  {
+    "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
+    "users": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "admin",
+        "name": "Administrator",
+        "password": "admin",
+        "roles": [
+          "admin"
+        ],
+        "allow": [],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "anonymous",
+        "name": "Anonymous User",
+        "password": "",
+        "roles": [
+          "anon"
+        ],
+        "allow": [],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "sensor",
+        "name": "Smart Sensors",
+        "password": "pwd",
+        "roles": [
+          "sost"
+        ],
+        "allow": [],
+        "deny": []
+      }
+    ],
+    "roles": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "admin",
+        "allow": [
+          "*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "anon",
+        "allow": [
+          "sos[*]/get/*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "sost",
+        "allow": [
+          "sos[*]/get/*",
+          "sos[*]/insert/*",
+          "sos[*]/update/*"
+        ],
+        "deny": []
+      }
+    ],
+    "id": "bd112969-8838-4f62-8d10-1edf1baa6669",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
+    "name": "Users"
+  },
+  {
+    "objClass": "org.sensorhub.ui.AdminUIConfig",
+    "widgetSet": "org.sensorhub.ui.SensorHubWidgetSet",
+    "bundleRepoUrls": [],
+    "customPanels": [],
+    "customForms": [],
+    "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.ui.AdminUIModule",
+    "name": "Admin UI"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
+    "customDataProviders": [],
+    "customFormats": [
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/mp4",
+        "className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
+      },
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/x-motion-jpeg",
+        "className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
+      }
+    ],
+    "maxObsCount": 100,
+    "maxRecordCount": 100000,
+    "maxFois": 10,
+    "defaultLiveTimeout": 600.0,
+    "templateTimeout": 600,
+    "databaseID": "75b9edfc-68e9-4de4-ab3e-430b465d5d81",
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": false
+    },
+    "enableTransactional": true,
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "title": "SOS Service",
+      "description": "An SOS service automatically deployed by OpenSensorHub",
+      "keywords": [
+        "SensorHub",
+        "GPS",
+        "weather"
+      ],
+      "fees": "NONE",
+      "accessConstraints": "NONE",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "individualName": "NAME",
+        "organizationName": "ORGANIZATION",
+        "positionName": "",
+        "voiceNumbers": [
+          "+1 800 123 4567"
+        ],
+        "faxNumbers": [
+          "+1 800 123 4568"
+        ],
+        "deliveryPoints": [
+          "1 Main Street"
+        ],
+        "city": "CITY",
+        "administrativeArea": "ST",
+        "postalCode": "12345",
+        "country": "United States of America",
+        "emails": [
+          "admin@bobby.com"
+        ],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/sos",
+    "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
+    "name": "SOS Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+      "indexObsLocation": false,
+      "storagePath": "sos.db",
+      "memoryCacheSize": 5120,
+      "autoCommitBufferSize": 1024,
+      "autoCommitPeriod": 10,
+      "autoCompactFillRate": 40,
+      "idProviderType": "SEQUENTIAL",
+      "useCompression": false,
+      "readOnly": false,
+      "compactOnClose": false,
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
+    },
+    "systemUIDs": [],
+    "autoPurgeConfig": [
+      {
+        "objClass": "org.sensorhub.impl.database.system.MaxAgeAutoPurgeConfig",
+        "maxRecordAge": 604800.0,
+        "enabled": true,
+        "purgePeriod": 3600.0,
+        "systemUIDs": [
+          "*"
+        ]
+      }
+    ],
+    "minCommitPeriod": 10000,
+    "databaseNum": 3,
+    "id": "75b9edfc-68e9-4de4-ab3e-430b465d5d81",
+    "description": "Database to store data pushed from OSH Android",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "SOS Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
+    "databaseID": "c5fef937-ac3e-48b7-a233-749d8fb4f02f",
+    "customFormats": [],
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": false
+    },
+    "enableTransactional": true,
+    "maxResponseLimit": 100000,
+    "defaultLiveTimeout": 600.0,
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "voiceNumbers": [],
+        "faxNumbers": [],
+        "deliveryPoints": [],
+        "emails": [],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/api",
+    "id": "6697cb4a-2e99-4fee-bba6-d1202d24dea5",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
+    "name": "Connected Systems API Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
+    "customFormats": [],
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": false
+    },
+    "enableTransactional": true,
+    "maxResponseLimit": 100000,
+    "defaultLiveTimeout": 600.0,
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "voiceNumbers": [],
+        "faxNumbers": [],
+        "deliveryPoints": [],
+        "emails": [],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/configs",
+    "id": "18984b54-c9a0-44b9-b822-74f47e6155fd",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
+    "name": "Config API Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+      "indexObsLocation": false,
+      "storagePath": "consys.db",
+      "memoryCacheSize": 5120,
+      "autoCommitBufferSize": 1024,
+      "autoCommitPeriod": 10,
+      "autoCompactFillRate": 40,
+      "idProviderType": "SEQUENTIAL",
+      "useCompression": false,
+      "readOnly": false,
+      "compactOnClose": false,
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
+    },
+    "systemUIDs": [],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 4,
+    "id": "c5fef937-ac3e-48b7-a233-749d8fb4f02f",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "Connected Systems Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+      "indexObsLocation": false,
+      "storagePath": "akfalefjk",
+      "memoryCacheSize": 5120,
+      "autoCommitBufferSize": 1024,
+      "autoCommitPeriod": 10,
+      "autoCompactFillRate": 40,
+      "idProviderType": "SEQUENTIAL",
+      "useCompression": false,
+      "readOnly": false,
+      "compactOnClose": false,
+      "id": "f1d073dd-606a-450c-854b-5cfaa3e41727",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "urn:osh:system:fsdlkfjasdf"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 5,
+    "id": "e51b4292-8964-4450-9c7d-05ffc391235f",
+    "autoStart": false,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "New System Driver Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig",
+    "uniqueID": "fsdlkfjasdf",
+    "subsystems": [
+      {
+        "objClass": "org.sensorhub.impl.sensor.SensorSystemConfig$SystemMember",
+        "config": {
+          "objClass": "com.botts.impl.sensor.aspect.AspectConfig",
+          "serialNumber": "sensor001",
+          "commSettings": {
+            "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPCommProviderConfig",
+            "connection": {
+              "objClass": "org.sensorhub.impl.comm.RobustIPConnectionConfig",
+              "checkReachability": true,
+              "connectTimeout": 3000,
+              "reconnectPeriod": 10000,
+              "reconnectAttempts": 10000
+            },
+            "protocol": {
+              "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPConfig",
+              "remoteHost": "localhost",
+              "remotePort": 502,
+              "addressRange": {
+                "objClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPConfig$AddressRange",
+                "from": 1,
+                "to": 32
+              }
+            },
+            "id": "064afb42-bb2b-4942-a6cc-d98f562c1180",
+            "autoStart": false,
+            "moduleClass": "com.botts.impl.sensor.aspect.comm.ModbusTCPCommProvider"
+          },
+          "positionConfig": {
+            "objClass": "org.sensorhub.api.sensor.PositionConfig"
+          },
+          "laneId": 0,
+          "lastUpdated": "2025-04-29T09:37:49.713-0500",
+          "id": "69c3abed-218a-482f-8e96-1223f4eab2d7",
+          "autoStart": true,
+          "moduleClass": "com.botts.impl.sensor.aspect.AspectSensor",
+          "name": "New AspectSensor"
+        }
+      }
+    ],
+    "lastUpdated": "2025-04-03T18:38:54.159-0500",
+    "id": "cb5bab46-a732-402a-ba7a-553f8267b6c8",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.sensor.SensorSystem",
+    "name": "New Sensor System"
+  }
+]
