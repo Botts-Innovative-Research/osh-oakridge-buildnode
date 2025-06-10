@@ -126,6 +126,10 @@ public class PBKDF2Credential extends Credential {
 			String password = ((Password) credentials).toString();
 			return check(password);
 		}
+		if (credentials instanceof char[]) {
+			String password = new String((char[]) credentials);
+			return check(password);
+		}
 		// We don't know how to validate against any other types of credential
 		// input, so we return false in those cases.
 		return false;
