@@ -2,7 +2,7 @@ apply from: gradle.oshCoreDir + '/common.gradle'
 description = ''
 
 allprojects {
-    version = "1.3.6"
+    version = "1.3.7"
 }
 
 subprojects {
@@ -69,6 +69,7 @@ distributions{
                 from 'config/eml'
             }
             from 'README.md'
+            from 'changelog.md'
             into('web'){
                 from 'web/oscar-viewer/web'
             }
