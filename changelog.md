@@ -2,20 +2,9 @@
 All notable changes to this project will be documented in this file. 
 
 
-## [Unreleased] - yyyy-mm-dd
-Here we will write upgrading notes for the test team and users. 
+## [2.2] - 2025-07-30
+Release 2.2 request, no updates since 1.3.7.
 
-### Added
-- [ISSUE NUMBER](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/?)
-  Issue Title Goes Here
-
-### Changed
-- [ISSUE NUMBER](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/?)
-  Issue Title Goes Here
-
-### Fixed
-- [ISSUE NUMBER](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/?)
-  Issue Title Goes Here
 
 ## [1.3.7] 2025-07-18
 
