@@ -8,7 +8,7 @@
 	branch = OSCAR
 [submodule "include/osh-addons"]
 	path = include/osh-addons
-	url = git@github.com:opensensorhub/osh-addons.git
+	url =  https://github.com/opensensorhub/osh-addons
 	branch = master
 [submodule "web/oscar-viewer"]
 	path = web/oscar-viewer
