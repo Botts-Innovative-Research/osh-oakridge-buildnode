@@ -5,8 +5,8 @@ gradle.ext.oshOakridgeModules = "$rootDir/include/osh-oakridge-modules"
 
 includeBuild gradle.oshCoreDir
 
-include 'sensorhub-comm-rxtx'
-project(':sensorhub-comm-rxtx').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-rxtx" as File
+//include 'sensorhub-comm-rxtx'
+//project(':sensorhub-comm-rxtx').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-rxtx" as File
 
 //include 'sensorhub-driver-sony-vb600'
 //project(':sensorhub-driver-sony-vb600').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-sony-vb600" as File
@@ -35,8 +35,8 @@ project(':sensorhub-driver-rtpcam').projectDir = "$gradle.oshAddonsDir/sensors/v
 include 'sensorhub-driver-dahua'
 project(':sensorhub-driver-dahua').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-dahua" as File
 
-include 'sensorhub-driver-axis'
-project(':sensorhub-driver-axis').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-axis" as File
+//include 'sensorhub-driver-axis'
+//project(':sensorhub-driver-axis').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-axis" as File
 
 //include 'sensorhub-driver-onvif'
 //project(':sensorhub-driver-onvif').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-onvif" as File
