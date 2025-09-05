@@ -17,7 +17,7 @@ dependencies {
   implementation project(':sensorhub-process-ffmpeg')
   implementation project(':sensorhub-service-video')
   implementation project(':sensorhub-driver-dahua')
-  implementation project(':sensorhub-driver-axis')
+//  implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-sony-vb600')
 
   // For MQTT
@@ -33,7 +33,7 @@ dependencies {
   implementation project(':sensorhub-driver-kromek-d5')
 
   // Processes
-  implementation project(':sensorhub-process-occupancy')
+//  implementation project(':sensorhub-process-occupancy')
 
   // Additional Modules
   implementation project(':sensorhub-system-lane')

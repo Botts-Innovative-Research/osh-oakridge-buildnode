@@ -1,6 +1,26 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## [2.3.0] 
+Release 2.3.0 
+
+### Added
+- Added Deployment version to config.json
+
+### Changed
+- [#89](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/89)
+Removed dependency to log4j
+
+
+  
+### Fixed
+- [#90](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/90)
+Aspect Charts:The prior issue mentioned the Aspect RPMs and the Admin Panel, but this encompasses Aspects issues on the client as well.
+- [#]()
+Update charts in client to display Rapiscan and Aspect charts 
+- [#]()
+  Node Form Fix: Updated NodeForm to check if node is reachable before adding it to the list of Nodes, so when configuring a node it will ensure that you can access that node before it continues processing and updating the UI.
+
 
 ## [2.2] - 2025-07-30
 Release 2.2 request, no updates since 1.3.7.
