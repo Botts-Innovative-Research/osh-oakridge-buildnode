@@ -25,8 +25,10 @@ dependencies {
     implementation project(':sensorhub-driver-ffmpeg')
     implementation project(':sensorhub-process-ffmpeg')
     implementation project(':sensorhub-service-video')
-    implementation project(':sensorhub-driver-dahua')
-    implementation project(':sensorhub-driver-axis')
+    implementation project(':sensorhub-datastore-postgis')
+//    implementation project(':sensorhub-driver-dahua')
+// !!WARNING!! If you need to use the Axis driver, you must ensure the driver has a non-vulnerable version of log4j
+//    implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-sony-vb600')
 
     // For MQTT
@@ -62,29 +64,28 @@ distributions{
     rel {
         distributionBaseName = 'osh-node-oscar'
         contents {
-            from 'scripts/standard'
-            from 'scripts/keystores'
-            from 'config/standard'
-            into('config'){
-                from 'config/eml'
-            }
-            from 'README.md'
-            from 'changelog.md'
-            into('web'){
-                from 'web/oscar-viewer/web'
+            from 'dist/scripts/standard'
+            from 'dist/config/standard'
+            into ('config') {
+                from 'dist/config/eml'
             }
             into('trusted_certificates') {
                 from 'scripts/trusted_certificates'
             }
+            into('rules') {
+                from 'dist/rules'
+            }
+            into('documentation') {
+                from 'dist/documentation'
+            }
+            into('web'){
+                from 'web/oscar-viewer/web'
+            }
+            from 'README.md'
+            from 'changelog.md'
             into('lib') {
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
-            }
-            into('rules') {
-                from 'rules'
-            }
-            into('documentation') {
-                from 'documentation'
             }
         }
     }
