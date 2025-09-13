@@ -108,10 +108,11 @@
         "uiClass": "com.botts.ui.oscar.forms.OccupancyVideoPurgeConfigForm"
       }
     ],
+    "enableLandingPage": false,
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,
     "moduleClass": "org.sensorhub.ui.AdminUIModule",
-    "deploymentName": "OSCAR 2.3.0",
+    "deploymentName": "OSCAR 2.3.1",
     "name": "Admin UI"
   },
   {
@@ -197,6 +198,7 @@
     "enableTransactional": true,
     "maxResponseLimit": 100000,
     "defaultLiveTimeout": 600.0,
+    "uriPrefixMap": [],
     "ogcCapabilitiesInfo": {
       "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
       "serviceProvider": {
@@ -229,6 +231,7 @@
     "enableTransactional": true,
     "maxResponseLimit": 100000,
     "defaultLiveTimeout": 600.0,
+    "uriPrefixMap": [],
     "ogcCapabilitiesInfo": {
       "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
       "serviceProvider": {
@@ -261,6 +264,7 @@
     "useCompression": false,
     "readOnly": false,
     "compactOnClose": false,
+    "printDebugInfoOnClose": false,
     "databaseNum": 1,
     "id": "65e0cdb5-25ca-4c37-9690-18ab98398e8d",
     "autoStart": true,
@@ -279,6 +283,7 @@
     "useCompression": false,
     "readOnly": false,
     "compactOnClose": false,
+    "printDebugInfoOnClose": false,
     "databaseNum": 2,
     "id": "06c57133-3f57-46fd-a806-927158d90dd4",
     "description": "Database to store data pushed via SOS-T",
@@ -298,6 +303,7 @@
     "useCompression": false,
     "readOnly": false,
     "compactOnClose": false,
+    "printDebugInfoOnClose": false,
     "databaseNum": 3,
     "id": "95474004-ffee-4c32-af32-4c5739dc53f4",
     "description": "Database to store data pushed via Connected Systems API clients",

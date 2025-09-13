@@ -1,6 +1,13 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## [2.3.1] - 2025-09-13
+### Added
+- Current PostGIS database module. (needs to be updated, but this provides a base for testing later versions of OSCAR)
+- Dockerfiles and script to launch PostGIS instance.
+### Changed
+- Restructured repository, moving most directories that are unused in development under `dist`
+
 ## [2.3.0] 
 Release 2.3.0 
 
@@ -11,8 +18,6 @@ Release 2.3.0
 - [#89](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/89)
 Removed dependency to log4j
 
-
-  
 ### Fixed
 - [#90](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/90)
 Aspect Charts:The prior issue mentioned the Aspect RPMs and the Admin Panel, but this encompasses Aspects issues on the client as well.

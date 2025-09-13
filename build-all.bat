@@ -7,4 +7,4 @@ call npm run build
 
 call cd ..\..
 
-call gradlew build -x test
+call gradlew build -x test -x osgi
