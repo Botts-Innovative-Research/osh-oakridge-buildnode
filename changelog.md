@@ -1,6 +1,14 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## [2.2.1] - 2025-09-13
+### Added
+- Current PostGIS database module. (needs to be updated, but this provides a base for testing later versions of OSCAR)
+- Dockerfiles and script to launch PostGIS instance.
+### Changed
+- Restructured repository, moving most directories that are unused in development under `dist`
+### Fixed
+- [#89](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/89) Removed vulnerable Log4j usage (Axis driver)
 
 ## [2.2] - 2025-07-30
 Release 2.2 request, no updates since 1.3.7.
