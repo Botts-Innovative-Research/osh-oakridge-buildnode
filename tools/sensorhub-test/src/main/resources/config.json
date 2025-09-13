@@ -109,10 +109,10 @@
       }
     ],
     "enableLandingPage": false,
-    "deploymentName": "OSCAR 2.2.1",
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,
     "moduleClass": "org.sensorhub.ui.AdminUIModule",
+    "deploymentName": "OSCAR 2.3.1",
     "name": "Admin UI"
   },
   {

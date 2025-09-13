@@ -2,7 +2,7 @@ apply from: gradle.oshCoreDir + '/common.gradle'
 description = ''
 
 allprojects {
-    version = "2.2.1"
+    version = "2.3.1"
 }
 
 subprojects {
@@ -44,7 +44,7 @@ dependencies {
     implementation project(':sensorhub-driver-kromek-d5')
 
     // Processes
-    implementation project(':sensorhub-process-occupancy')
+//    implementation project(':sensorhub-process-occupancy')
 
     // Additional Modules
     implementation project(':sensorhub-system-lane')

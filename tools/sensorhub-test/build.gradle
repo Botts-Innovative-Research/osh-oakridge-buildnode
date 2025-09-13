@@ -35,7 +35,7 @@ dependencies {
   implementation project(':sensorhub-driver-kromek-d5')
 
   // Processes
-  implementation project(':sensorhub-process-occupancy')
+//  implementation project(':sensorhub-process-occupancy')
 
   // Additional Modules
   implementation project(':sensorhub-system-lane')

@@ -5,11 +5,8 @@ gradle.ext.oshOakridgeModules = "$rootDir/include/osh-oakridge-modules"
 
 includeBuild gradle.oshCoreDir
 
-//include 'sensorhub-driver-fakeweather'
-//project(':sensorhub-driver-fakeweather').projectDir = "$gradle.oshAddonsDir/sensors/simulated/sensorhub-driver-fakeweather" as File
-
-include 'sensorhub-comm-rxtx'
-project(':sensorhub-comm-rxtx').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-rxtx" as File
+//include 'sensorhub-comm-rxtx'
+//project(':sensorhub-comm-rxtx').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-rxtx" as File
 
 //include 'sensorhub-driver-sony-vb600'
 //project(':sensorhub-driver-sony-vb600').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-sony-vb600" as File
@@ -53,9 +50,6 @@ project(':sensorhub-service-mqtt-hivemq').projectDir = "$gradle.oshAddonsDir/ser
 
 include 'sensorhub-service-consys-mqtt'
 project(':sensorhub-service-consys-mqtt').projectDir = "$gradle.oshAddonsDir/services/sensorhub-service-consys-mqtt" as File
-
-include 'sensorhub-datastore-postgis'
-project(':sensorhub-datastore-postgis').projectDir = "$gradle.oshAddonsDir/persistence/sensorhub-datastore-postgis" as File
 
 include 'sensorhub-comm-mqtt'
 project(':sensorhub-comm-mqtt').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-mqtt" as File
