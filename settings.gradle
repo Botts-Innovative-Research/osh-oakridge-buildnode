@@ -26,17 +26,21 @@ project(':sensorhub-driver-videocam').projectDir = "$gradle.oshAddonsDir/sensors
 include 'sensorhub-driver-v4l'
 project(':sensorhub-driver-v4l').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-v4l" as File
 
+include 'sensorhub-datastore-postgis'
+project(':sensorhub-datastore-postgis').projectDir = "$gradle.oshAddonsDir/persistence/sensorhub-datastore-postgis" as File
+
 //include 'sensorhub-driver-openhab'
 //project(':sensorhub-driver-openhab').projectDir = "$gradle.oshAddonsDir/sensors/smarthome/sensorhub-driver-openhab" as File
 
 include 'sensorhub-driver-rtpcam'
 project(':sensorhub-driver-rtpcam').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-rtpcam" as File
 
-include 'sensorhub-driver-dahua'
-project(':sensorhub-driver-dahua').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-dahua" as File
+//include 'sensorhub-driver-dahua'
+//project(':sensorhub-driver-dahua').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-dahua" as File
 
-include 'sensorhub-driver-axis'
-project(':sensorhub-driver-axis').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-axis" as File
+// !!WARNING!! If you need to use the Axis driver, you must ensure the driver has a non-vulnerable version of log4j
+//include 'sensorhub-driver-axis'
+//project(':sensorhub-driver-axis').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-axis" as File
 
 //include 'sensorhub-driver-onvif'
 //project(':sensorhub-driver-onvif').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-onvif" as File
