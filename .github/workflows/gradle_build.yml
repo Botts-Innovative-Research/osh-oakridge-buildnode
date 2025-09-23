@@ -36,7 +36,7 @@ jobs:
 
       - name: Install oscar-viewer dependencies
         working-directory: ${{ env.OSCAR_DIR }}
-        run: npm ci
+        run: npm i
 
       - name: Build oscar-viewer
         working-directory: ${{ env.OSCAR_DIR }}
