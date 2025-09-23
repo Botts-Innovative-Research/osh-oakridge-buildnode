@@ -9,6 +9,7 @@ env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
+  POSTGIS_SCRIPT: "./dist/scripts/standard/postgis/run-postgis.bat"
 jobs:
   Build:
     runs-on: self-hosted
@@ -64,13 +65,21 @@ jobs:
       - name: Verify Axis camera reachable
         run: echo "Include axis test"
 
+      - name: Run PostGIS Test Database
+        run: ${{ env.POSTGIS_SCRIPT }}
+
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
-#        env:
-#        # Add connection env variables
-
-#      - name: Start OSH test node
-#        run: # start node for cypress tests
+        env:
+          SONY_H264_AUTH_IP: ${{ secrets.SONY_H264_AUTH_IP }}
+          SONY_H264_NO_AUTH_IP: ${{ secrets.SONY_H264_NO_AUTH_IP }}
+          SONY_MJPEG_AUTH_IP: ${{ secrets.SONY_MJPEG_AUTH_IP }}
+          SONY_MJPEG_NO_AUTH_IP: ${{ secrets.SONY_MJPEG_NO_AUTH_IP }}
+          AXIS_H264_AUTH_IP: ${{ secrets.AXIS_H264_AUTH_IP }}
+          AXIS_H264_NO_AUTH_IP: ${{ secrets.AXIS_H264_NO_AUTH_IP }}
+          AXIS_MJPEG_AUTH_IP: ${{ secrets.AXIS_MJPEG_AUTH_IP }}
+          AXIS_MJPEG_NO_AUTH_IP: ${{ secrets.AXIS_MJPEG_NO_AUTH_IP }}
+          RPM_HOST: "localhost"
 
       - name: Run Cypress UI tests
         working-directory: ${{ env.OSCAR_DIR }}
