@@ -9,7 +9,7 @@ env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
-  POSTGIS_SCRIPT: "./dist/scripts/standard/postgis/run-postgis.bat"
+  POSTGIS_DIR: "./dist/scripts/standard/postgis"
 jobs:
   Build:
     runs-on: self-hosted
@@ -66,7 +66,8 @@ jobs:
         run: echo "Include axis test"
 
       - name: Run PostGIS Test Database
-        run: ${{ env.POSTGIS_SCRIPT }}
+        working-directory: ${{ env.POSTGIS_DIR }}
+        run: ./run-postgis.bat
 
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
