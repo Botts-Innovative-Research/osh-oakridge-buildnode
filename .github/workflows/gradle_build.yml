@@ -67,15 +67,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         env:
-          GRADLE_USER_HOME: "C:\.gradle"
+          GRADLE_USER_HOME: "C:\\.gradle"
 
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
 #        env:
 #        # Add connection env variables
 
-      - name: Start OSH test node
-        run: # start node for cypress tests
+#      - name: Start OSH test node
+#        run: # start node for cypress tests
 
       - name: Run Cypress UI tests
         working-directory: ${{ env.OSCAR_DIR }}
