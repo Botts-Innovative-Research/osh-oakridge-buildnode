@@ -17,6 +17,8 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+          repository: Botts-Innovative-Research/osh-oakridge-buildnode
+          ssh-key: ''
 
       - name: Set up JDK
         uses: actions/setup-java@v4
