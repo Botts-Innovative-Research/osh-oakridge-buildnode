@@ -90,3 +90,7 @@ jobs:
         working-directory: ${{ env.OSCAR_DIR }}
         run: npm test
 
+      - name: Cleanup PostGIS Test Instance
+        if: always()
+        run: docker rm -f test-postgis
+
