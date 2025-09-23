@@ -2,6 +2,8 @@ name: OSCAR E2E Testing
 on:
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    branches [ main, dev ]
 env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
