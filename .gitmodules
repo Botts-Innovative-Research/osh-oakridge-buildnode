@@ -1,6 +1,6 @@
 [submodule "include/osh-oakridge-modules"]
 	path = include/osh-oakridge-modules
-	url = git@github.com:Botts-Innovative-Research/osh-oakridge-modules.git
+	url = https://github.com/Botts-Innovative-Research/osh-oakridge-modules.git
 	branch = main
 [submodule "include/osh-core"]
 	path = include/osh-core
