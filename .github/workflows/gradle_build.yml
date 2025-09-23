@@ -78,10 +78,7 @@ jobs:
             -p 5432:5432 \
             my-postgis:latest
 
-          until docker exec postgres pg_isready -U postgres; do
-            echo "Waiting for Postgres..."
-            sleep 2
-          done
+          until docker exec postgres pg_isready -U postgres; do sleep 5 ; done
 
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
