@@ -66,6 +66,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        env:
+          GRADLE_USER_HOME: "C:\.gradle"
 
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
