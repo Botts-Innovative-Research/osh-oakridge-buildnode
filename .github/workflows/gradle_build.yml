@@ -3,7 +3,6 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-    branches [ main, dev ]
 env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
@@ -65,8 +64,8 @@ jobs:
       - name: Build with Gradle
         uses: gradle/actions/setup-gradle@v4
         run: ./gradlew clean build -x osgi
-        env:
-        # Add connection env variables
+#        env:
+#        # Add connection env variables
 
       - name: Start OSH test node
         run: # start node for cypress tests
@@ -74,6 +73,4 @@ jobs:
       - name: Run Cypress UI tests
         working-directory: ${{ env.OSCAR_DIR }}
         run: npm test
-
-      - name:
 
