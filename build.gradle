@@ -50,6 +50,7 @@ dependencies {
     implementation project(':sensorhub-system-lane')
     implementation project(':sensorhub-database-purge')
     implementation project(':sensorhub-webui-oscar')
+    implementation project(':sensorhub-service-oscar')
 
     implementation project(':security-utils')
 }
