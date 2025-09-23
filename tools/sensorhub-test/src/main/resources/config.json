@@ -106,13 +106,18 @@
         "objClass": "org.sensorhub.ui.CustomUIConfig",
         "configClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
         "uiClass": "com.botts.ui.oscar.forms.OccupancyVideoPurgeConfigForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
+    "deploymentName": "OSCAR 2.3.1",
     "enableLandingPage": false,
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,
     "moduleClass": "org.sensorhub.ui.AdminUIModule",
-    "deploymentName": "OSCAR 2.3.1",
     "name": "Admin UI"
   },
   {
@@ -312,22 +317,12 @@
     "name": "Connected Systems API Database"
   },
   {
-    "objClass": "org.sensorhub.impl.service.hivemq.MqttServerConfig",
-    "configFolder": "hivemq-config",
-    "dataFolder": "hivemq-data",
-    "webSocketProxyEndpoint": "/mqtt",
-    "enableWebSocketProxy": true,
-    "requireAuth": true,
-    "id": "36b5ad18-7c0e-49bb-8b82-ff0d937b40fb",
+    "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+    "nodeId": "test1",
+    "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
+    "id": "a234793e-51ce-4f46-9039-b42a18e61627",
     "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.hivemq.MqttServer",
-    "name": "MQTT Server (HiveMQ)"
-  },
-  {
-    "objClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttServiceConfig",
-    "id": "0ca5035c-4420-445f-b46f-b617307074cd",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttService",
-    "name": "Connected Systems API MQTT Extension"
+    "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
+    "name": "New OSCAR Service Module"
   }
 ]
