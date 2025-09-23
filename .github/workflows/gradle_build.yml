@@ -8,7 +8,7 @@ env:
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
 jobs:
-  build:
+  Build:
     runs-on: self-hosted
     timeout-minutes: 15
     steps:
@@ -18,8 +18,6 @@ jobs:
           fetch-depth: 0
           submodules: recursive
           repository: Botts-Innovative-Research/osh-oakridge-buildnode
-          ssh-key: ''
-          ssh-strict: 'false'
 
       - name: Set up JDK
         uses: actions/setup-java@v4
