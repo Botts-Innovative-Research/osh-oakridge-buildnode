@@ -65,9 +65,23 @@ jobs:
       - name: Verify Axis camera reachable
         run: echo "Include axis test"
 
-      - name: Run PostGIS Test Database
+      - name: Build PostGIS Docker Image
         working-directory: ${{ env.POSTGIS_DIR }}
-        run: ./run-postgis.bat
+        run: docker build . --tag=oscar-postgis
+
+      - name: Run Test PostGIS Instance
+        run: |
+          docker run -d --name postgres \
+            -e POSTGRES_DB=gis \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -p 5432:5432 \
+            my-postgis:latest
+
+          until docker exec postgres pg_isready -U postgres; do
+            echo "Waiting for Postgres..."
+            sleep 2
+          done
 
       - name: Build with Gradle
         run: ./gradlew clean build -x osgi
