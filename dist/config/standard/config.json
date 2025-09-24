@@ -255,10 +255,10 @@
     "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
     "dbConfig": {
       "objClass": "org.sensorhub.impl.datastore.postgis.PostgisObsSystemDatabaseConfig",
-      "url": "localhost:5432",
-      "dbName": "gis",
-      "login": "postgres",
-      "password": "postgres",
+      "url": "",
+      "dbName": "",
+      "login": "",
+      "password": "",
       "idProviderType": "SEQUENTIAL",
       "autoCommitPeriod": 10,
       "databaseNum": 4,
@@ -273,9 +273,9 @@
     "minCommitPeriod": 10000,
     "databaseNum": 4,
     "id": "25b6aadf-e45d-44c3-90d0-b41a77b24a01",
-    "autoStart": true,
+    "autoStart": false,
     "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
-    "name": "Postgis Database"
+    "name": "PostGIS Database"
   },
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
