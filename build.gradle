@@ -31,10 +31,6 @@ dependencies {
 //    implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-sony-vb600')
 
-    // For MQTT
-    implementation project(':sensorhub-service-consys-mqtt')
-    implementation project(':sensorhub-service-mqtt-hivemq')
-
     // FROM OSH-OAKRIDGE-MODULES
     // Drivers
     implementation project(':sensorhub-driver-kromek-d3s')
@@ -48,7 +44,6 @@ dependencies {
 
     // Additional Modules
     implementation project(':sensorhub-system-lane')
-    implementation project(':sensorhub-database-purge')
     implementation project(':sensorhub-webui-oscar')
     implementation project(':sensorhub-service-oscar')
 

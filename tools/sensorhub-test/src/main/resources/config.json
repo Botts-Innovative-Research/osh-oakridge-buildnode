@@ -96,24 +96,9 @@
         "objClass": "org.sensorhub.ui.CustomUIConfig",
         "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
         "uiClass": "com.botts.ui.oscar.forms.LaneConfigForm"
-      },
-      {
-        "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "com.botts.impl.system.lane.config.LaneConfig",
-        "uiClass": "com.botts.ui.oscar.forms.LaneModuleConfigForm"
-      },
-      {
-        "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
-        "uiClass": "com.botts.ui.oscar.forms.OccupancyVideoPurgeConfigForm"
-      },
-      {
-        "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
-    "deploymentName": "OSCAR 2.3.1",
+    "deploymentName": "OSCAR 2.3.0",
     "enableLandingPage": false,
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,
@@ -225,58 +210,6 @@
     "name": "Connected Systems API Service"
   },
   {
-    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
-    "databaseID": "65e0cdb5-25ca-4c37-9690-18ab98398e8d",
-    "customFormats": [],
-    "security": {
-      "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
-      "requireAuth": false
-    },
-    "enableTransactional": true,
-    "maxResponseLimit": 100000,
-    "defaultLiveTimeout": 600.0,
-    "uriPrefixMap": [],
-    "ogcCapabilitiesInfo": {
-      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-      "serviceProvider": {
-        "objClass": "org.vast.util.ResponsibleParty",
-        "voiceNumbers": [],
-        "faxNumbers": [],
-        "deliveryPoints": [],
-        "emails": [],
-        "hrefPresent": false
-      }
-    },
-    "enableHttpGET": true,
-    "enableHttpPOST": true,
-    "enableSOAP": true,
-    "endPoint": "/configs",
-    "id": "18984b54-c9a0-44b9-b822-74f47e6155fd",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
-    "name": "Config API Service"
-  },
-  {
-    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-    "indexObsLocation": false,
-    "storagePath": "clientconfig.db",
-    "memoryCacheSize": 5120,
-    "autoCommitBufferSize": 1024,
-    "autoCommitPeriod": 10,
-    "autoCompactFillRate": 40,
-    "idProviderType": "SEQUENTIAL",
-    "useCompression": false,
-    "readOnly": false,
-    "compactOnClose": false,
-    "printDebugInfoOnClose": false,
-    "databaseNum": 1,
-    "id": "65e0cdb5-25ca-4c37-9690-18ab98398e8d",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-    "name": "OSCAR Client Config Database"
-  },
-  {
     "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
     "indexObsLocation": false,
     "storagePath": "sos.db",
@@ -317,12 +250,36 @@
     "name": "Connected Systems API Database"
   },
   {
-    "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-    "nodeId": "test1",
-    "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
-    "id": "a234793e-51ce-4f46-9039-b42a18e61627",
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.postgis.PostgisObsSystemDatabaseConfig",
+      "url": "localhost:5432",
+      "dbName": "gis",
+      "login": "postgres",
+      "password": "postgres",
+      "idProviderType": "SEQUENTIAL",
+      "autoCommitPeriod": 10,
+      "databaseNum": 4,
+      "id": "9493f92f-7160-4973-9166-a3e212952bb8",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.postgis.PostgisObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "urn:osh:system:lane:*"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 4,
+    "id": "25b6aadf-e45d-44c3-90d0-b41a77b24a01",
     "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "Postgis Database"
+  },
+  {
+    "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+    "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
+    "autoStart": false,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
-    "name": "New OSCAR Service Module"
+    "name": "OSCAR Service Module"
   }
 ]
