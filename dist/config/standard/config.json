@@ -102,6 +102,21 @@
         "objClass": "org.sensorhub.ui.CustomUIConfig",
         "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
         "uiClass": "com.botts.ui.oscar.forms.LaneConfigForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
+        "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.siteinfo.SiteDiagramConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
