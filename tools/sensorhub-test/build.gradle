@@ -16,15 +16,11 @@ dependencies {
   implementation project(':sensorhub-driver-ffmpeg')
   implementation project(':sensorhub-process-ffmpeg')
   implementation project(':sensorhub-service-video')
-  implementation project(':sensorhub-datastore-postgis')
+    implementation project(':sensorhub-datastore-postgis')
+
 //  implementation project(':sensorhub-driver-dahua')
-// !!WARNING!! If you need to use the Axis driver, you must ensure the driver has a non-vulnerable version of log4j
 //  implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-sony-vb600')
-
-  // For MQTT
-  implementation project(':sensorhub-service-consys-mqtt')
-  implementation project(':sensorhub-service-mqtt-hivemq')
 
   // FROM OSH-OAKRIDGE-MODULES
   // Drivers
@@ -37,10 +33,8 @@ dependencies {
   // Processes
 //  implementation project(':sensorhub-process-occupancy')
 
-  // Additional Modules
-  implementation project(':sensorhub-system-lane')
-  implementation project(':sensorhub-webui-oscar')
-  implementation project(':sensorhub-database-purge')
-  implementation project(':sensorhub-service-oscar')
-//  implementation project(':sensorhub-service-fileserver')
+    // Additional Modules
+    implementation project(':sensorhub-system-lane')
+    implementation project(':sensorhub-webui-oscar')
+    implementation project(':sensorhub-service-oscar')
 }
