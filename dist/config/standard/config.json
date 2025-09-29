@@ -105,7 +105,7 @@
       },
       {
         "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
+        "configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
         "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
       },
       {
