@@ -7,7 +7,6 @@ dependencies {
   implementation 'org.sensorhub:sensorhub-datastore-h2:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-service-swe:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
-//  implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
   implementation 'org.sensorhub:sensorhub-service-consys'
 
   // FROM OSH-ADDONS
@@ -17,10 +16,11 @@ dependencies {
   implementation project(':sensorhub-process-ffmpeg')
   implementation project(':sensorhub-service-video')
     implementation project(':sensorhub-datastore-postgis')
-
+// !!WARNING!! If you need to use the Axis driver, you must ensure the driver has a non-vulnerable version of log4j
+//    implementation project(':sensorhub-driver-axis')
 //  implementation project(':sensorhub-driver-dahua')
 //  implementation project(':sensorhub-driver-axis')
-//    implementation project(':sensorhub-driver-sony-vb600')
+//  implementation project(':sensorhub-driver-sony-vb600')
 
   // FROM OSH-OAKRIDGE-MODULES
   // Drivers
