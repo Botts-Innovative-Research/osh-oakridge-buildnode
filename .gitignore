@@ -11,6 +11,11 @@
 **/*.iml
 /storage/
 *.db
+*.dat
 hivemq-config/
 hivemq-data/
 *.env
+
+# test bucket store
+oscar/
+files/

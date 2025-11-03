@@ -115,77 +115,6 @@
     "name": "Admin UI"
   },
   {
-    "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
-    "customDataProviders": [],
-    "customFormats": [
-      {
-        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-        "mimeType": "video/mp4",
-        "className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
-      },
-      {
-        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-        "mimeType": "video/x-motion-jpeg",
-        "className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
-      }
-    ],
-    "maxObsCount": 100,
-    "maxRecordCount": 100000,
-    "maxFois": 10,
-    "defaultLiveTimeout": 600.0,
-    "templateTimeout": 600,
-    "databaseID": "06c57133-3f57-46fd-a806-927158d90dd4",
-    "security": {
-      "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
-      "requireAuth": false
-    },
-    "enableTransactional": true,
-    "ogcCapabilitiesInfo": {
-      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-      "title": "SOS Service",
-      "description": "An SOS service automatically deployed by OpenSensorHub",
-      "keywords": [
-        "SensorHub",
-        "GPS",
-        "weather"
-      ],
-      "fees": "NONE",
-      "accessConstraints": "NONE",
-      "serviceProvider": {
-        "objClass": "org.vast.util.ResponsibleParty",
-        "individualName": "NAME",
-        "organizationName": "ORGANIZATION",
-        "positionName": "",
-        "voiceNumbers": [
-          "+1 800 123 4567"
-        ],
-        "faxNumbers": [
-          "+1 800 123 4568"
-        ],
-        "deliveryPoints": [
-          "1 Main Street"
-        ],
-        "city": "CITY",
-        "administrativeArea": "ST",
-        "postalCode": "12345",
-        "country": "United States of America",
-        "emails": [
-          "admin@bobby.com"
-        ],
-        "hrefPresent": false
-      }
-    },
-    "enableHttpGET": true,
-    "enableHttpPOST": true,
-    "enableSOAP": true,
-    "endPoint": "/sos",
-    "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
-    "name": "SOS Service"
-  },
-  {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
     "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
     "customFormats": [],
@@ -266,25 +195,6 @@
     "autoStart": true,
     "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
     "name": "OSCAR Client Config Database"
-  },
-  {
-    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-    "indexObsLocation": false,
-    "storagePath": "sos.db",
-    "memoryCacheSize": 5120,
-    "autoCommitBufferSize": 1024,
-    "autoCommitPeriod": 10,
-    "autoCompactFillRate": 40,
-    "idProviderType": "SEQUENTIAL",
-    "useCompression": false,
-    "readOnly": false,
-    "compactOnClose": false,
-    "databaseNum": 2,
-    "id": "06c57133-3f57-46fd-a806-927158d90dd4",
-    "description": "Database to store data pushed via SOS-T",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-    "name": "SOS Database"
   },
   {
     "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",

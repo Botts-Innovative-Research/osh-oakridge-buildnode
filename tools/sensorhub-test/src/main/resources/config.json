@@ -23,7 +23,7 @@
         "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
         "id": "admin",
         "name": "Administrator",
-        "password": "admin",
+        "password": "oscar",
         "roles": [
           "admin"
         ],
@@ -99,17 +99,17 @@
       },
       {
         "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "com.botts.impl.system.lane.config.LaneConfig",
-        "uiClass": "com.botts.ui.oscar.forms.LaneModuleConfigForm"
-      },
-      {
-        "objClass": "org.sensorhub.ui.CustomUIConfig",
-        "configClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
-        "uiClass": "com.botts.ui.oscar.forms.OccupancyVideoPurgeConfigForm"
+        "configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
+        "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
       },
       {
         "objClass": "org.sensorhub.ui.CustomUIConfig",
         "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.siteinfo.SiteDiagramConfig",
         "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
@@ -144,7 +144,7 @@
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
       "enableAccessControl": false,
-      "requireAuth": false
+      "requireAuth": true
     },
     "enableTransactional": true,
     "ogcCapabilitiesInfo": {
@@ -198,7 +198,7 @@
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
       "enableAccessControl": false,
-      "requireAuth": false
+      "requireAuth": true
     },
     "enableTransactional": true,
     "maxResponseLimit": 100000,
@@ -223,58 +223,6 @@
     "autoStart": true,
     "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
     "name": "Connected Systems API Service"
-  },
-  {
-    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
-    "databaseID": "65e0cdb5-25ca-4c37-9690-18ab98398e8d",
-    "customFormats": [],
-    "security": {
-      "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
-      "requireAuth": false
-    },
-    "enableTransactional": true,
-    "maxResponseLimit": 100000,
-    "defaultLiveTimeout": 600.0,
-    "uriPrefixMap": [],
-    "ogcCapabilitiesInfo": {
-      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-      "serviceProvider": {
-        "objClass": "org.vast.util.ResponsibleParty",
-        "voiceNumbers": [],
-        "faxNumbers": [],
-        "deliveryPoints": [],
-        "emails": [],
-        "hrefPresent": false
-      }
-    },
-    "enableHttpGET": true,
-    "enableHttpPOST": true,
-    "enableSOAP": true,
-    "endPoint": "/configs",
-    "id": "18984b54-c9a0-44b9-b822-74f47e6155fd",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
-    "name": "Config API Service"
-  },
-  {
-    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-    "indexObsLocation": false,
-    "storagePath": "clientconfig.db",
-    "memoryCacheSize": 5120,
-    "autoCommitBufferSize": 1024,
-    "autoCommitPeriod": 10,
-    "autoCompactFillRate": 40,
-    "idProviderType": "SEQUENTIAL",
-    "useCompression": false,
-    "readOnly": false,
-    "compactOnClose": false,
-    "printDebugInfoOnClose": false,
-    "databaseNum": 1,
-    "id": "65e0cdb5-25ca-4c37-9690-18ab98398e8d",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-    "name": "OSCAR Client Config Database"
   },
   {
     "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
@@ -318,11 +266,31 @@
   },
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-    "nodeId": "test1",
-    "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
-    "id": "a234793e-51ce-4f46-9039-b42a18e61627",
+    "nodeId": "oscar",
+    "databaseID": "69c7d15a-6897-43e0-8fe8-d2c12a4b9006",
+    "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
-    "name": "New OSCAR Service Module"
+    "name": "OSCAR Service Module"
+  },
+  {
+    "objClass": "com.botts.impl.service.bucket.BucketServiceConfig",
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": true
+    },
+    "enableCORS": true,
+    "initialBuckets": [
+      "sitemap",
+      "reports",
+      "videos"
+    ],
+    "fileStoreRootDir": "files",
+    "endPoint": "/buckets",
+    "id": "51a2a980-cf7a-4e53-9a78-fa8f32e65cbb",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.bucket.BucketService",
+    "name": "Bucket Storage Service"
   }
 ]

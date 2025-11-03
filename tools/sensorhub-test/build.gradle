@@ -3,44 +3,37 @@ description = 'Main Test Project'
 targetCompatibility = 11
 
 dependencies {
-  implementation 'org.sensorhub:sensorhub-core:' + oshCoreVersion
-  implementation 'org.sensorhub:sensorhub-datastore-h2:' + oshCoreVersion
-  implementation 'org.sensorhub:sensorhub-service-swe:' + oshCoreVersion
-  implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
-//  implementation 'org.sensorhub:sensorhub-service-sweapi:' + oshCoreVersion
-  implementation 'org.sensorhub:sensorhub-service-consys'
+    implementation 'org.sensorhub:sensorhub-core:' + oshCoreVersion
+    implementation 'org.sensorhub:sensorhub-datastore-h2:' + oshCoreVersion
+    implementation 'org.sensorhub:sensorhub-service-swe:' + oshCoreVersion
+    implementation 'org.sensorhub:sensorhub-webui-core:' + oshCoreVersion
+    implementation 'org.sensorhub:sensorhub-service-consys'
 
-  // FROM OSH-ADDONS
-  implementation project(':sensorhub-driver-videocam')
-  implementation project(':sensorhub-driver-rtpcam')
-  implementation project(':sensorhub-driver-ffmpeg')
-  implementation project(':sensorhub-process-ffmpeg')
-  implementation project(':sensorhub-service-video')
-  implementation project(':sensorhub-datastore-postgis')
+    // FROM OSH-ADDONS
+    implementation project(':sensorhub-driver-videocam')
+    implementation project(':sensorhub-driver-rtpcam')
+    implementation project(':sensorhub-driver-ffmpeg')
+    implementation project(':sensorhub-process-ffmpeg')
+    implementation project(':sensorhub-service-video')
+    implementation project(':sensorhub-datastore-postgis')
 //  implementation project(':sensorhub-driver-dahua')
 // !!WARNING!! If you need to use the Axis driver, you must ensure the driver has a non-vulnerable version of log4j
 //  implementation project(':sensorhub-driver-axis')
 //    implementation project(':sensorhub-driver-sony-vb600')
 
-  // For MQTT
-  implementation project(':sensorhub-service-consys-mqtt')
-  implementation project(':sensorhub-service-mqtt-hivemq')
-
-  // FROM OSH-OAKRIDGE-MODULES
-  // Drivers
-  implementation project(':sensorhub-driver-kromek-d3s')
-  implementation project(':sensorhub-driver-rs350')
-  implementation project(':sensorhub-driver-rapiscan')
-  implementation project(':sensorhub-driver-aspect')
-  implementation project(':sensorhub-driver-kromek-d5')
+    // FROM OSH-OAKRIDGE-MODULES
+    // Drivers
+    implementation project(':sensorhub-driver-kromek-d3s')
+    implementation project(':sensorhub-driver-rs350')
+    implementation project(':sensorhub-driver-rapiscan')
+    implementation project(':sensorhub-driver-aspect')
+    implementation project(':sensorhub-driver-kromek-d5')
 
   // Processes
-//  implementation project(':sensorhub-process-occupancy')
 
   // Additional Modules
-  implementation project(':sensorhub-system-lane')
-  implementation project(':sensorhub-webui-oscar')
-  implementation project(':sensorhub-database-purge')
-  implementation project(':sensorhub-service-oscar')
-//  implementation project(':sensorhub-service-fileserver')
+    implementation project(':sensorhub-system-lane')
+    implementation project(':sensorhub-webui-oscar')
+    implementation project(':sensorhub-service-oscar')
+    implementation project(':sensorhub-service-bucket')
 }
