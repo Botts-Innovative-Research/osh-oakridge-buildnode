@@ -3,8 +3,8 @@
     "objClass": "org.sensorhub.impl.service.HttpServerConfig",
     "httpPort": 8282,
     "httpsPort": 0,
-    "staticDocsRootUrl": "/",
-    "staticDocsRootDir": "web",
+    "staticDocsRootUrl": "null",
+    "staticDocsRootDir": "null",
     "servletsRootUrl": "/sensorhub",
     "authMethod": "BASIC",
     "keyStorePath": ".keystore/ssl_keys",
@@ -27,7 +27,9 @@
         "roles": [
           "admin"
         ],
-        "allow": [],
+        "allow": [
+          "fileserver[af72442c-1ce6-4baa-a126-ed41dda26910]"
+        ],
         "deny": []
       },
       {
@@ -37,17 +39,6 @@
         "password": "",
         "roles": [
           "anon"
-        ],
-        "allow": [],
-        "deny": []
-      },
-      {
-        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-        "id": "sensor",
-        "name": "Smart Sensors",
-        "password": "pwd",
-        "roles": [
-          "sost"
         ],
         "allow": [],
         "deny": []
@@ -67,16 +58,6 @@
         "id": "anon",
         "allow": [
           "sos[*]/get/*"
-        ],
-        "deny": []
-      },
-      {
-        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
-        "id": "sost",
-        "allow": [
-          "sos[*]/get/*",
-          "sos[*]/insert/*",
-          "sos[*]/update/*"
         ],
         "deny": []
       }
@@ -121,77 +102,6 @@
     "name": "Admin UI"
   },
   {
-    "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
-    "customDataProviders": [],
-    "customFormats": [
-      {
-        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-        "mimeType": "video/mp4",
-        "className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
-      },
-      {
-        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-        "mimeType": "video/x-motion-jpeg",
-        "className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
-      }
-    ],
-    "maxObsCount": 100,
-    "maxRecordCount": 100000,
-    "maxFois": 10,
-    "defaultLiveTimeout": 600.0,
-    "templateTimeout": 600,
-    "databaseID": "06c57133-3f57-46fd-a806-927158d90dd4",
-    "security": {
-      "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
-      "requireAuth": true
-    },
-    "enableTransactional": true,
-    "ogcCapabilitiesInfo": {
-      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-      "title": "SOS Service",
-      "description": "An SOS service automatically deployed by OpenSensorHub",
-      "keywords": [
-        "SensorHub",
-        "GPS",
-        "weather"
-      ],
-      "fees": "NONE",
-      "accessConstraints": "NONE",
-      "serviceProvider": {
-        "objClass": "org.vast.util.ResponsibleParty",
-        "individualName": "NAME",
-        "organizationName": "ORGANIZATION",
-        "positionName": "",
-        "voiceNumbers": [
-          "+1 800 123 4567"
-        ],
-        "faxNumbers": [
-          "+1 800 123 4568"
-        ],
-        "deliveryPoints": [
-          "1 Main Street"
-        ],
-        "city": "CITY",
-        "administrativeArea": "ST",
-        "postalCode": "12345",
-        "country": "United States of America",
-        "emails": [
-          "admin@bobby.com"
-        ],
-        "hrefPresent": false
-      }
-    },
-    "enableHttpGET": true,
-    "enableHttpPOST": true,
-    "enableSOAP": true,
-    "endPoint": "/sos",
-    "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
-    "name": "SOS Service"
-  },
-  {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
     "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
     "customFormats": [],
@@ -227,26 +137,6 @@
   {
     "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
     "indexObsLocation": false,
-    "storagePath": "sos.db",
-    "memoryCacheSize": 5120,
-    "autoCommitBufferSize": 1024,
-    "autoCommitPeriod": 10,
-    "autoCompactFillRate": 40,
-    "idProviderType": "SEQUENTIAL",
-    "useCompression": false,
-    "readOnly": false,
-    "compactOnClose": false,
-    "printDebugInfoOnClose": false,
-    "databaseNum": 2,
-    "id": "06c57133-3f57-46fd-a806-927158d90dd4",
-    "description": "Database to store data pushed via SOS-T",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-    "name": "SOS Database"
-  },
-  {
-    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-    "indexObsLocation": false,
     "storagePath": "consys.db",
     "memoryCacheSize": 5120,
     "autoCommitBufferSize": 1024,
@@ -266,8 +156,7 @@
   },
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-    "nodeId": "oscar",
-    "databaseID": "",
+    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
     "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
     "autoStart": false,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
@@ -292,5 +181,45 @@
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.bucket.BucketService",
     "name": "Bucket Storage Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabaseConfig",
+      "url": "localhost:5432",
+      "dbName": "gis",
+      "login": "postgres",
+      "password": "postgres",
+      "idProviderType": "SEQUENTIAL",
+      "autoCommitPeriod": 10,
+      "useBatch": false,
+      "id": "bfbd6d58-1a4a-40b4-999d-381a1489cbb5",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "*"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 4,
+    "id": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "autoStart": false,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "PostGIS Database"
+  },
+  {
+    "objClass": "com.botts.impl.service.fileserver.FileServerConfig",
+    "staticDocsRootUrl": "/",
+    "staticDocsRootDir": "web",
+    "securityConfig": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": true,
+      "requireAuth": true
+    },
+    "id": "af72442c-1ce6-4baa-a126-ed41dda26910",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.fileserver.FileServer",
+    "name": "OSCAR Client"
   }
 ]

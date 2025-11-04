@@ -29,6 +29,9 @@ project(':sensorhub-driver-v4l').projectDir = "$gradle.oshAddonsDir/sensors/vide
 include 'sensorhub-datastore-postgis'
 project(':sensorhub-datastore-postgis').projectDir = "$gradle.oshAddonsDir/persistence/sensorhub-datastore-postgis" as File
 
+include 'sensorhub-service-fileserver'
+project(':sensorhub-service-fileserver').projectDir = "$gradle.oshAddonsDir/services/sensorhub-service-fileserver" as File
+
 //include 'sensorhub-driver-openhab'
 //project(':sensorhub-driver-openhab').projectDir = "$gradle.oshAddonsDir/sensors/smarthome/sensorhub-driver-openhab" as File
 
