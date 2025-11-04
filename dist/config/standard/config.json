@@ -156,7 +156,7 @@
   },
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "databaseID": "75937de9-ba7f-45eb-be6b-884ee9dfc2b5",
     "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
     "autoStart": false,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
@@ -221,5 +221,35 @@
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.fileserver.FileServer",
     "name": "OSCAR Client"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+      "indexObsLocation": false,
+      "storagePath": "oscar.dat",
+      "memoryCacheSize": 5120,
+      "autoCommitBufferSize": 1024,
+      "autoCommitPeriod": 10,
+      "autoCompactFillRate": 40,
+      "idProviderType": "SEQUENTIAL",
+      "useCompression": false,
+      "readOnly": false,
+      "compactOnClose": false,
+      "printDebugInfoOnClose": false,
+      "id": "c2ba5733-6432-45d8-91b4-4f9c67589cf2",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "*"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 5,
+    "id": "75937de9-ba7f-45eb-be6b-884ee9dfc2b5",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "H2 System Database"
   }
 ]
