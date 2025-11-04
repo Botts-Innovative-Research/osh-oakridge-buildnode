@@ -48,6 +48,8 @@ dependencies {
     implementation project(':sensorhub-service-bucket')
 
     implementation project(':security-utils')
+
+    implementation 'io.sentry:sentry-logback:8.25.0'
 }
 
 configurations {
