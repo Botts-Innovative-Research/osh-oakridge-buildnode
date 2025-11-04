@@ -1,296 +1,296 @@
 [
-{
-"objClass": "org.sensorhub.impl.service.HttpServerConfig",
-"httpPort": 8282,
-"httpsPort": 0,
-"staticDocsRootUrl": "/",
-"staticDocsRootDir": "web",
-"servletsRootUrl": "/sensorhub",
-"authMethod": "BASIC",
-"keyStorePath": ".keystore/ssl_keys",
-"keyAlias": "jetty",
-"trustStorePath": ".keystore/ssl_trust",
-"enableCORS": true,
-"id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.service.HttpServer",
-"name": "HTTP Server"
-},
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
-"users": [
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-"id": "admin",
-"name": "Administrator",
-"password": "__INITIAL_ADMIN_PASSWORD__",
-"roles": [
-"admin"
-],
-"allow": [],
-"deny": []
-},
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-"id": "anonymous",
-"name": "Anonymous User",
-"password": "",
-"roles": [
-"anon"
-],
-"allow": [],
-"deny": []
-},
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-"id": "sensor",
-"name": "Smart Sensors",
-"password": "pwd",
-"roles": [
-"sost"
-],
-"allow": [],
-"deny": []
-}
-],
-"roles": [
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
-"id": "admin",
-"allow": [
-"*"
-],
-"deny": []
-},
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
-"id": "anon",
-"allow": [
-"sos[*]/get/*"
-],
-"deny": []
-},
-{
-"objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
-"id": "sost",
-"allow": [
-"sos[*]/get/*",
-"sos[*]/insert/*",
-"sos[*]/update/*"
-],
-"deny": []
-}
-],
-"id": "bd112969-8838-4f62-8d10-1edf1baa6669",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
-"name": "Users"
-},
-{
-"objClass": "org.sensorhub.ui.AdminUIConfig",
-"widgetSet": "org.sensorhub.ui.SensorHubWidgetSet",
-"bundleRepoUrls": [],
-"customPanels": [],
-"customForms": [
-{
-"objClass": "org.sensorhub.ui.CustomUIConfig",
-"configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
-"uiClass": "com.botts.ui.oscar.forms.LaneConfigForm"
-},
-{
-"objClass": "org.sensorhub.ui.CustomUIConfig",
-"configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
-"uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
-},
-{
-"objClass": "org.sensorhub.ui.CustomUIConfig",
-"configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-"uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
-},
-{
-"objClass": "org.sensorhub.ui.CustomUIConfig",
-"configClass": "com.botts.impl.service.oscar.siteinfo.SiteDiagramConfig",
-"uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
-}
-],
-"deploymentName": "OSCAR 2.3.1",
-"enableLandingPage": false,
-"id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
-"autoStart": true,
-"moduleClass": "org.sensorhub.ui.AdminUIModule",
-"name": "Admin UI"
-},
-{
-"objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
-"customDataProviders": [],
-"customFormats": [
-{
-"objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-"mimeType": "video/mp4",
-"className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
-},
-{
-"objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
-"mimeType": "video/x-motion-jpeg",
-"className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
-}
-],
-"maxObsCount": 100,
-"maxRecordCount": 100000,
-"maxFois": 10,
-"defaultLiveTimeout": 600.0,
-"templateTimeout": 600,
-"databaseID": "06c57133-3f57-46fd-a806-927158d90dd4",
-"security": {
-"objClass": "org.sensorhub.api.security.SecurityConfig",
-"enableAccessControl": false,
-"requireAuth": true
-},
-"enableTransactional": true,
-"ogcCapabilitiesInfo": {
-"objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-"title": "SOS Service",
-"description": "An SOS service automatically deployed by OpenSensorHub",
-"keywords": [
-"SensorHub",
-"GPS",
-"weather"
-],
-"fees": "NONE",
-"accessConstraints": "NONE",
-"serviceProvider": {
-"objClass": "org.vast.util.ResponsibleParty",
-"individualName": "NAME",
-"organizationName": "ORGANIZATION",
-"positionName": "",
-"voiceNumbers": [
-"+1 800 123 4567"
-],
-"faxNumbers": [
-"+1 800 123 4568"
-],
-"deliveryPoints": [
-"1 Main Street"
-],
-"city": "CITY",
-"administrativeArea": "ST",
-"postalCode": "12345",
-"country": "United States of America",
-"emails": [
-"admin@bobby.com"
-],
-"hrefPresent": false
-}
-},
-"enableHttpGET": true,
-"enableHttpPOST": true,
-"enableSOAP": true,
-"endPoint": "/sos",
-"id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.service.sos.SOSService",
-"name": "SOS Service"
-},
-{
-"objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
-"databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
-"customFormats": [],
-"security": {
-"objClass": "org.sensorhub.api.security.SecurityConfig",
-"enableAccessControl": false,
-"requireAuth": true
-},
-"enableTransactional": true,
-"maxResponseLimit": 100000,
-"defaultLiveTimeout": 600.0,
-"uriPrefixMap": [],
-"ogcCapabilitiesInfo": {
-"objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
-"serviceProvider": {
-"objClass": "org.vast.util.ResponsibleParty",
-"voiceNumbers": [],
-"faxNumbers": [],
-"deliveryPoints": [],
-"emails": [],
-"hrefPresent": false
-}
-},
-"enableHttpGET": true,
-"enableHttpPOST": true,
-"enableSOAP": true,
-"endPoint": "/api",
-"id": "6697cb4a-2e99-4fee-bba6-d1202d24dea5",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
-"name": "Connected Systems API Service"
-},
-{
-"objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-"indexObsLocation": false,
-"storagePath": "sos.db",
-"memoryCacheSize": 5120,
-"autoCommitBufferSize": 1024,
-"autoCommitPeriod": 10,
-"autoCompactFillRate": 40,
-"idProviderType": "SEQUENTIAL",
-"useCompression": false,
-"readOnly": false,
-"compactOnClose": false,
-"printDebugInfoOnClose": false,
-"databaseNum": 2,
-"id": "06c57133-3f57-46fd-a806-927158d90dd4",
-"description": "Database to store data pushed via SOS-T",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-"name": "SOS Database"
-},
-{
-"objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-"indexObsLocation": false,
-"storagePath": "consys.db",
-"memoryCacheSize": 5120,
-"autoCommitBufferSize": 1024,
-"autoCommitPeriod": 10,
-"autoCompactFillRate": 40,
-"idProviderType": "SEQUENTIAL",
-"useCompression": false,
-"readOnly": false,
-"compactOnClose": false,
-"printDebugInfoOnClose": false,
-"databaseNum": 3,
-"id": "95474004-ffee-4c32-af32-4c5739dc53f4",
-"description": "Database to store data pushed via Connected Systems API clients",
-"autoStart": true,
-"moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-"name": "Connected Systems API Database"
-},
-{
-"objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-"nodeId": "oscar",
-"databaseID": "69c7d15a-6897-43e0-8fe8-d2c12a4b9006",
-"id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
-"autoStart": true,
-"moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
-"name": "OSCAR Service Module"
-},
-{
-"objClass": "com.botts.impl.service.bucket.BucketServiceConfig",
-"security": {
-"objClass": "org.sensorhub.api.security.SecurityConfig",
-"enableAccessControl": false,
-"requireAuth": true
-},
-"enableCORS": true,
-"initialBuckets": [
-"sitemap",
-"reports",
-"videos"
-],
-"fileStoreRootDir": "files",
-"endPoint": "/buckets",
-"id": "51a2a980-cf7a-4e53-9a78-fa8f32e65cbb",
-"autoStart": true,
-"moduleClass": "com.botts.impl.service.bucket.BucketService",
-"name": "Bucket Storage Service"
-}
+  {
+    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+    "httpPort": 8282,
+    "httpsPort": 0,
+    "staticDocsRootUrl": "/",
+    "staticDocsRootDir": "web",
+    "servletsRootUrl": "/sensorhub",
+    "authMethod": "BASIC",
+    "keyStorePath": ".keystore/ssl_keys",
+    "keyAlias": "jetty",
+    "trustStorePath": ".keystore/ssl_trust",
+    "enableCORS": true,
+    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.HttpServer",
+    "name": "HTTP Server"
+  },
+  {
+    "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
+    "users": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "admin",
+        "name": "Administrator",
+        "password": "__INITIAL_ADMIN_PASSWORD__",
+        "roles": [
+          "admin"
+        ],
+        "allow": [],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "anonymous",
+        "name": "Anonymous User",
+        "password": "",
+        "roles": [
+          "anon"
+        ],
+        "allow": [],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "sensor",
+        "name": "Smart Sensors",
+        "password": "pwd",
+        "roles": [
+          "sost"
+        ],
+        "allow": [],
+        "deny": []
+      }
+    ],
+    "roles": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "admin",
+        "allow": [
+          "*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "anon",
+        "allow": [
+          "sos[*]/get/*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "sost",
+        "allow": [
+          "sos[*]/get/*",
+          "sos[*]/insert/*",
+          "sos[*]/update/*"
+        ],
+        "deny": []
+      }
+    ],
+    "id": "bd112969-8838-4f62-8d10-1edf1baa6669",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
+    "name": "Users"
+  },
+  {
+    "objClass": "org.sensorhub.ui.AdminUIConfig",
+    "widgetSet": "org.sensorhub.ui.SensorHubWidgetSet",
+    "bundleRepoUrls": [],
+    "customPanels": [],
+    "customForms": [
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
+        "uiClass": "com.botts.ui.oscar.forms.LaneConfigForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
+        "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.siteinfo.SiteDiagramConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      }
+    ],
+    "deploymentName": "OSCAR 2.3.1",
+    "enableLandingPage": false,
+    "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.ui.AdminUIModule",
+    "name": "Admin UI"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.sos.SOSServiceConfig",
+    "customDataProviders": [],
+    "customFormats": [
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/mp4",
+        "className": "org.sensorhub.impl.service.sos.video.MP4Serializer"
+      },
+      {
+        "objClass": "org.sensorhub.impl.service.sos.SOSCustomFormatConfig",
+        "mimeType": "video/x-motion-jpeg",
+        "className": "org.sensorhub.impl.service.sos.video.MJPEGSerializer"
+      }
+    ],
+    "maxObsCount": 100,
+    "maxRecordCount": 100000,
+    "maxFois": 10,
+    "defaultLiveTimeout": 600.0,
+    "templateTimeout": 600,
+    "databaseID": "06c57133-3f57-46fd-a806-927158d90dd4",
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": true
+    },
+    "enableTransactional": true,
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "title": "SOS Service",
+      "description": "An SOS service automatically deployed by OpenSensorHub",
+      "keywords": [
+        "SensorHub",
+        "GPS",
+        "weather"
+      ],
+      "fees": "NONE",
+      "accessConstraints": "NONE",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "individualName": "NAME",
+        "organizationName": "ORGANIZATION",
+        "positionName": "",
+        "voiceNumbers": [
+          "+1 800 123 4567"
+        ],
+        "faxNumbers": [
+          "+1 800 123 4568"
+        ],
+        "deliveryPoints": [
+          "1 Main Street"
+        ],
+        "city": "CITY",
+        "administrativeArea": "ST",
+        "postalCode": "12345",
+        "country": "United States of America",
+        "emails": [
+          "admin@bobby.com"
+        ],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/sos",
+    "id": "5cb05c9c-9e08-4fa1-8731-ff41e246bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.sos.SOSService",
+    "name": "SOS Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
+    "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
+    "customFormats": [],
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": true
+    },
+    "enableTransactional": true,
+    "maxResponseLimit": 100000,
+    "defaultLiveTimeout": 600.0,
+    "uriPrefixMap": [],
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "voiceNumbers": [],
+        "faxNumbers": [],
+        "deliveryPoints": [],
+        "emails": [],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/api",
+    "id": "6697cb4a-2e99-4fee-bba6-d1202d24dea5",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
+    "name": "Connected Systems API Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+    "indexObsLocation": false,
+    "storagePath": "sos.db",
+    "memoryCacheSize": 5120,
+    "autoCommitBufferSize": 1024,
+    "autoCommitPeriod": 10,
+    "autoCompactFillRate": 40,
+    "idProviderType": "SEQUENTIAL",
+    "useCompression": false,
+    "readOnly": false,
+    "compactOnClose": false,
+    "printDebugInfoOnClose": false,
+    "databaseNum": 2,
+    "id": "06c57133-3f57-46fd-a806-927158d90dd4",
+    "description": "Database to store data pushed via SOS-T",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
+    "name": "SOS Database"
+  },
+  {
+    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
+    "indexObsLocation": false,
+    "storagePath": "consys.db",
+    "memoryCacheSize": 5120,
+    "autoCommitBufferSize": 1024,
+    "autoCommitPeriod": 10,
+    "autoCompactFillRate": 40,
+    "idProviderType": "SEQUENTIAL",
+    "useCompression": false,
+    "readOnly": false,
+    "compactOnClose": false,
+    "printDebugInfoOnClose": false,
+    "databaseNum": 3,
+    "id": "95474004-ffee-4c32-af32-4c5739dc53f4",
+    "description": "Database to store data pushed via Connected Systems API clients",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
+    "name": "Connected Systems API Database"
+  },
+  {
+    "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+    "nodeId": "oscar",
+    "databaseID": "",
+    "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
+    "autoStart": false,
+    "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
+    "name": "OSCAR Service Module"
+  },
+  {
+    "objClass": "com.botts.impl.service.bucket.BucketServiceConfig",
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": true
+    },
+    "enableCORS": true,
+    "initialBuckets": [
+      "sitemap",
+      "reports",
+      "videos"
+    ],
+    "fileStoreRootDir": "files",
+    "endPoint": "/buckets",
+    "id": "51a2a980-cf7a-4e53-9a78-fa8f32e65cbb",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.bucket.BucketService",
+    "name": "Bucket Storage Service"
+  }
 ]

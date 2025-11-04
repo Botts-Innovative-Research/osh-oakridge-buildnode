@@ -267,9 +267,9 @@
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
     "nodeId": "oscar",
-    "databaseID": "69c7d15a-6897-43e0-8fe8-d2c12a4b9006",
+    "databaseID": "",
     "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
-    "autoStart": true,
+    "autoStart": false,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
     "name": "OSCAR Service Module"
   },
