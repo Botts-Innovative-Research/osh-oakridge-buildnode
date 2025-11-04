@@ -1,6 +1,25 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-alpha - 2025-11-04
+### Added
+- [#19 Option to replace sitemap with site diagram](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/19)
+- [#43 Implement Report Generation](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/43)
+- [#48 Switched Database from H2 to PostgresSQL ](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/48)
+- [#53 Streamlined Initial Configuration via Spreadsheet Import](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/53)
+- Set up Sentry Testing
+- Added Unit Tests for all drivers - (Rapiscan, Aspect, FFMpeg, Lane System)
+- Set up Client testing using Cypress
+- Added GitHub Actions for testing
+### Changed
+- [#106 Update client playback videostreams](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/106)
+- Use local storage to save nodes configured on client server page.
+-
+### Removed
+- [#89 Upgrade Log4j from EOL 1.x to a secure version](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/89)
+### Fixed
+- [#101 National View does not show the accurate data collected by each site](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/101)
+
 ## [2.3.1] - 2025-09-13
 ### Added
 - Current PostGIS database module. (needs to be updated, but this provides a base for testing later versions of OSCAR)
