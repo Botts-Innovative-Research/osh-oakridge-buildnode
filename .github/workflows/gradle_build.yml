@@ -9,7 +9,7 @@ env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
-  POSTGIS_DIR: './dist/scripts/standard/postgis'
+  POSTGIS_DIR: 'dist/release/postgis'
   DIST_DIR: './build/distributions'
 jobs:
   Build:
