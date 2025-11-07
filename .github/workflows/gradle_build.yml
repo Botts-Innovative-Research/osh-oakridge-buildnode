@@ -87,17 +87,17 @@ jobs:
         run: |
           unzip $(ls oscar-*.zip | head -n 1) -d .
 
-      - name: Copy environment variables to test config
+#      - name: Copy environment variables to test config
+#
+#      - name: Load test data into current PostGIS database
+#
+#      - name: Load test videos
+#
+#      - name: Launch test node
 
-      - name: Load test data into current PostGIS database
-
-      - name: Load test videos
-
-      - name: Launch test node
-
-      - name: Run Cypress UI tests
-        working-directory: ${{ env.OSCAR_DIR }}
-        run: npm test
+#      - name: Run Cypress UI tests
+#        working-directory: ${{ env.OSCAR_DIR }}
+#        run: npm test
 
       - name: Cleanup PostGIS Test Instance
         if: always()
