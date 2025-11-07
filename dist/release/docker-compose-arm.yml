@@ -2,17 +2,18 @@ services:
   postgis:
     build:
       context: ./postgis
-      dockerfile: Dockerfile
-    container_name: oscar-postgis
+      dockerfile: Dockerfile-arm64
+    container_name: oscar-postgis-arm
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: gis
+      DATADIR: /var/lib/postgresql/data
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gis || exit 1"]
       start_period: 20s

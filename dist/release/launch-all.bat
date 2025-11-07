@@ -29,5 +29,3 @@ if errorlevel 1 (
     echo [ERROR] Failed to start containers.
     exit /b 1
 )
-
-echo Application started successfully.
