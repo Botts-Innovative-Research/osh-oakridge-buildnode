@@ -1,5 +1,6 @@
 @echo off
 docker run -d --name test-postgis ^
+  -e PG_MAX_CONNECTIONS=500 ^
   -e POSTGRES_DB=gis ^
   -e POSTGRES_USER=postgres ^
   -e POSTGRES_PASSWORD=postgres ^
