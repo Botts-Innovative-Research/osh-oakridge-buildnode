@@ -94,7 +94,7 @@
         "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
-    "deploymentName": "OSCAR 2.3.1",
+    "deploymentName": "OSCAR 3.0.0-alpha.1",
     "enableLandingPage": false,
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,
@@ -103,7 +103,7 @@
   },
   {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
-    "databaseID": "95474004-ffee-4c32-af32-4c5739dc53f4",
+    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
     "customFormats": [],
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
@@ -135,30 +135,11 @@
     "name": "Connected Systems API Service"
   },
   {
-    "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-    "indexObsLocation": false,
-    "storagePath": "consys.db",
-    "memoryCacheSize": 5120,
-    "autoCommitBufferSize": 1024,
-    "autoCommitPeriod": 10,
-    "autoCompactFillRate": 40,
-    "idProviderType": "SEQUENTIAL",
-    "useCompression": false,
-    "readOnly": false,
-    "compactOnClose": false,
-    "printDebugInfoOnClose": false,
-    "databaseNum": 3,
-    "id": "95474004-ffee-4c32-af32-4c5739dc53f4",
-    "description": "Database to store data pushed via Connected Systems API clients",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase",
-    "name": "Connected Systems API Database"
-  },
-  {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
-    "databaseID": "75937de9-ba7f-45eb-be6b-884ee9dfc2b5",
+    "nodeId": "default",
+    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
     "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
-    "autoStart": false,
+    "autoStart": true,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
     "name": "OSCAR Service Module"
   },
@@ -166,7 +147,7 @@
     "objClass": "com.botts.impl.service.bucket.BucketServiceConfig",
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
+      "enableAccessControl": true,
       "requireAuth": true
     },
     "enableCORS": true,
@@ -186,7 +167,7 @@
     "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
     "dbConfig": {
       "objClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabaseConfig",
-      "url": "localhost:5432",
+      "url": "postgis:5432",
       "dbName": "gis",
       "login": "postgres",
       "password": "postgres",
@@ -204,7 +185,7 @@
     "minCommitPeriod": 10000,
     "databaseNum": 4,
     "id": "a445cf15-c2ab-4d92-beab-3241667a8976",
-    "autoStart": false,
+    "autoStart": true,
     "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
     "name": "PostGIS Database"
   },
@@ -221,35 +202,5 @@
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.fileserver.FileServer",
     "name": "OSCAR Client"
-  },
-  {
-    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
-    "dbConfig": {
-      "objClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabaseConfig",
-      "indexObsLocation": false,
-      "storagePath": "oscar.dat",
-      "memoryCacheSize": 5120,
-      "autoCommitBufferSize": 1024,
-      "autoCommitPeriod": 10,
-      "autoCompactFillRate": 40,
-      "idProviderType": "SEQUENTIAL",
-      "useCompression": false,
-      "readOnly": false,
-      "compactOnClose": false,
-      "printDebugInfoOnClose": false,
-      "id": "c2ba5733-6432-45d8-91b4-4f9c67589cf2",
-      "autoStart": false,
-      "moduleClass": "org.sensorhub.impl.datastore.h2.MVObsSystemDatabase"
-    },
-    "systemUIDs": [
-      "*"
-    ],
-    "autoPurgeConfig": [],
-    "minCommitPeriod": 10000,
-    "databaseNum": 5,
-    "id": "75937de9-ba7f-45eb-be6b-884ee9dfc2b5",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
-    "name": "H2 System Database"
   }
 ]

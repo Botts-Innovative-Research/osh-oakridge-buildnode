@@ -70,9 +70,10 @@ After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clie
 - Remote: **[ip-address]:8282**
 - Local: **http://localhost:8282/**
 
-For documentaiton on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
+For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
 
-
-
-
+# Release Checklist
+- Version in `build.gradle`
+- Version in `dist/config/standard/config.json`
+- Build with `./build-all.sh` or `./build-all.bat`
 

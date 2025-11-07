@@ -61,31 +61,42 @@ configurations {
 
 distributions{
     rel {
-        distributionBaseName = 'osh-node-oscar'
+        distributionBaseName = 'oscar'
         contents {
-            from 'dist/scripts/standard'
-            from 'dist/config/standard'
-            into ('config') {
+            // OSH NODE
+            into("osh-node-oscar/") {
+                from 'dist/scripts/standard'
+                from 'dist/config/standard'
+            }
+            into ("osh-node-oscar/config") {
                 from 'dist/config/eml'
             }
-            into('trusted_certificates') {
+            into("osh-node-oscar/trusted_certificates") {
                 from 'scripts/trusted_certificates'
             }
-            into('rules') {
+            into("osh-node-oscar/rules") {
                 from 'dist/rules'
             }
-            into('documentation') {
+            into("osh-node-oscar/documentation") {
                 from 'dist/documentation'
             }
-            into('web'){
+            into("osh-node-oscar/web") {
                 from 'web/oscar-viewer/web'
             }
-            from 'README.md'
-            from 'changelog.md'
-            into('lib') {
+            into("osh-node-oscar/") {
+                from 'README.md'
+                from 'osh-node-oscar/changelog.md'
+            }
+            into("osh-node-oscar/lib") {
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
             }
+
+            // POSTGIS / DOCKER / SCRIPTS
+            into('.') {
+                from('dist/release')
+            }
+
         }
     }
 }

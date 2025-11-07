@@ -9,7 +9,8 @@ env:
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
-  POSTGIS_DIR: "./dist/scripts/standard/postgis"
+  POSTGIS_DIR: './dist/scripts/standard/postgis'
+  DIST_DIR: './build/distributions'
 jobs:
   Build:
     runs-on: self-hosted
@@ -59,12 +60,6 @@ jobs:
           "netstat -aon | findstr 502"
         shell: powershell
 
-      - name: Verify Sony camera reachable
-        run: echo "Include sony test"
-
-      - name: Verify Axis camera reachable
-        run: echo "Include axis test"
-
       - name: Build PostGIS Docker Image
         working-directory: ${{ env.POSTGIS_DIR }}
         run: docker build . --tag=oscar-postgis
@@ -85,6 +80,20 @@ jobs:
           AXIS_MJPEG_AUTH_IP: ${{ secrets.AXIS_MJPEG_AUTH_IP }}
           AXIS_MJPEG_NO_AUTH_IP: ${{ secrets.AXIS_MJPEG_NO_AUTH_IP }}
           RPM_HOST: "localhost"
+
+      # Cypress test setup
+      - name: Unpack OSH node
+        working-directory: ${{ env.DIST_DIR }}
+        run: |
+          unzip $(ls oscar-*.zip | head -n 1) -d .
+
+      - name: Copy environment variables to test config
+
+      - name: Load test data into current PostGIS database
+
+      - name: Load test videos
+
+      - name: Launch test node
 
       - name: Run Cypress UI tests
         working-directory: ${{ env.OSCAR_DIR }}

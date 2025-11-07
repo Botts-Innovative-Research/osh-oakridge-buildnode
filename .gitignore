@@ -16,6 +16,8 @@ hivemq-config/
 hivemq-data/
 *.env
 
+*.log
+
 # test bucket store
 oscar/
 files/
