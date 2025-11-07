@@ -1,7 +1,7 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
-## 3.0.0-alpha.1 - 2025-11-xx
+## 3.0.0-alpha.1 - 2025-11-07
 ### Added
 - Added docker compose and Dockerfile for OSCAR OSH node, allowing PostGIS and OSH to be run with one script.
 ### Changed
