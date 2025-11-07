@@ -61,8 +61,8 @@ jobs:
         shell: powershell
 
       - name: Build PostGIS Docker Image
-        working-directory: ${{ env.POSTGIS_DIR }}
-        run: docker build . --tag=oscar-postgis
+        working-directory: "test"
+        run: docker build . --tag=test-oscar-postgis
 
       - name: Run Test PostGIS Instance
         working-directory: "test"

@@ -5,7 +5,7 @@ docker run -d --name test-postgis ^
   -e POSTGRES_USER=postgres ^
   -e POSTGRES_PASSWORD=postgres ^
   -p 5432:5432 ^
-  oscar-postgis:latest
+  test-oscar-postgis:latest
 
 :waitloop
 docker exec test-postgis pg_isready -U postgres | findstr /C:"accepting connections" >nul
