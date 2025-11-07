@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - Added docker compose and Dockerfile for OSCAR OSH node, allowing PostGIS and OSH to be run with one script.
 ### Changed
 - Swapped default H2 database with default PostGIS database.
+- Update report paths to use valid Windows path
 
 ## 3.0.0-alpha - 2025-11-04
 ### Added
