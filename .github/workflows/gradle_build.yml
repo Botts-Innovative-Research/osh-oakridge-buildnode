@@ -84,8 +84,10 @@ jobs:
       # Cypress test setup
       - name: Unpack OSH node
         working-directory: ${{ env.DIST_DIR }}
+        shell: powershell
         run: |
-          unzip $(ls oscar-*.zip | head -n 1) -d .
+          $zip = Get-ChildItem -Filter "oscar-*.zip" | Sort-Object Name | Select-Object -First 1
+          Expand-Archive -Path $zip.FullName -DestinationPath .
 
 #      - name: Copy environment variables to test config
 #
