@@ -202,5 +202,24 @@
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.fileserver.FileServer",
     "name": "OSCAR Client"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.hivemq.MqttServerConfig",
+    "configFolder": "hivemq-config",
+    "dataFolder": "hivemq-data",
+    "webSocketProxyEndpoint": "/mqtt",
+    "enableWebSocketProxy": true,
+    "requireAuth": true,
+    "id": "0a0d9999-5d16-434a-8bb7-e245b474ba1d",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.hivemq.MqttServer",
+    "name": "MQTT Server (HiveMQ)"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttServiceConfig",
+    "id": "e7c35780-dbb6-4481-9fbe-556a7e44045d",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttService",
+    "name": "Connected Systems API MQTT Extension"
   }
 ]
