@@ -48,6 +48,15 @@ project(':sensorhub-driver-rtpcam').projectDir = "$gradle.oshAddonsDir/sensors/v
 //include 'sensorhub-driver-onvif'
 //project(':sensorhub-driver-onvif').projectDir = "$gradle.oshAddonsDir/sensors/video/sensorhub-driver-onvif" as File
 
+include 'sensorhub-service-mqtt-hivemq'
+project(':sensorhub-service-mqtt-hivemq').projectDir = "$gradle.oshAddonsDir/services/sensorhub-service-mqtt-hivemq" as File
+
+include 'sensorhub-service-consys-mqtt'
+project(':sensorhub-service-consys-mqtt').projectDir = "$gradle.oshAddonsDir/services/sensorhub-service-consys-mqtt" as File
+
+include 'sensorhub-comm-mqtt'
+project(':sensorhub-comm-mqtt').projectDir = "$gradle.oshAddonsDir/comm/sensorhub-comm-mqtt" as File
+
 include 'security-utils'
 project(':security-utils').projectDir = "$rootDir/security-utils" as File
 
