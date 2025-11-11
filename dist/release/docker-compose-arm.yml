@@ -32,5 +32,4 @@ services:
       - "8282:8282"
     volumes:
       - ./osh-node-oscar:/app/
-volumes:
-  pgdata:
+    restart: on-failure
