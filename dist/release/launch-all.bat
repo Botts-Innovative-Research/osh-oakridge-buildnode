@@ -24,7 +24,7 @@ if %errorlevel%==0 (
 cd /d "%~dp0"
 
 echo Starting Docker Compose services...
-%DOCKER_COMPOSE_CMD% up -d
+%DOCKER_COMPOSE_CMD% up
 if errorlevel 1 (
     echo [ERROR] Failed to start containers.
     exit /b 1

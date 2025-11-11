@@ -20,4 +20,4 @@ fi
 
 echo "Starting application using Docker Compose..."
 cd "$PROJECT_DIR"
-$DOCKER_COMPOSE_CMD up -d
+$DOCKER_COMPOSE_CMD up
