@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file. 
 
 
-## Unreleased 3.0.0-alpha.2 
+## 3.0.0-alpha.2 - 2025-11-11
 ### Added
 - Added MQTT Services to allow client to receive messages through a single persistent websocket instead of opening multiple websockets per lane.
 - Added video retention
