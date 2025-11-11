@@ -21,3 +21,5 @@ hivemq-data/
 # test bucket store
 oscar/
 files/
+
+dist/release/postgis/pgdata

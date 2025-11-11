@@ -4,8 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased 3.0.0-alpha.2 
 ### Added
-- Added MQTT Services to allow client to receive messages through a single persistent websocket instead of opening multiple ws per lane.
-
+- Added MQTT Services to allow client to receive messages through a single persistent websocket instead of opening multiple websockets per lane.
+- Added video retention
+### Fixed
+- Updated PostGIS to be able to handle commands and command statuses.
 
 ## 3.0.0-alpha.1 - 2025-11-07
 ### Added
