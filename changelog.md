@@ -2,10 +2,13 @@
 All notable changes to this project will be documented in this file. 
 
 ## 3.0.0-alpha.3 - 2025-11-12
+### Added
+- Added extra FFmpeg checks for invalid cameras.
 ### Changed
 - Edited docker compose to restart OSH node on failure
 - Edited docker compose to not use managed volume
 - Edited ARM64 PostGIS Dockerfile to not use peer connection
+- Changed web client to use single MQTT Web Socket connection for dashboard connections
 
 ## 3.0.0-alpha.2 - 2025-11-11
 ### Added
