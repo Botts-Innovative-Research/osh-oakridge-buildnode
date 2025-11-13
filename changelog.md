@@ -1,6 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-alpha.4 - 2025-11-13
+### Added
+### Changed
+### Fixed
+
 ## 3.0.0-alpha.3 - 2025-11-12
 ### Added
 - Added extra FFmpeg checks for invalid cameras.

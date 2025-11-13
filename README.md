@@ -5,6 +5,7 @@ This repository combines all the OSH modules and dependencies to deploy the OSH 
 ## Requirements
 - [Java 21](https://www.oracle.com/java/technologies/downloads/#java21)
 - [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
+- Node v22
 
 ## Installation
 Clone the repository and update all submodules recursively
