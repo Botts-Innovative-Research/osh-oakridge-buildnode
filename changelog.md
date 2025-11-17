@@ -1,10 +1,15 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
-## 3.0.0-alpha.4 - 2025-11-13
-### Added
-### Changed
+## 3.0.0-alpha.4 - 2025-11-17
 ### Fixed
+- Fixed MQTT not disconnecting on client
+- Added fixes for FFmpeg issues
+- Fixed occupancy videos not attached to every occupancy
+- Fixed event preview charts
+- Fixed video switching in live video / events
+- Fixed issue where commands would never send due to duplicate control streams in CSAPI
+- Added fix to decrease HLS latency
 
 ## 3.0.0-alpha.3 - 2025-11-12
 ### Added

@@ -76,5 +76,6 @@ For documentation on configuring a server on the OSCAR Client refer to the OSCAR
 # Release Checklist
 - Version in `build.gradle`
 - Version in `dist/config/standard/config.json`
+- Make sure no `pgdata` in `dist/release/postgis`
 - Build with `./build-all.sh` or `./build-all.bat`
 
