@@ -167,7 +167,7 @@
     "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
     "dbConfig": {
       "objClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabaseConfig",
-      "url": "postgis:5432",
+      "url": "localhost:5432",
       "dbName": "gis",
       "login": "postgres",
       "password": "postgres",
