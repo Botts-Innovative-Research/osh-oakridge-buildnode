@@ -6,8 +6,8 @@ SENSORHUB_NAME="com.botts.impl.security.SensorHubWrapper"
 echo "Stopping container: $CONTAINER_NAME..."
 
 # Stop container if running
-if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
-    sudo docker stop "$CONTAINER_NAME"
+if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+    docker stop "$CONTAINER_NAME"
     echo "Container stopped and removed."
 else
     echo "Container not found. Nothing to stop."

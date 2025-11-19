@@ -49,8 +49,9 @@ docker run \
   -e POSTGRES_DB="$DB_NAME" \
   -e POSTGRES_USER="$USER" \
   -e POSTGRES_PASSWORD="postgres" \
+  -e DATADIR="/var/lib/postgresql/data" \
   -p $PORT:5432 \
-  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/17/main" \
+  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
   -d \
   oscar-postgis-arm
 
