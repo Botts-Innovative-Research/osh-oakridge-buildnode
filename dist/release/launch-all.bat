@@ -33,7 +33,7 @@ if not exist "postgis" (
 cd postgis
 
 rem Build PostGIS image
-docker build . --file=Dockerfile-arm64 --tag=oscar-postgis-arm
+docker build . --file=Dockerfile --tag=oscar-postgis
 
 cd "%PROJECT_DIR%"
 
@@ -42,7 +42,7 @@ docker ps -a --format "{{.Names}}" | findstr /i "^%CONTAINER_NAME%$" >nul
 if errorlevel 1 (
     rem Container does not exist, create it
     echo Starting new PostGIS container...
-    docker run --name "%CONTAINER_NAME%" -e POSTGRES_DB=%DB_NAME% -e POSTGRES_USER=%USER% -e POSTGRES_PASSWORD=postgres -p %PORT%:5432 -v "%PROJECT_DIR%/pgdata:/var/lib/postgresql/17/main" -d oscar-postgis-arm
+    docker run --name "%CONTAINER_NAME%" -e POSTGRES_DB=%DB_NAME% -e POSTGRES_USER=%USER% -e POSTGRES_PASSWORD=postgres -p %PORT%:5432 -v "%PROJECT_DIR%/pgdata:/var/lib/postgresql/data" -d oscar-postgis
 ) else (
     rem Container exists, start it if not running
     docker inspect -f "{{.State.Running}}" "%CONTAINER_NAME%" | findstr true >nul

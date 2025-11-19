@@ -30,14 +30,14 @@ if ! command -v docker >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "Building PostGIS (ARM) Docker image..."
+echo "Building PostGIS Docker image..."
 
 cd postgis || { echo "Error: postgis directory not found"; exit 1; }
 
 # Build PostGIS
 docker build . \
-  --file=Dockerfile-arm64 \
-  --tag=oscar-postgis-arm
+  --file=Dockerfile \
+  --tag=oscar-postgis
 
 echo "Starting PostGIS container..."
 
@@ -50,9 +50,9 @@ docker run \
   -e POSTGRES_USER="$USER" \
   -e POSTGRES_PASSWORD="postgres" \
   -p $PORT:5432 \
-  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/17/main" \
+  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
   -d \
-  oscar-postgis-arm
+  oscar-postgis
 
 # Wait for PostgreSQL/PostGIS to become ready
 echo "Waiting for PostGIS (PostgreSQL) to be ready..."
