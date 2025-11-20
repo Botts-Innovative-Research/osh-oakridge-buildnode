@@ -1,6 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM ==== CONFIG ====
 set HOST=localhost
 set PORT=5432
 set DB_NAME=gis
@@ -9,80 +10,106 @@ set RETRY_MAX=20
 set RETRY_INTERVAL=5
 set PROJECT_DIR=%cd%
 set CONTAINER_NAME=oscar-postgis-container
+set IMAGE_NAME=oscar-postgis
 
-rem Create pgdata directory if needed
+echo PROJECT_DIR is: %PROJECT_DIR%
+
+where docker >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ERROR: Docker is not installed or not in PATH.
+    exit /b 1
+)
+
 if not exist "%PROJECT_DIR%\pgdata" (
-    echo Creating pgdata folder...
+    echo Creating pgdata directory...
     mkdir "%PROJECT_DIR%\pgdata"
 )
 
-rem Check Docker
-docker --version >nul 2>&1
-if errorlevel 1 (
-    echo Error: Docker is not installed. Please install Docker first.
+echo Building PostGIS Docker image...
+pushd postgis
+docker build . -f Dockerfile -t %IMAGE_NAME%
+if %errorlevel% neq 0 (
+    echo ERROR: Docker build failed.
     exit /b 1
 )
+popd
 
-echo Building PostGIS (ARM) Docker image...
+echo Starting PostGIS container...
 
-if not exist "postgis" (
-    echo Error: postgis directory not found
-    exit /b 1
-)
-
-cd postgis
-
-rem Build PostGIS image
-docker build . --file=Dockerfile --tag=oscar-postgis
-
-cd "%PROJECT_DIR%"
-
-rem Check if container exists
-docker ps -a --format "{{.Names}}" | findstr /i "^%CONTAINER_NAME%$" >nul
-if errorlevel 1 (
-    rem Container does not exist, create it
-    echo Starting new PostGIS container...
-    docker run --name "%CONTAINER_NAME%" -e POSTGRES_DB=%DB_NAME% -e POSTGRES_USER=%USER% -e POSTGRES_PASSWORD=postgres -p %PORT%:5432 -v "%PROJECT_DIR%/pgdata:/var/lib/postgresql/data" -d oscar-postgis
-) else (
-    rem Container exists, start it if not running
-    docker inspect -f "{{.State.Running}}" "%CONTAINER_NAME%" | findstr true >nul
-    if errorlevel 1 (
-        echo Starting existing PostGIS container...
-        docker start "%CONTAINER_NAME%"
-    ) else (
-        echo PostGIS container already running.
+for /f "tokens=*" %%i in ('docker ps -a --format "{{.Names}}"') do (
+    if "%%i"=="%CONTAINER_NAME%" (
+        set CONTAINER_EXISTS=1
     )
 )
 
-rem Wait for PostgreSQL/PostGIS to become ready
-echo Waiting for PostGIS (PostgreSQL) to be ready...
-set RETRY_COUNT=0
-set PGPASSWORD=postgres
-
-:wait_loop
-docker exec "%CONTAINER_NAME%" pg_isready -U "%USER%" -d "%DB_NAME%" >nul 2>&1
-if errorlevel 1 (
-    echo PostGIS not ready yet, retrying...
-    timeout /t %RETRY_INTERVAL% /nobreak >nul
-    set /a RETRY_COUNT+=1
-    if !RETRY_COUNT! lss %RETRY_MAX% goto wait_loop
-    echo Error: PostGIS failed to become ready after %RETRY_MAX% retries
-    exit /b 1
+for /f "tokens=*" %%i in ('docker ps --format "{{.Names}}"') do (
+    if "%%i"=="%CONTAINER_NAME%" (
+        set CONTAINER_RUNNING=1
+    )
 )
 
-echo PostGIS (PostgreSQL) is ready!
+if defined CONTAINER_EXISTS (
+    if defined CONTAINER_RUNNING (
+        echo Container already running: %CONTAINER_NAME%
+    ) else (
+        echo Starting existing container: %CONTAINER_NAME%
+        docker start %CONTAINER_NAME%
+    )
+) else (
+    echo Creating new container: %CONTAINER_NAME%
+    docker run ^
+        --name %CONTAINER_NAME% ^
+        -e POSTGRES_DB=%DB_NAME% ^
+        -e POSTGRES_USER=%USER% ^
+        -e POSTGRES_PASSWORD=postgres ^
+        -p %PORT%:5432 ^
+        -v "%PROJECT_DIR%\pgdata:/var/lib/postgresql/data" ^
+        -d ^
+        %IMAGE_NAME%
 
-rem Launch osh-node-oscar
-cd "%PROJECT_DIR%\osh-node-oscar"
-if not exist "launch.bat" (
-    if not exist "launch.sh" (
-        echo Error: launch script not found in osh-node-oscar
+    if %errorlevel% neq 0 (
+        echo ERROR: Failed to start PostGIS container.
         exit /b 1
     )
-    echo Warning: launch.sh found but launch.bat not found. You may need to convert launch.sh to launch.bat
+)
+
+echo Waiting for PostGIS (PostgreSQL) to become ready...
+
+set RETRY_COUNT=0
+
+:wait_loop
+docker exec %CONTAINER_NAME% pg_isready -U %USER% -d %DB_NAME% >nul 2>&1
+if %errorlevel% equ 0 (
+    echo PostGIS (PostgreSQL) is ready!
+    goto after_wait
+)
+
+echo PostGIS not ready yet, retrying...
+set /a RETRY_COUNT+=1
+
+if %RETRY_COUNT% geq %RETRY_MAX% (
+    echo ERROR: PostGIS did not become ready in time.
     exit /b 1
 )
 
-call launch.bat
+timeout /t %RETRY_INTERVAL% >nul
+goto wait_loop
+
+:after_wait
+
+timeout /t 3 >nul
+
+cd "%PROJECT_DIR%\osh-node-oscar"
+if %errorlevel% neq 0 (
+    echo ERROR: osh-node-oscar directory not found.
+    exit /b 1
+)
+
+if exist launch.bat (
+    call launch.bat
+) else (
+    echo WARNING: launch.bat not found. Trying launch.sh through Git Bash...
+    bash launch.sh
+)
 
 endlocal

@@ -5,24 +5,40 @@ SENSORHUB_NAME="com.botts.impl.security.SensorHubWrapper"
 
 echo "Stopping container: $CONTAINER_NAME..."
 
-# Stop container if running
-if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+# Stop Docker container if it exists
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Container exists. Stopping..."
     docker stop "$CONTAINER_NAME"
-    echo "Container stopped and removed."
+    echo "Container stopped."
 else
     echo "Container not found. Nothing to stop."
 fi
 
-echo "Stopping SensorHubWrapper Java Process"
+echo
+echo "Stopping SensorHubWrapper Java process..."
 
-SENSORHUB_PID=$(jps -l | grep "$SENSORHUB_NAME" | awk '{print $1}')
+PID=""
 
-if [ -n "$SENSORHUB_PID" ]; then
-    echo "Stopping SensorHubWrapper Java process with PID $SENSORHUB_PID..."
-    kill -9 "$SENSORHUB_PID"
+# --- Option 1: Use jps if available ---
+if command -v jps >/dev/null 2>&1; then
+    PID=$(jps -l | grep "$SENSORHUB_NAME" | awk '{print $1}')
+fi
+
+# --- Option 2: fallback to pgrep if PID not found ---
+if [ -z "$PID" ]; then
+    if command -v pgrep >/dev/null 2>&1; then
+        PID=$(pgrep -f "$SENSORHUB_NAME")
+    fi
+fi
+
+# --- Kill process if found ---
+if [ -n "$PID" ]; then
+    echo "Stopping SensorHubWrapper with PID(s): $PID"
+    kill -9 $PID
     echo "SensorHubWrapper stopped."
 else
     echo "SensorHubWrapper process not found."
 fi
 
+echo
 echo "Done."

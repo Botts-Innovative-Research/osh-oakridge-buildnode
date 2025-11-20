@@ -17,13 +17,6 @@ if [ ! -d "${PROJECT_DIR}/pgdata" ]; then
   mkdir -p "${PROJECT_DIR}/pgdata"
 fi
 
-#if [ -d "${PROJECT_DIR}/pgdata" ]; then
-#  echo "Removing old pgdata to force fresh initialization..."
-#  rm -rf "${PROJECT_DIR}/pgdata"
-#fi
-#
-#mkdir -p "${PROJECT_DIR}/pgdata"
-
 # Check Docker
 if ! command -v docker >/dev/null 2>&1; then
     echo "Error: Docker is not installed. Please install Docker first."
@@ -44,15 +37,26 @@ echo "Starting PostGIS container..."
 
 echo "PROJECT_DIR is set to: ${PROJECT_DIR}"
 
-docker run \
-  --name "$CONTAINER_NAME" \
-  -e POSTGRES_DB="$DB_NAME" \
-  -e POSTGRES_USER="$USER" \
-  -e POSTGRES_PASSWORD="postgres" \
-  -p $PORT:5432 \
-  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
-  -d \
-  oscar-postgis
+if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+    # The container exists
+    if docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+        echo "Container already running: ${CONTAINER_NAME}"
+    else
+        echo "Starting existing container: ${CONTAINER_NAME}"
+        docker start "${CONTAINER_NAME}"
+    fi
+else
+    echo "Creating new container: ${CONTAINER_NAME}"
+    docker run \
+      --name "$CONTAINER_NAME" \
+      -e POSTGRES_DB="$DB_NAME" \
+      -e POSTGRES_USER="$USER" \
+      -e POSTGRES_PASSWORD="postgres" \
+      -p $PORT:5432 \
+      -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
+      -d \
+      oscar-postgis || { echo "Failed to start PostGIS container"; exit 1; }
+fi
 
 # Wait for PostgreSQL/PostGIS to become ready
 echo "Waiting for PostGIS (PostgreSQL) to be ready..."
@@ -67,6 +71,7 @@ done
 
 echo "PostGIS (PostgreSQL) is ready!"
 
+sleep 3
 
 # Launch osh-node-oscar
 cd "$PROJECT_DIR/osh-node-oscar" || { echo "Error: osh-node-oscar not found"; exit 1; }

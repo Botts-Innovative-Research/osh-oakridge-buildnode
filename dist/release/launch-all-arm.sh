@@ -17,20 +17,13 @@ if [ ! -d "${PROJECT_DIR}/pgdata" ]; then
   mkdir -p "${PROJECT_DIR}/pgdata"
 fi
 
-#if [ -d "${PROJECT_DIR}/pgdata" ]; then
-#  echo "Removing old pgdata to force fresh initialization..."
-#  rm -rf "${PROJECT_DIR}/pgdata"
-#fi
-#
-#mkdir -p "${PROJECT_DIR}/pgdata"
-
 # Check Docker
 if ! command -v docker >/dev/null 2>&1; then
     echo "Error: Docker is not installed. Please install Docker first."
     exit 1
 fi
 
-echo "Building PostGIS (ARM) Docker image..."
+echo "Building PostGIS Docker image..."
 
 cd postgis || { echo "Error: postgis directory not found"; exit 1; }
 
@@ -44,19 +37,30 @@ echo "Starting PostGIS container..."
 
 echo "PROJECT_DIR is set to: ${PROJECT_DIR}"
 
-docker run \
-  --name "$CONTAINER_NAME" \
-  -e POSTGRES_DB="$DB_NAME" \
-  -e POSTGRES_USER="$USER" \
-  -e POSTGRES_PASSWORD="postgres" \
-  -e DATADIR="/var/lib/postgresql/data" \
-  -p $PORT:5432 \
-  -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
-  -d \
-  oscar-postgis-arm
+if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+    # The container exists
+    if docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+        echo "Container already running: ${CONTAINER_NAME}"
+    else
+        echo "Starting existing container: ${CONTAINER_NAME}"
+        docker start "${CONTAINER_NAME}"
+    fi
+else
+    echo "Creating new container: ${CONTAINER_NAME}"
+    docker run \
+      --name "$CONTAINER_NAME" \
+      -e POSTGRES_DB="$DB_NAME" \
+      -e POSTGRES_USER="$USER" \
+      -e POSTGRES_PASSWORD="postgres" \
+      -e DATADIR=/var/lib/postgresql/data \
+      -p $PORT:5432 \
+      -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
+      -d \
+      oscar-postgis-arm || { echo "Failed to start PostGIS container"; exit 1; }
+fi
 
 # Wait for PostgreSQL/PostGIS to become ready
-echo "Waiting for PostGIS (PostgreSQL) to be ready..."
+echo "Waiting for PostGIS ARM64 (PostgreSQL) to be ready..."
 
 RETRY_COUNT=0
 export PGPASSWORD=postgres  # Needed for pg_isready with password
@@ -68,6 +72,7 @@ done
 
 echo "PostGIS (PostgreSQL) is ready!"
 
+sleep 3
 
 # Launch osh-node-oscar
 cd "$PROJECT_DIR/osh-node-oscar" || { echo "Error: osh-node-oscar not found"; exit 1; }
