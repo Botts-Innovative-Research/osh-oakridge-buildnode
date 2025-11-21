@@ -69,9 +69,9 @@ until docker exec "$CONTAINER_NAME" pg_isready -U "$USER" -d "$DB_NAME" > /dev/n
   sleep "${RETRY_INTERVAL}"
 done
 
-echo "PostGIS (PostgreSQL) is ready!"
+echo "PostGIS (PostgreSQL) is ready! Please wait for OpenSensorHub to start..."
 
-sleep 3
+sleep 5
 
 # Launch osh-node-oscar
 cd "$PROJECT_DIR/osh-node-oscar" || { echo "Error: osh-node-oscar not found"; exit 1; }
