@@ -1,15 +1,14 @@
 #!/bin/bash
 
-HOST="localhost"
-PORT="5432"
-DB_NAME="gis"
-USER="postgres"
+HOST=localhost
+DB_NAME=gis
+DB_USER=postgres
 RETRY_MAX=20
 RETRY_INTERVAL=5
-PROJECT_DIR="$(pwd)"   # Store the original directory
-CONTAINER_NAME="oscar-postgis-container"
+PROJECT_DIR="$(pwd)" # Store the original directory
+CONTAINER_NAME=oscar-postgis-container
 
-#docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+#sudo docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 # Create pgdata directory if needed
 if [ ! -d "${PROJECT_DIR}/pgdata" ]; then
@@ -28,13 +27,11 @@ echo "Building PostGIS Docker image..."
 cd postgis || { echo "Error: postgis directory not found"; exit 1; }
 
 # Build PostGIS
-docker build . \
+sudo docker build . \
   --file=Dockerfile-arm64 \
   --tag=oscar-postgis-arm
 
 echo "Starting PostGIS container..."
-
-
 echo "PROJECT_DIR is set to: ${PROJECT_DIR}"
 
 if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
@@ -48,13 +45,13 @@ if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
 else
     echo "Creating new container: ${CONTAINER_NAME}"
     docker run \
-      --name "$CONTAINER_NAME" \
-      -e POSTGRES_DB="$DB_NAME" \
-      -e POSTGRES_USER="$USER" \
-      -e POSTGRES_PASSWORD="postgres" \
+      --name $CONTAINER_NAME \
+      -e POSTGRES_DB=$DB_NAME \
+      -e POSTGRES_USER=$DB_USER \
+      -e POSTGRES_PASSWORD=postgres \
       -e DATADIR=/var/lib/postgresql/data \
-      -p $PORT:5432 \
-      -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
+      -p 5432:5432 \
+      -v "$(pwd)/pgdata:/var/lib/postgresql/data" \
       -d \
       oscar-postgis-arm || { echo "Failed to start PostGIS container"; exit 1; }
 fi
@@ -65,7 +62,7 @@ echo "Waiting for PostGIS ARM64 (PostgreSQL) to be ready..."
 RETRY_COUNT=0
 export PGPASSWORD=postgres  # Needed for pg_isready with password
 
-until docker exec "$CONTAINER_NAME" pg_isready -U "$USER" -d "$DB_NAME" > /dev/null 2>&1; do
+until docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
   echo "PostGIS not ready yet, retrying..."
   sleep "${RETRY_INTERVAL}"
 done

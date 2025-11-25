@@ -3,7 +3,7 @@
 HOST="localhost"
 PORT="5432"
 DB_NAME="gis"
-USER="postgres"
+DB_USER="postgres"
 RETRY_MAX=20
 RETRY_INTERVAL=5
 PROJECT_DIR="$(pwd)"   # Store the original directory
@@ -50,7 +50,7 @@ else
     docker run \
       --name "$CONTAINER_NAME" \
       -e POSTGRES_DB="$DB_NAME" \
-      -e POSTGRES_USER="$USER" \
+      -e POSTGRES_USER="$DB_USER" \
       -e POSTGRES_PASSWORD="postgres" \
       -p $PORT:5432 \
       -v "${PROJECT_DIR}/pgdata:/var/lib/postgresql/data" \
@@ -64,7 +64,7 @@ echo "Waiting for PostGIS (PostgreSQL) to be ready..."
 RETRY_COUNT=0
 export PGPASSWORD=postgres  # Needed for pg_isready with password
 
-until docker exec "$CONTAINER_NAME" pg_isready -U "$USER" -d "$DB_NAME" > /dev/null 2>&1; do
+until docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
   echo "PostGIS not ready yet, retrying..."
   sleep "${RETRY_INTERVAL}"
 done

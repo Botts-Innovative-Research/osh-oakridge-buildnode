@@ -1,6 +1,14 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-rc.1 - 2025-11-25
+### Fixed
+- Optimized requests on client via pagination and filtering
+- Fixed adjudications not working properly on client
+- Improved FFmpeg HLS latency and video consistency
+- Fixed PostGIS queries taking too long
+- Reverted launch script to use native JVM for OSH and Docker for PostGIS
+
 ## 3.0.0-alpha.4 - 2025-11-17
 ### Fixed
 - Fixed MQTT not disconnecting on client
