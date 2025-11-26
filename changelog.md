@@ -1,6 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-rc.2 2025-11-26
+### Fixed
+- Fixed issue with Windows `launch-all.bat` script not working
+- Fixed embedded MQTT server issue on Windows
+
 ## 3.0.0-rc.1 - 2025-11-25
 ### Fixed
 - Optimized requests on client via pagination and filtering

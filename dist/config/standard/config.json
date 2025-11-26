@@ -94,7 +94,7 @@
         "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
       }
     ],
-    "deploymentName": "OSCAR 3.0.0-rc.1",
+    "deploymentName": "OSCAR 3.0.0-rc.2",
     "enableLandingPage": false,
     "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
     "autoStart": true,

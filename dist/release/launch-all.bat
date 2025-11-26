@@ -73,14 +73,14 @@ if defined CONTAINER_EXISTS (
     )
 )
 
-echo Waiting for PostGIS (PostgreSQL) to become ready...
+echo Waiting for PostGIS database to become ready...
 
 set RETRY_COUNT=0
 
 :wait_loop
 docker exec %CONTAINER_NAME% pg_isready -U %USER% -d %DB_NAME% >nul 2>&1
 if %errorlevel% equ 0 (
-    echo PostGIS (PostgreSQL) is ready!
+    echo PostGIS database is ready!
     goto after_wait
 )
 
