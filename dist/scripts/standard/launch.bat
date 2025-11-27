@@ -26,7 +26,7 @@ REM Call the next batch script to handle setting the initial admin password
 CALL "%SCRIPT_DIR%set-initial-admin-password.bat"
 
 REM Start the node
-java -Xms12g -Xmx12g -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError ^
+java -Xms6g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError ^
     -Dlogback.configurationFile=./logback.xml ^
     -cp "lib/*" ^
     -Djava.system.class.loader="org.sensorhub.utils.NativeClassLoader" ^

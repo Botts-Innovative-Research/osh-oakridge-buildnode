@@ -80,7 +80,7 @@ set RETRY_COUNT=0
 :wait_loop
 docker exec %CONTAINER_NAME% pg_isready -U %USER% -d %DB_NAME% >nul 2>&1
 if %errorlevel% equ 0 (
-    echo PostGIS database is ready!
+    echo Received OK from PostGIS. Please wait for initialization...
     goto after_wait
 )
 
@@ -97,7 +97,9 @@ goto wait_loop
 
 :after_wait
 
-timeout /t 3 >nul
+timeout /t 10 >nul
+
+echo PostGIS database is ready!
 
 cd "%PROJECT_DIR%\osh-node-oscar"
 if %errorlevel% neq 0 (

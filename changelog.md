@@ -1,6 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-rc.3 2025-11-26
+### Fixed
+- Fixed issue with FFmpeg transcoding causing node to crash
+- Reduce launch script heap size to 6GB
+
 ## 3.0.0-rc.2 2025-11-26
 ### Fixed
 - Fixed issue with Windows `launch-all.bat` script not working

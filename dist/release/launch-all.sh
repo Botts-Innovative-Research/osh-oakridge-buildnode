@@ -71,7 +71,7 @@ done
 
 echo "PostGIS (PostgreSQL) is ready! Please wait for OpenSensorHub to start..."
 
-sleep 5
+sleep 10
 
 # Launch osh-node-oscar
 cd "$PROJECT_DIR/osh-node-oscar" || { echo "Error: osh-node-oscar not found"; exit 1; }
