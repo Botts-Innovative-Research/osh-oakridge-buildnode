@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Fixed issue with FFmpeg transcoding causing node to crash
 - Reduce launch script heap size to 6GB
+- Reduce thread count for Rapiscan drivers
 
 ## 3.0.0-rc.2 2025-11-26
 ### Fixed
