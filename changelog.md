@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 ## 3.0.0-rc.4 2025-12-01
 ### Changes
 - Improved PostGIS query speed for Observations
-- 
+- Improved site stats page load time
 
 ## 3.0.0-rc.3 2025-11-26
 ### Fixed
