@@ -1,4 +1,4 @@
-FROM postgis/postgis:17-3.5
+FROM postgis/postgis:16-3.4
 
 COPY init-extensions.sql /docker-entrypoint-initdb.d/init-extensions.sql
 

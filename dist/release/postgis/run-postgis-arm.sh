@@ -5,7 +5,7 @@ if [ ! -d "$(pwd)/pgdata" ]; then
   mkdir -p "$(pwd)/pgdata"
 fi
 
-sudo docker build . --file=Dockerfile-arm64 --tag=oscar-postgis-arm
+docker build . --file=Dockerfile-arm64 --tag=oscar-postgis-arm
 docker run \
   -e PG_MAX_CONNECTIONS=500 \
   -e POSTGRES_DB=gis \
