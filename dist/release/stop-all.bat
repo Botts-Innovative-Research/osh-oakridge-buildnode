@@ -4,14 +4,7 @@ set SENSORHUB_NAME=com.botts.impl.security.SensorHubWrapper
 
 echo Stopping container: %CONTAINER_NAME%...
 
-REM Stop docker container if it exists
-docker ps -a --format "{{.Names}}" | findstr /R "^%CONTAINER_NAME%$" >nul
-if %ERRORLEVEL%==0 (
-    docker stop %CONTAINER_NAME%
-    echo Container stopped.
-) else (
-    echo Container not found. Nothing to stop.
-)
+docker stop %CONTAINER_NAME%
 
 echo.
 echo Stopping SensorHubWrapper Java Process...
