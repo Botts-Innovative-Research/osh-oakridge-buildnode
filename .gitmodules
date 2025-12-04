@@ -4,12 +4,12 @@
 	branch = main
 [submodule "include/osh-core"]
 	path = include/osh-core
-	url = https://github.com/opensensorhub/osh-core
-	branch = master
+	url = https://github.com/earocorn/osh-core
+	branch = OSCAR
 [submodule "include/osh-addons"]
 	path = include/osh-addons
-	url =  https://github.com/opensensorhub/osh-addons
-	branch = master
+	url =  https://github.com/earocorn/osh-addons
+	branch = OSCAR
 [submodule "web/oscar-viewer"]
 	path = web/oscar-viewer
 	url = https://github.com/Botts-Innovative-Research/oscar-viewer.git
