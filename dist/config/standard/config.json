@@ -104,6 +104,10 @@
   {
     "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
     "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "exposedResources": {
+      "objClass": "org.sensorhub.impl.datastore.view.ObsSystemDatabaseViewConfig",
+      "sourceDatabaseId": "a445cf15-c2ab-4d92-beab-3241667a8976"
+    },
     "customFormats": [],
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
