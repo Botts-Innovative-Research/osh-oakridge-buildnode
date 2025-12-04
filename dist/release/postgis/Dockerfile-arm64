@@ -1,6 +1,6 @@
 FROM kartoza/postgis:16-3.4
 
-RUN echo "host all all all md5" >> /etc/postgresql/17/main/pg_hba.conf
+RUN echo "host all all all md5" >> /etc/postgresql/16/main/pg_hba.conf
 
 COPY init-extensions.sql /docker-entrypoint-initdb.d/init-extensions.sql
 
