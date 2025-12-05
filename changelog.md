@@ -1,10 +1,13 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
-## 3.0.0-rc.4 2025-12-01
+## 3.0.0-rc.4 2025-12-05
 ### Changes
-- Improved PostGIS query speed for Observations
+- Improved PostGIS query speed for observations
 - Improved site stats page load time
+### Fixed
+- Fixed bug where adjudications would not submit, and duplicate isotopes would appear in adjudications
+- Fixed an FFmpeg memory leak causing unbounded memory usage
 
 ## 3.0.0-rc.3 2025-11-26
 ### Fixed
