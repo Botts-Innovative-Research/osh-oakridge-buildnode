@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 ## 3.0.0-rc.5 2025-12-09
 ### Changes
 - Improved pagination speed on large datasets
-- Improved site stats by adding to previously recorded stats
+- Make the time at which stats are published configurable
 ### Fixed
 - Fixed bug with HLS thread-locking which causes live video to be unavailable after some time
 
