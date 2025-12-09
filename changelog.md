@@ -1,6 +1,13 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
+## 3.0.0-rc.5 2025-12-09
+### Changes
+- Improved pagination speed on large datasets
+- Improved site stats by adding to previously recorded stats
+### Fixed
+- Fixed bug with HLS thread-locking which causes live video to be unavailable after some time
+
 ## 3.0.0-rc.4 2025-12-05
 ### Changes
 - Improved PostGIS query speed for observations
