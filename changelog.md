@@ -1,7 +1,7 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
 
-## 3.0.0-rc.5 2025-12-09
+## 3.0.0-rc.5 2025-12-11
 ### Changes
 - Improved pagination speed on large datasets
 - Make the time at which stats are published configurable
