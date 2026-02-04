@@ -1,5 +1,14 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.0.0 2026-02-04
+This is the official first release of 3.0.0
+### Changes
+- Data from database is purged regularly with "daily files" exported at midnight
+- Added internationalization (i18n) to the frontend
+- Sorted lanes by alphanumeric order in the frontend dashboard
+- Use server-side filters in frontend tables
+### Fixed
+- Fixed issue where database is queried everytime Admin UI is loaded
 
 ## 3.0.0-rc.5 2025-12-11
 ### Changes
