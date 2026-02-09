@@ -1,5 +1,10 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.1.0 2026-XX-XX
+### Changes
+- Attach node names to lane names on frontend dashboard to differentiate same-name lanes
+- Add mobile UI and PWA support (with push notifications)
+
 ## 3.0.0 2026-02-04
 This is the official first release of 3.0.0
 ### Changes
