@@ -138,6 +138,8 @@
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
     "nodeId": "default",
     "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "statsFrequencyMinutes": 60,
+    "webIdApiRoot": "https://full-spectrum.sandia.gov/api/v1",
     "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
     "autoStart": true,
     "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
@@ -154,7 +156,8 @@
     "initialBuckets": [
       "sitemap",
       "reports",
-      "videos"
+      "videos",
+      "adjudication"
     ],
     "fileStoreRootDir": "files",
     "endPoint": "/buckets",
