@@ -33,4 +33,5 @@ java -Xms6g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+Hea
 	-Djavax.net.ssl.keyStorePassword="atakatak" \
 	-Djavax.net.ssl.trustStore="$SCRIPT_DIR/trustStore.jks" \
 	-Djavax.net.ssl.trustStorePassword="changeit" \
+	-Djava.library.path="./nativelibs" \
 	com.botts.impl.security.SensorHubWrapper ./config.json ./db

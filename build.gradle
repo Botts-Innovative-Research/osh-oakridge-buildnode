@@ -95,6 +95,9 @@ distributions{
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
             }
+            into("osh-node-oscar/nativelibs") {
+                from 'dist/nativelibs'
+            }
 
             // POSTGIS / DOCKER / SCRIPTS
             into('.') {
