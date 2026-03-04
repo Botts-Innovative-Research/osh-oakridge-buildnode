@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ### Changes
 - Attach node names to lane names on frontend dashboard to differentiate same-name lanes
 - Add mobile UI and PWA support (with push notifications)
+### Fixed
+- Fixed bug where chart points were out of order
 
 ## 3.0.0 2026-02-04
 This is the official first release of 3.0.0
