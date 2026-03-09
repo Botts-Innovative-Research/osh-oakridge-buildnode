@@ -170,7 +170,7 @@
       "url": "localhost:5432",
       "dbName": "gis",
       "login": "postgres",
-      "password": "postgres",
+      "password": "",
       "idProviderType": "SEQUENTIAL",
       "autoCommitPeriod": 10,
       "useBatch": false,
