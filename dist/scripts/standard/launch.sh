@@ -13,6 +13,16 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
   export TRUSTSTORE_PASSWORD="changeit"
   export INITIAL_ADMIN_PASSWORD_FILE="./.s"
 
+# Database configuration
+export DB_HOST="${DB_HOST:-localhost}"
+if [ -z "$POSTGRES_PASSWORD_FILE" ]; then
+    # Check for password file in parent directory (standard for release) or current
+    if [ -f "../.db_password" ]; then
+        export POSTGRES_PASSWORD_FILE="$(cd .. && pwd)/.db_password"
+    elif [ -f "./.db_password" ]; then
+        export POSTGRES_PASSWORD_FILE="$(pwd)/.db_password"
+    fi
+fi
 
 # After copying the default configuration file, also look to see if they
 # specified what they want the initial admin user's password to be, either

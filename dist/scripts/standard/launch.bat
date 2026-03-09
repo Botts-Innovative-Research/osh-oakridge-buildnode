@@ -15,6 +15,17 @@ set TRUSTSTORE_PASSWORD=changeit
 
 set INITIAL_ADMIN_PASSWORD_FILE=.\.s
 
+REM Database configuration
+if "%DB_HOST%"=="" (set DB_HOST=localhost)
+if "%POSTGRES_PASSWORD_FILE%"=="" (
+    if exist "..\.db_password" (
+        for %%i in ("..\.db_password") do set POSTGRES_PASSWORD_FILE=%%~fi
+    ) else (
+        if exist ".\.db_password" (
+            for %%i in (".\.db_password") do set POSTGRES_PASSWORD_FILE=%%~fi
+        )
+    )
+)
 
 REM Check if INITIAL_ADMIN_PASSWORD_FILE and INITIAL_ADMIN_PASSWORD are empty
 REM Set default password if neither is provided
