@@ -1,9 +1,10 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
-## 3.1.0 2026-XX-XX
+## 3.1.0 2026-03-09
 ### Changes
 - Attach node names to lane names on frontend dashboard to differentiate same-name lanes
 - Add mobile UI and PWA support (with push notifications)
+- Add support for adjudicating with Web ID supplemental analysis
 ### Fixed
 - Fixed bug where chart points were out of order
 
