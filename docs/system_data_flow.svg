@@ -1,0 +1,106 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Styles -->
+  <style>
+    .box { fill: #f9f9f9; stroke: #333; stroke-width: 2; }
+    .sensor { fill: #e1f5fe; stroke: #01579b; }
+    .core { fill: #fff3e0; stroke: #e65100; }
+    .db { fill: #e8f5e9; stroke: #1b5e20; }
+    .ui { fill: #f3e5f5; stroke: #4a148c; }
+    .ext { fill: #fafafa; stroke: #616161; stroke-dasharray: 5,5; }
+    text { font-family: Arial, sans-serif; font-size: 14px; }
+    .title { font-weight: bold; font-size: 16px; }
+    .arrow { stroke: #333; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+  </style>
+
+  <!-- Markers -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+
+  <!-- External Sensors -->
+  <rect x="50" y="50" width="180" height="80" rx="10" class="sensor" />
+  <text x="60" y="75" class="title">Radiation Portal Monitors</text>
+  <text x="60" y="95">(RPMs: G/N Alarms)</text>
+  <text x="60" y="115">Protocol: TCP/UDP/CSV</text>
+
+  <rect x="50" y="150" width="180" height="80" rx="10" class="sensor" />
+  <text x="60" y="175" class="title">IP Cameras</text>
+  <text x="60" y="195">(Video/MJPEG/RTSP)</text>
+  <text x="60" y="215">Protocol: HTTP/RTSP</text>
+
+  <!-- OSH Backend -->
+  <rect x="300" y="50" width="220" height="400" rx="10" class="core" />
+  <text x="310" y="75" class="title">OSH Backend (Java)</text>
+
+  <rect x="320" y="100" width="180" height="60" rx="5" fill="#fff" stroke="#e65100" />
+  <text x="330" y="125">Sensor Drivers</text>
+  <text x="330" y="145">(Aspect, Rapiscan, etc.)</text>
+
+  <rect x="320" y="180" width="180" height="60" rx="5" fill="#fff" stroke="#e65100" />
+  <text x="330" y="205">Processing Modules</text>
+  <text x="330" y="225">(FFmpeg, Lane Logic)</text>
+
+  <rect x="320" y="260" width="180" height="100" rx="5" fill="#fff" stroke="#e65100" />
+  <text x="330" y="285" style="font-weight:bold">OGC Services Layer</text>
+  <text x="330" y="305">- SOS (Observations)</text>
+  <text x="330" y="325">- SPS (Control)</text>
+  <text x="330" y="345">- WebSockets (Live)</text>
+
+  <rect x="320" y="380" width="180" height="50" rx="5" fill="#fff" stroke="#e65100" />
+  <text x="330" y="410">Auth (Bifurcated)</text>
+
+  <!-- PostGIS Database -->
+  <rect x="50" y="350" width="180" height="100" rx="10" class="db" />
+  <text x="60" y="375" class="title">PostGIS Database</text>
+  <text x="60" y="395">Persistent Storage</text>
+  <text x="60" y="415">G/N Alarms, Events</text>
+  <text x="60" y="435">TLS + SCRAM-SHA-256</text>
+
+  <!-- Client Interfaces -->
+  <rect x="580" y="50" width="180" height="80" rx="10" class="ui" />
+  <text x="590" y="75" class="title">Admin UI (Vaadin)</text>
+  <text x="590" y="95">Config, User Mgmt</text>
+  <text x="590" y="115">Auth: TOTP/Session</text>
+
+  <rect x="580" y="150" width="180" height="80" rx="10" class="ui" />
+  <text x="590" y="175" class="title">OSCAR Viewer (React)</text>
+  <text x="590" y="195">Live Maps, Alarms</text>
+  <text x="590" y="215">Auth: TOTP/Session</text>
+
+  <rect x="580" y="250" width="180" height="80" rx="10" class="ui" />
+  <text x="590" y="275" class="title">MQTT Proxy</text>
+  <text x="590" y="295">HiveMQ Extension</text>
+  <text x="590" y="315">Auth: API Key</text>
+
+  <!-- Federated Nodes -->
+  <rect x="580" y="370" width="180" height="80" rx="10" class="ext" />
+  <text x="590" y="395" class="title">Federated Nodes</text>
+  <text x="590" y="415">Remote Polling</text>
+  <text x="590" y="435">Auth: API Key / Tailscale</text>
+
+  <!-- Arrows -->
+  <!-- Sensors to Drivers -->
+  <path d="M 230 90 L 300 90" class="arrow" />
+  <path d="M 230 190 L 320 150" class="arrow" />
+
+  <!-- Drivers to Processing -->
+  <path d="M 410 160 L 410 180" class="arrow" />
+
+  <!-- Processing to OGC -->
+  <path d="M 410 240 L 410 260" class="arrow" />
+
+  <!-- OGC to DB -->
+  <path d="M 300 310 L 250 310 L 230 350" class="arrow" />
+
+  <!-- DB to OGC (History queries) -->
+  <path d="M 140 350 L 140 330 L 320 330" class="arrow" />
+
+  <!-- OGC to Clients -->
+  <path d="M 500 280 L 580 90" class="arrow" />
+  <path d="M 500 300 L 580 190" class="arrow" />
+  <path d="M 500 320 L 580 290" class="arrow" />
+  <path d="M 500 340 L 580 410" class="arrow" />
+
+</svg>

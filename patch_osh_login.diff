@@ -1,0 +1,122 @@
+<<<<<<< SEARCH
+    public static String getBridgedUser(HttpServletRequest req, ISecurityManager securityManager)
+    {
+        try {
+            // 1. First check local session for performance
+            javax.servlet.http.HttpSession localSession = req.getSession(false);
+            if (localSession != null) {
+                String user = (String) localSession.getAttribute("VERIFIED_USER");
+                if (user != null) return user;
+
+                // search bridge if VERIFIED_USER missing
+                String cid = getCleanId(localSession.getId());
+                for (String entry : securityManager.get2FAVerifiedSessions()) {
+                    if (entry.startsWith(cid + ":")) {
+                        String found = entry.substring(cid.length() + 1);
+                        localSession.setAttribute("VERIFIED_USER", found);
+                        localSession.setAttribute("2FA_VERIFIED", true);
+                        return found;
+                    }
+                }
+            }
+
+            // 2. Search all cookies for a bridged session
+            String cookieHeader = req.getHeader("Cookie");
+            if (cookieHeader != null) {
+                for (String cookie : cookieHeader.split(";")) {
+                    String[] parts = cookie.trim().split("=", 2);
+                    if (parts.length == 2 && parts[0].trim().contains("JSESSIONID")) {
+                        String cid = getCleanId(parts[1].trim());
+                        if (cid != null) {
+                            for (String entry : securityManager.get2FAVerifiedSessions()) {
+                                if (entry.startsWith(cid + ":")) {
+                                    String foundUser = entry.substring(cid.length() + 1);
+                                    // Auto-bridge current local session if it exists
+                                    if (localSession != null) {
+                                        String currentCid = getCleanId(localSession.getId());
+                                        securityManager.get2FAVerifiedSessions().add(currentCid + ":" + foundUser);
+                                        localSession.setAttribute("2FA_VERIFIED", true);
+                                        localSession.setAttribute("VERIFIED_USER", foundUser);
+                                    }
+                                    return foundUser;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {}
+        return null;
+    }
+=======
+    public static String getBridgedUser(HttpServletRequest req, ISecurityManager securityManager)
+    {
+        try {
+            System.err.println("--- [DEBUG] getBridgedUser called for path: " + req.getRequestURI());
+            System.err.println("--- [DEBUG] Remote user: " + req.getRemoteUser());
+            // 1. First check local session for performance
+            javax.servlet.http.HttpSession localSession = req.getSession(false);
+            if (localSession != null) {
+                System.err.println("--- [DEBUG] localSession id: " + localSession.getId());
+                String user = (String) localSession.getAttribute("VERIFIED_USER");
+                if (user != null) {
+                    System.err.println("--- [DEBUG] found VERIFIED_USER in localSession: " + user);
+                    return user;
+                }
+
+                // search bridge if VERIFIED_USER missing
+                String cid = getCleanId(localSession.getId());
+                for (String entry : securityManager.get2FAVerifiedSessions()) {
+                    if (entry.startsWith(cid + ":")) {
+                        String found = entry.substring(cid.length() + 1);
+                        localSession.setAttribute("VERIFIED_USER", found);
+                        localSession.setAttribute("2FA_VERIFIED", true);
+                        System.err.println("--- [DEBUG] found VERIFIED_USER via bridged localSession: " + found);
+                        return found;
+                    }
+                }
+            } else {
+                System.err.println("--- [DEBUG] localSession is null");
+            }
+
+            // 2. Search all cookies for a bridged session
+            String cookieHeader = req.getHeader("Cookie");
+            System.err.println("--- [DEBUG] Cookie header: " + cookieHeader);
+            if (cookieHeader != null) {
+                for (String cookie : cookieHeader.split(";")) {
+                    String[] parts = cookie.trim().split("=", 2);
+                    if (parts.length == 2 && parts[0].trim().contains("JSESSIONID")) {
+                        String cid = getCleanId(parts[1].trim());
+                        if (cid != null) {
+                            for (String entry : securityManager.get2FAVerifiedSessions()) {
+                                if (entry.startsWith(cid + ":")) {
+                                    String foundUser = entry.substring(cid.length() + 1);
+                                    // Auto-bridge current local session if it exists
+                                    if (localSession != null) {
+                                        String currentCid = getCleanId(localSession.getId());
+                                        securityManager.get2FAVerifiedSessions().add(currentCid + ":" + foundUser);
+                                        localSession.setAttribute("2FA_VERIFIED", true);
+                                        localSession.setAttribute("VERIFIED_USER", foundUser);
+                                    }
+                                    System.err.println("--- [DEBUG] found user via cookie JSESSIONID bridge: " + foundUser);
+                                    return foundUser;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Check auth header directly to see if it's there
+            String authHeader = req.getHeader("Authorization");
+            if (authHeader != null) {
+                System.err.println("--- [DEBUG] Authorization header is present: " + authHeader.substring(0, Math.min(10, authHeader.length())) + "...");
+            }
+
+        } catch (Exception e) {
+            System.err.println("--- [DEBUG] Error in getBridgedUser: " + e.getMessage());
+        }
+        System.err.println("--- [DEBUG] getBridgedUser returning null");
+        return null;
+    }
+>>>>>>> REPLACE
