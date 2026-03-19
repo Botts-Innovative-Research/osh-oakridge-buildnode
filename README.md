@@ -79,3 +79,11 @@ For documentation on configuring a server on the OSCAR Client refer to the OSCAR
 - Make sure no `pgdata` in `dist/release/postgis`
 - Build with `./build-all.sh` or `./build-all.bat`
 
+# PostgreSQL Configuration
+There are some tweaks that can be made to the PostgreSQL configuration to make it perform better.
+Below is a list of suggested configuration parameters at varying levels of maximum system RAM.
+
+`shared_buffers` - Should be around 25% of maximum RAM
+`effective_cache_size` - Should be around 70-75% of maximum RAM
+`work_mem` - 16MB to 64MB. Depends on maximum system memory and size of the load
+`maintenance_work_mem` - 512MB to 2GB. Depends on the load, but it's OK to try high numbers
