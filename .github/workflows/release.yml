@@ -98,8 +98,8 @@ jobs:
           generate_release_notes: true
           files: ${{ env.DIST_DIR }}/oscar-*.zip
 
-  merge-to-main:
-    name: Merge to main
+  update-main:
+    name: Update main to release
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -109,11 +109,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: main
 
-      - name: Merge dev into main
+      - name: Update main to tagged commit
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git merge origin/dev --no-ff -m "Merge dev into main for release ${{ github.ref_name }}"
-          git push origin main
+          git push origin ${{ github.ref_name }}^{}:refs/heads/main
