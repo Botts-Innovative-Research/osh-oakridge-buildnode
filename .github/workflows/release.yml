@@ -112,4 +112,4 @@ jobs:
 
       - name: Update main to tagged commit
         run: |
-          git push origin ${{ github.ref_name }}^{}:refs/heads/main
+          git push --force origin ${{ github.ref_name }}^{}:refs/heads/main
