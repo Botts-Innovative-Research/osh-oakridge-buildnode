@@ -21,19 +21,6 @@
     "users": [
       {
         "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-        "id": "admin",
-        "name": "Administrator",
-        "password": "oscar",
-        "roles": [
-          "admin"
-        ],
-        "allow": [
-          "fileserver[af72442c-1ce6-4baa-a126-ed41dda26910]"
-        ],
-        "deny": []
-      },
-      {
-        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
         "id": "anonymous",
         "name": "Anonymous User",
         "password": "",
@@ -170,7 +157,7 @@
       "url": "localhost:5432",
       "dbName": "gis",
       "login": "postgres",
-      "password": "postgres",
+      "password": "",
       "idProviderType": "SEQUENTIAL",
       "autoCommitPeriod": 10,
       "useBatch": false,
