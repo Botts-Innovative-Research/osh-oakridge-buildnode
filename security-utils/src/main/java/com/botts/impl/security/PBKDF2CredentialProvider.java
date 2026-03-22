@@ -10,10 +10,10 @@ import org.eclipse.jetty.util.security.CredentialProvider;
 
 public class PBKDF2CredentialProvider implements CredentialProvider {
 	private int strength = PBKDF2Credential.DEFAULT_STRENGTH;
-	
+
 	public PBKDF2CredentialProvider() {
 	}
-	
+
 	public int getStrength() {
 		return strength;
 	}
@@ -30,6 +30,10 @@ public class PBKDF2CredentialProvider implements CredentialProvider {
 	@Override
 	public String getPrefix() {
 		return PBKDF2Credential.PREFIX;
+	}
+
+	public static String encode(String password) {
+		return PBKDF2Credential.fromPassword(password).toString();
 	}
 
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
