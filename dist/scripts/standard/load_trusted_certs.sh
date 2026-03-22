@@ -2,9 +2,11 @@
 
 echo "Building Java trust store..."
 
-# Default password for the system trust store is "changeit". Edit this next
-# line if it's something different in your Java installation.
-STOREPASS="changeit"
+if [ -z "$TRUSTSTORE_PASSWORD" ]; then
+    echo "CRITICAL ERROR: TRUSTSTORE_PASSWORD not set. Cannot load truststore password. Halting startup."
+    exit 1
+fi
+STOREPASS="$TRUSTSTORE_PASSWORD"
 
 # Get the path of this script.
 SCRIPTDIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
