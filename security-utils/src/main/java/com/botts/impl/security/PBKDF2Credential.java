@@ -23,28 +23,28 @@ public class PBKDF2Credential extends Credential {
 	 * of brute-force attacks by increasing the calculations necessary for each password check.
 	 */
 	public static final int DEFAULT_STRENGTH = 16;
-	
+
 	/**
 	 * How many bits are calculated when the password is hashed. This is fixed by the choice of algorithm.
 	 */
 	public static final int HASH_BITS = 128;
-	
+
 	/**
 	 * How many random bytes are generated for salt. This is also fixed by the choice of algorithm.
 	 */
 	public static final int SALT_LENGTH = 16;
-	
+
 	/**
 	 * What character is used to separate the components of the encoded password when it is stringified for saving in a
 	 * config file or database.
 	 */
 	public static final char SEPARATOR = ':';
-	
+
 	/**
 	 * Secret key algorithm to use. This must be known to the JSSE implementation at runtime.
 	 */
 	public static final String ALGORITHM = "PBKDF2WithHmacSHA1";
-	
+
 	/**
 	 * Prefix to use when the password is stringified. Lets Jetty identify this credential provider.
 	 */
@@ -54,32 +54,40 @@ public class PBKDF2Credential extends Credential {
 	private final byte[] salt;
 	private final byte[] hash;
 	private final int strength;
-	
+
 	private PBKDF2Credential(String stringifiedCredential, byte[] salt, byte[] hash, int strength) {
 		this.stringifiedCredential = stringifiedCredential;
 		this.salt = salt;
 		this.hash = hash;
 		this.strength = strength;
 	}
-	
+
 	public static PBKDF2Credential fromEncoded(String stringifiedCredential) {
 		String strengthSaltHashString = stringifiedCredential.substring(PREFIX.length());
 		int separatorIndex;
-		
+
 		separatorIndex = strengthSaltHashString.indexOf(SEPARATOR);
 		String strengthString = strengthSaltHashString.substring(0, separatorIndex);
 		String saltHashString = strengthSaltHashString.substring(separatorIndex + 1);
 		separatorIndex = saltHashString.indexOf(SEPARATOR);
 		String saltString = saltHashString.substring(0, separatorIndex);
 		String hashString = saltHashString.substring(separatorIndex + 1);
-		
+
 		Base64.Decoder base64Decoder = Base64.getDecoder();
 		byte[] salt = base64Decoder.decode(saltString);
 		byte[] hash = base64Decoder.decode(hashString);
 		int strength = Integer.parseInt(strengthString);
 		return new PBKDF2Credential(stringifiedCredential, salt, hash, strength);
 	}
-	
+
+	public static PBKDF2Credential fromPassword(String password) {
+		try {
+			return fromPassword(password, DEFAULT_STRENGTH);
+		} catch (GeneralSecurityException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static PBKDF2Credential fromPassword(String password, int strength) throws GeneralSecurityException {
 		SecureRandom random = new SecureRandom();
 		byte[] salt = new byte[16];
@@ -87,17 +95,17 @@ public class PBKDF2Credential extends Credential {
 
 		KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, getIterationsFromStrength(strength), HASH_BITS);
 		SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(ALGORITHM);
-		
+
 		byte[] hash = secretKeyFactory.generateSecret(keySpec).getEncoded();
 
 		Base64.Encoder base64Encoder = Base64.getEncoder();
-		
+
 		String stringifiedCredential = PREFIX + strength + SEPARATOR + base64Encoder.encodeToString(salt) +
 				SEPARATOR + base64Encoder.encodeToString(hash);
 
 		return new PBKDF2Credential(stringifiedCredential, salt, hash, strength);
 	}
-	
+
 	private boolean check(String password) {
 		try {
 			KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, getIterationsFromStrength(strength), HASH_BITS);

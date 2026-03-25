@@ -1,12 +1,22 @@
 #!/bin/bash
 
-HOST=localhost
+HOST="${DB_HOST:-localhost}"
 DB_NAME=gis
 DB_USER=postgres
 RETRY_MAX=20
 RETRY_INTERVAL=5
 PROJECT_DIR="$(pwd)" # Store the original directory
 CONTAINER_NAME=oscar-postgis-container
+
+# Set up DB password secret
+if [ -z "$POSTGRES_PASSWORD_FILE" ]; then
+    export POSTGRES_PASSWORD_FILE="${PROJECT_DIR}/.db_password"
+fi
+
+if [ ! -f "$POSTGRES_PASSWORD_FILE" ]; then
+    echo "Generating new database password..."
+    openssl rand -base64 32 > "$POSTGRES_PASSWORD_FILE"
+fi
 
 #sudo docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
@@ -48,10 +58,11 @@ else
       --name $CONTAINER_NAME \
       -e POSTGRES_DB=$DB_NAME \
       -e POSTGRES_USER=$DB_USER \
-      -e POSTGRES_PASSWORD=postgres \
+      -e POSTGRES_PASS=$(cat "$POSTGRES_PASSWORD_FILE") \
       -e DATADIR=/var/lib/postgresql/data \
       -p 5432:5432 \
       -v "$(pwd)/pgdata:/var/lib/postgresql/data" \
+      -v "$POSTGRES_PASSWORD_FILE:/run/secrets/db_password" \
       -d \
       oscar-postgis-arm || { echo "Failed to start PostGIS container"; exit 1; }
 fi
@@ -60,16 +71,24 @@ fi
 echo "Waiting for PostGIS ARM64 (PostgreSQL) to be ready..."
 
 RETRY_COUNT=0
-export PGPASSWORD=postgres  # Needed for pg_isready with password
-
-until docker exec "$CONTAINER_NAME" pg_isready -U "$DB_USER" -d "$DB_NAME" > /dev/null 2>&1; do
+until docker exec -u "$DB_USER" "$CONTAINER_NAME" pg_isready -d "$DB_NAME" > /dev/null 2>&1; do
   echo "PostGIS not ready yet, retrying..."
   sleep "${RETRY_INTERVAL}"
 done
 
 echo "PostGIS (PostgreSQL) is ready! Please wait for OpenSensorHub to start..."
 
-sleep 10
+sleep 30
+
+# Final check
+until docker exec -u "$DB_USER" "$CONTAINER_NAME" pg_isready -d "$DB_NAME" > /dev/null 2>&1; do
+  echo "PostGIS still restarting, waiting..."
+  sleep 5
+done
+
+# Export for OSH backend
+export DB_HOST="$HOST"
+export POSTGRES_PASSWORD_FILE="$POSTGRES_PASSWORD_FILE"
 
 # Launch osh-node-oscar
 cd "$PROJECT_DIR/osh-node-oscar" || { echo "Error: osh-node-oscar not found"; exit 1; }
