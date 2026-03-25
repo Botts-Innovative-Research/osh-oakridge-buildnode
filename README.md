@@ -87,3 +87,49 @@ Below is a list of suggested configuration parameters at varying levels of maxim
 `effective_cache_size` - Should be around 70-75% of maximum RAM
 `work_mem` - 16MB to 64MB. Depends on maximum system memory and size of the load
 `maintenance_work_mem` - 512MB to 2GB. Depends on the load, but it's OK to try high numbers
+
+# Secure Node Over TLS (HTTPS)
+In order to secure the OSH node over TLS, you must generate a Java keystore with an SSL certificate.
+
+Below is the command to generate a keystore with a self-signed certificate.
+
+`keytool -genkeypair -alias <alias_name> -keyalg RSA -keysize 2048 -validity <days> -keystore <keystore_filename>.jks -storepass <keystore_password> -keypass <key_password> -dname "CN=<Common Name>, OU=<Organizational Unit>, O=<Organization>, L=<Locality>, ST=<State>, C=<Country>" -ext "SAN=<Subject Alternative Name>"`
+
+Then, in your OSH config (`config.json`), or in the Admin Panel under `Network` -> `HTTP Server`, you must specify the key store path, password, key alias, and HTTPS port.
+
+An example of the `config.json`'s HTTP Server config is shown below:
+
+```json
+{
+    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+    "httpPort": 8282,
+    "httpsPort": 8443,
+    "servletsRootUrl": "/sensorhub",
+    "authMethod": "BASIC",
+    "keyStorePath": "osh-keystore.jks",
+    "keyStorePassword": "changeit",
+    "keyAlias": "oscar-key",
+    "trustStorePath": ".keystore/ssl_trust",
+    "enableCORS": true,
+    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.HttpServer",
+    "name": "HTTP Server"
+}
+```
+
+You can also edit this information in the OSH launch scripts at `osh-node-oscar/launch.(sh|bat)`
+
+```shell
+java -Xms6g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError \
+	-Dlogback.configurationFile=./logback.xml \
+	-cp "lib/*" \
+	-Djava.system.class.loader="org.sensorhub.utils.NativeClassLoader" \
+	-Djavax.net.ssl.keyStore="./osh-keystore.jks" \
+	-Djavax.net.ssl.keyStorePassword="changeit" \
+	-Djavax.net.ssl.trustStore="$SCRIPT_DIR/trustStore.jks" \
+	-Djavax.net.ssl.trustStorePassword="changeit" \
+	-Djava.library.path="./nativelibs" \
+	com.botts.impl.security.SensorHubWrapper ./config.json ./db
+
+```
