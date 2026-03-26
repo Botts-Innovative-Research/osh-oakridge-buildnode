@@ -3,9 +3,11 @@ setlocal
 
 echo Building Java trust store...
 
-REM Default password for the sytem trust store is "changeit". Edit this next
-REM line if it's something different in your Java installation.
-set "STOREPASS=changeit"
+if "%TRUSTSTORE_PASSWORD%"=="" (
+    echo CRITICAL ERROR: TRUSTSTORE_PASSWORD not set. Cannot load truststore password. Halting startup.
+    exit /b 1
+)
+set "STOREPASS=%TRUSTSTORE_PASSWORD%"
 
 REM Get the path of this script.
 set "SCRIPTDIR=%~dp0"
