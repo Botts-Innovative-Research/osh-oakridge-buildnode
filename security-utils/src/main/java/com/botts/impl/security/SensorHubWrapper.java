@@ -1,6 +1,7 @@
 package com.botts.impl.security;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,7 +19,7 @@ public class SensorHubWrapper {
 	 * "javax.net.ssl.keyStore" system property.
 	 */
 	public static final String KEYSTORE = "KEYSTORE";
-	
+
 	/**
 	 * Name of the environment variable that specifies the type (e.g. "jks" or "pkcs12") of the file named by the
 	 * KEYSTORE environment variable. This is used for the "javax.net.ssl.keyStoreType" system property.
@@ -54,14 +55,17 @@ public class SensorHubWrapper {
 	 * the named file, rather than from the value of the environment variable itself.
 	 */
 	public static final String FILE_SUFFIX = "_FILE";
-	
+
 	/**
 	 * Name of the environment variable that, if set to a non-empty value, will cause this class to emit some
 	 * information about where it loaded certificates from.
 	 */
 	public static final String SHOW_CMD = "SHOW_CMD";
-	
-	public static void main(String[] args) throws IOException {
+
+	public static void main(String[] args) throws Exception {
+		// Run CA check and renewal
+		LocalCAUtility.checkAndRenewCertificates();
+
 		String showCmdEnv = System.getenv(SHOW_CMD);
 		boolean debug = nonBlank(showCmdEnv);
 
@@ -69,7 +73,18 @@ public class SensorHubWrapper {
 		// for empty/non-set values.
 		String keyStoreEnv = System.getenv(KEYSTORE);
 		String keyStoreTypeEnv = System.getenv(KEYSTORE_TYPE);
-		PasswordValue keyStorePassword = getPasswordValue(KEYSTORE_PASSWORD, "changeit");
+
+		PasswordValue keyStorePassword;
+		File appSecrets = new File(".app_secrets");
+		if (appSecrets.exists()) {
+			String val = firstLineOfFile(appSecrets.getAbsolutePath());
+			keyStorePassword = new PasswordValue(val, "KEYSTORE_PASSWORD_FILE", appSecrets.getAbsolutePath(), PasswordSpecifier.FILE_ENVIRONMENT_VARIABLE);
+		} else {
+			keyStorePassword = getPasswordValue(KEYSTORE_PASSWORD, null);
+			if (keyStorePassword.getValue() == null) {
+				throw new IOException("CRITICAL ERROR: .app_secrets not found and KEYSTORE_PASSWORD not set. Cannot load keystore password. Halting startup.");
+			}
+		}
 
 		System.setProperty("javax.net.ssl.keyStore", keyStoreEnv);
 		System.setProperty("javax.net.ssl.keyStoreType", keyStoreTypeEnv);
@@ -77,8 +92,17 @@ public class SensorHubWrapper {
 
 		String trustStoreEnv = System.getenv(TRUSTSTORE);
 		String trustStoreTypeEnv = System.getenv(TRUSTSTORE_TYPE);
-		PasswordValue trustStorePassword = getPasswordValue(TRUSTSTORE_PASSWORD, "changeit");
-		
+		PasswordValue trustStorePassword;
+		if (appSecrets.exists()) {
+			String val = firstLineOfFile(appSecrets.getAbsolutePath());
+			trustStorePassword = new PasswordValue(val, "TRUSTSTORE_PASSWORD_FILE", appSecrets.getAbsolutePath(), PasswordSpecifier.FILE_ENVIRONMENT_VARIABLE);
+		} else {
+			trustStorePassword = getPasswordValue(TRUSTSTORE_PASSWORD, null);
+			if (trustStorePassword.getValue() == null) {
+				throw new IOException("CRITICAL ERROR: TRUSTSTORE_PASSWORD not set. Cannot load truststore password. Halting startup.");
+			}
+		}
+
 		System.setProperty("javax.net.ssl.trustStore", trustStoreEnv);
 		System.setProperty("javax.net.ssl.trustStoreType", trustStoreTypeEnv);
 		System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword.getValue());
@@ -92,24 +116,24 @@ public class SensorHubWrapper {
 			System.out.println("Trust store type:     " + trustStoreTypeEnv);
 			System.out.println("Trust store password: " + trustStorePassword.getDescription());
 		}
-		
+
 		SensorHub.main(args);
 	}
-	
+
 	/**
 	 * Utility method for getting passwords from environment variables.
-	 * 
+	 *
 	 * We're assuming that passwords will be provided in one of two ways: (1) by specifying a "secret file" in an
 	 * environment variable named "XXX_FILE", whose content is the password, or (2) by specifying the password
 	 * directly in an environment variable named just "XXX" (without the "_FILE" prefix).
-	 * 
+	 *
 	 * This method here checks the "_FILE" version first, and if it's present, returns the content of the file as a
 	 * String. Otherwise it will look for plain "XXX" and return the value of that environment variable, if present.
 	 * And if neither is present, will return the default value given as the second parameter.
 	 */
 	private static PasswordValue getPasswordValue(String envVarName, String defaultValue) throws IOException {
 		String fileEnvVarName = envVarName + FILE_SUFFIX;
-		
+
 		String filename = System.getenv(fileEnvVarName);
 		if (nonBlank(filename)) {
 			String value = firstLineOfFile(filename);
@@ -123,7 +147,7 @@ public class SensorHubWrapper {
 			}
 		}
 	}
-	
+
 	/**
 	 * Reads the first line of a file and returns it as a String. Assumes UTF-8 encoding in the file. Does not include
 	 * the line terminator in the return value.
@@ -135,14 +159,14 @@ public class SensorHubWrapper {
 			return bufferedReader.readLine();
 		}
 	}
-	
+
 	/**
 	 * Returns true if the given string is non-null and has length greater than zero. Returns false otherwise.
 	 */
 	private static boolean nonBlank(String s) {
 		return (s != null) && (s.length() > 0);
 	}
-	
+
 	public enum PasswordSpecifier {
 		ENVIRONMENT_VARIABLE,
 		FILE_ENVIRONMENT_VARIABLE,
@@ -177,7 +201,7 @@ public class SensorHubWrapper {
 		public PasswordSpecifier getHow() {
 			return how;
 		}
-		
+
 		public String getDescription() {
 			switch (how) {
 			case ENVIRONMENT_VARIABLE:
