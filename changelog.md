@@ -1,5 +1,12 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+
+## [Unreleased]
+### Added
+- Added Progressive Web App (PWA) capabilities, allowing the client to be installed as a local application with offline support.
+- Integrated Spectroscopic QR Code scanning for Adjudication workflows.
+- Added WebID analysis and result logging to the Adjudication Detail view.
+
 ## 3.0.0 2026-02-04
 This is the official first release of 3.0.0
 ### Changes
