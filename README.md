@@ -73,11 +73,40 @@ After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clie
 
 For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
 
-# Release Checklist
-- Version in `build.gradle`
-- Version in `dist/config/standard/config.json`
-- Make sure no `pgdata` in `dist/release/postgis`
-- Build with `./build-all.sh` or `./build-all.bat`
+# Releasing a New Version
+
+## Release Checklist
+Before releasing, ensure the following on the `dev` branch:
+1. Update `version` in `build.gradle` to match the release version (e.g. `"3.2.0"`)
+2. Update `deploymentName` in `dist/config/standard/config.json` to `"OSCAR <version>"` (e.g. `"OSCAR 3.2.0"`)
+3. Ensure there is no `pgdata` directory in `dist/release/postgis`
+4. Verify the build succeeds locally with `./build-all.sh` or `./build-all.bat`
+
+## Release Steps
+1. **Merge `dev` into `main`:**
+   ```bash
+   git checkout main
+   git pull origin main
+   git merge dev
+   git push origin main
+   ```
+   Alternatively, create a pull request from `dev` → `main` on GitHub and merge it.
+
+2. **Tag the release on `main`:**
+   ```bash
+   git checkout main
+   git pull origin main
+   git tag v<version>    # e.g. git tag v3.2.0
+   git push origin v<version>
+   ```
+
+3. **The release workflow runs automatically.** It will:
+   - Validate that the tag is on the `main` branch
+   - Verify version numbers match the tag in `build.gradle` and `config.json`
+   - Check that `pgdata` does not exist in the release directory
+   - Build the project (Gradle + oscar-viewer)
+   - Package the source code with all submodules included
+   - Create a GitHub Release with the build artifact and source archive
 
 # PostgreSQL Configuration
 There are some tweaks that can be made to the PostgreSQL configuration to make it perform better.
