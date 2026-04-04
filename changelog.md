@@ -1,5 +1,12 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.2.0 2026-04-04
+### Changes
+- Now fully supporting RS350 systems in backend and viewer
+- Updated notification models and redirects.
+- Updated Web ID / Adjudication UI
+- Automated RS350 N42 Web ID analysis
+
 ## 3.1.0 2026-03-09
 ### Changes
 - Attach node names to lane names on frontend dashboard to differentiate same-name lanes
