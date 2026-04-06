@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - Updated Web ID / Adjudication UI
 - Automated RS350 N42 Web ID analysis
 
-## 3.1.0 2026-03-09
+## 3.1.0 2026-03-19
 ### Changes
 - Attach node names to lane names on frontend dashboard to differentiate same-name lanes
 - Add mobile UI and PWA support (with push notifications)
