@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 ## 3.2.1 2026-04-XX
 ### Fixes
 - Fixed client dashboard UI to allow double tapping occupancy instead of scrolling to click on "Details" button
+- Fixed bug where video clips would not load on first /event-details page load
 - Fixed Cambio usage to work offline
 - Fixed bug where OSCAR Service Module would fail to restart
 
