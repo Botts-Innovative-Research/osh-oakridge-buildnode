@@ -2,7 +2,7 @@ apply from: gradle.oshCoreDir + '/common.gradle'
 description = ''
 
 allprojects {
-    version = "3.2.0"
+    version = "3.2.1"
 }
 
 subprojects {
@@ -95,10 +95,6 @@ distributions{
                 from 'third-party-drivers'
                 from project.configurations.runtimeClasspath
             }
-            into("osh-node-oscar/nativelibs") {
-                from 'dist/nativelibs'
-            }
-
             // POSTGIS / DOCKER / SCRIPTS
             into('.') {
                 from('dist/release')
