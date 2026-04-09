@@ -1,11 +1,15 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
-## 3.2.1 2026-04-XX
+## 3.3.0 2026-04-08
 ### Fixes
 - Fixed client dashboard UI to allow double tapping occupancy instead of scrolling to click on "Details" button
 - Fixed bug where video clips would not load on first /event-details page load
 - Fixed Cambio usage to work offline
 - Fixed bug where OSCAR Service Module would fail to restart
+
+### Changes
+- Modified occupancy data structure for RS350 occupancies, along with UI.
+  - (This makes 3.3.0 incompatible with previous versions)
 
 ## 3.2.0 2026-04-04
 ### Changes
