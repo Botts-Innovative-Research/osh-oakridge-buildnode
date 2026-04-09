@@ -1,5 +1,10 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.3.1 2026-04-09
+### Fixes
+- Fixed OSCAR notifications
+- Set video retention policy to enabled by default
+
 ## 3.3.0 2026-04-08
 ### Fixes
 - Fixed client dashboard UI to allow double tapping occupancy instead of scrolling to click on "Details" button
