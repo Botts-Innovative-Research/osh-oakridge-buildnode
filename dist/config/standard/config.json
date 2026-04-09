@@ -140,6 +140,13 @@
   },
   {
     "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+    "videoRetentionConfig": {
+      "objClass": "com.botts.impl.service.oscar.video.VideoRetentionConfig",
+      "timeToRetention": 7,
+      "videoQueryPeriod": 1,
+      "enableFrameRetention": true,
+      "frameRetentionCount": 5
+    },
     "nodeId": "default",
     "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
     "statsFrequencyMinutes": 60,
