@@ -1,5 +1,15 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.3.3 2026-04-22
+### Fixes
+- Fixed crashes caused by spreadsheet import
+- Fixed locations not being deserialized/loaded from spreadsheet config
+
+## 3.3.2 2026-04-17
+### Fixes
+- Fixed crash caused by video retention bug
+- Fixed daily-file creation
+
 ## 3.3.1 2026-04-09
 ### Fixes
 - Fixed OSCAR notifications
