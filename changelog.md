@@ -1,5 +1,9 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.3.6 2026-04-23
+### Changes
+- Updated documentation with correct launch script names
+
 ## 3.3.5 2026-04-23
 ### Fixes
 - Fixed bug in viewer with MQTT message parsing
