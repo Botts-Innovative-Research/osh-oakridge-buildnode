@@ -483,4 +483,3 @@ This section captures known gaps and enhancement ideas so they are not confused 
 | PWA          | Progressive web app. The installable version of the viewer for desktop or mobile use.                              |
 | RS350        | A supported backpack-style mobile detector lane type.                                                              |
 
-# End of document.
