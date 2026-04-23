@@ -1,5 +1,10 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.3.5 2026-04-23
+### Fixes
+- Fixed bug in viewer with MQTT message parsing
+- Updated documentation to reflect new changes
+
 ## 3.3.4 2026-04-22
 ### Fixes
 - Fixed server side filtering with queries containing numeric comparisons
