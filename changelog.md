@@ -1,5 +1,9 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.3.4 2026-04-22
+### Fixes
+- Fixed server side filtering with queries containing numeric comparisons
+
 ## 3.3.3 2026-04-22
 ### Fixes
 - Fixed crashes caused by spreadsheet import
