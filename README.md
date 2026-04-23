@@ -8,6 +8,21 @@ This repository combines all the OSH modules and dependencies to deploy the OSH 
 - [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
 - Node v22
 
+## Quick Start
+1. **Download the latest release**
+   - Go to the Releases section of the repository and download the latest compiled release archive (for example, `oscar-3.3.5.zip`).
+2. **Extract the archive**
+   - Extract the downloaded ZIP file to a directory of your choice.
+3. **Verify Docker Engine**
+   - Ensure that [Docker engine](https://www.docker.com) is installed and actively running on your host machine.
+4. **Launch the system**
+   - Open a terminal or command prompt in the extracted directory and run the OS-specific launch script:
+     - **Windows:** Run `launch-all.bat`
+     - **Linux/macOS:** Run `./launch-all.sh`
+     - **ARM systems:** Run `./launch-all-arm.sh`
+
+For a complete guide covering architecture, deployment, configuration, operations, and troubleshooting, please refer to the [OSCAR System Documentation Manual](dist/documentation/OSCAR_System_Documentation_Manual_3.5.md).
+
 ## Installation
 Clone the repository and update all submodules recursively
 

@@ -86,7 +86,7 @@ The diagram below condenses the system relationships. It is not a source-code cl
 
 # 3. Installation and initial startup
 
-Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific launch-all script. The database and application come up together in the default deployment path.
+Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific launch-all script (`launch-all.bat` for Windows, `launch-all.sh` for Linux/macOS, or `launch-all-arm.sh` for ARM systems). The database and application come up together in the default deployment path.
 
 ## Prerequisites
 
@@ -105,7 +105,7 @@ Installation is intentionally simple: download a release archive, extract it, en
 >
 > 2\. Install Docker and verify that the Docker service is running before starting OSCAR.
 >
-> 3\. Run the launch-all script for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
+> 3\. Run the launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
 >
 > 4\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
 >
@@ -450,7 +450,7 @@ This section captures known gaps and enhancement ideas so they are not confused 
 
 > 1\. Install Docker and verify that the service is running on the host before launch.
 >
-> 2\. Extract the chosen OSCAR release and start it with the OS-specific launch-all script.
+> 2\. Extract the chosen OSCAR release and start it with the OS-specific launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`).
 >
 > 3\. Change the initial admin password using the package-provided settings file and password-initialization script before production use.
 >
