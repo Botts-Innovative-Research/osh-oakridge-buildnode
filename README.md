@@ -4,6 +4,7 @@ This repository combines all the OSH modules and dependencies to deploy the OSH 
 
 ## Requirements
 - [Java 21.0.10+](https://www.oracle.com/java/technologies/downloads/#java21)
+- Docker engine
 - [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
 - Node v22
 
