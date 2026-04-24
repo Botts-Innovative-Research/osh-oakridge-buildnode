@@ -1,5 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.5.0 2026-04-24
+### Changes
+- Updated LaneSystem README
+
+This is the finalized release for OSCAR phase 3.5.
+
 ## 3.3.6 2026-04-23
 ### Changes
 - Updated documentation with correct launch script names
