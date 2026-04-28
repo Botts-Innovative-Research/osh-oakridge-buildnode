@@ -3,12 +3,14 @@
 This repository combines all the OSH modules and dependencies to deploy the OSH server and client for ORNL.
 
 ## Requirements
+
 - [Java 21.0.10+](https://www.oracle.com/java/technologies/downloads/#java21)
 - [Docker engine](https://www.docker.com)
-- [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
+- [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode)
 - Node v22
 
 ## Quick Start
+
 1. **Download the latest release**
    - Go to the Releases section of the repository and download the latest compiled release archive (for example, `oscar-3.3.5.zip`).
 2. **Extract the archive**
@@ -24,17 +26,22 @@ This repository combines all the OSH modules and dependencies to deploy the OSH 
 For a complete guide covering architecture, deployment, configuration, operations, and troubleshooting, please refer to the [OSCAR System Documentation Manual](dist/documentation/OSCAR_System_Documentation_Manual_3.5.md).
 
 ## Installation
+
 Clone the repository and update all submodules recursively
 
 ```bash
 git clone git@github.com:Botts-Innovative-Research/osh-oakridge-buildnode.git --recursive
 ```
+
 If you've already cloned without `--recursive`, run:
+
 ```bash
 cd path/to/osh-oakridge-buildnode
 git submodule update --init --recursive
 ```
-## Build 
+
+## Build
+
 Navigate to the project directory:
 
 ```bash
@@ -53,62 +60,76 @@ Run the build script (Windows):
 ./build-all.bat
 ```
 
-After the build completes, it can be located in `build/distributions/` 
+After the build completes, it can be located in `build/distributions/`
 
 ## Deploy and Start OSH Node
+
 1. Unzip the distribution using the command line or File Explorer:
 
-    Option 1: Command Line
-    ```bash
-    unzip build/distributions/osh-node-oscar-1.0.zip
-    cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
+   Option 1: Command Line
+
+   ```bash
+   unzip build/distributions/osh-node-oscar-1.0.zip
+   cd osh-node-oscar-1.0/osh-node-oscar-1.0
+   ```
+
    ```bash
     tar -xf build/distributions/osh-node-oscar-1.0.zip
     cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
+   ```
+
    Option 2: Use File Explorer
-    1. Navigate to `path/to/osh-oakridge-buildnode/build/distributions/`
-    2. Right-click `osh-node-oscar-1.0.zip`.
-    3. Select **Extract All..**
-    4. Choose your destination, (or leave the default) and extract.
+   1. Navigate to `path/to/osh-oakridge-buildnode/build/distributions/`
+   2. Right-click `osh-node-oscar-1.0.zip`.
+   3. Select **Extract All..**
+   4. Choose your destination, (or leave the default) and extract.
+
 1. Launch the OSH node:
    Run the launch script, "launch.sh" for linux/mac and "launch.bat" for windows.
-2. Access the OSH Node
+1. Access the OSH Node
+
 - Remote: **[ip-address]:8282/sensorhub/admin**
-- Locally:  **http://localhost:8282/sensorhub/admin**
+- Locally: **http://localhost:8282/sensorhub/admin**
 
 The default credentials to access the OSH Node are admin:admin. This can be changed in the Security section of the admin page.
 
 For documentation on configuring a Lane System on the OSH Admin panel, please refer to the OSCAR Documentation provided in the Google Drive documentation folder.
 
 ## Deploy the Client
+
 After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clients endpoint:
+
 - Remote: **[ip-address]:8282**
 - Local: **http://localhost:8282/**
 
-For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
+For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder.
 
 # Releasing a New Version
 
 ## Release Checklist
+
 Before releasing, ensure the following on the `dev` branch:
+
 1. Update `version` in `build.gradle` to match the release version (e.g. `"3.2.0"`)
 2. Update `deploymentName` in `dist/config/standard/config.json` to `"OSCAR <version>"` (e.g. `"OSCAR 3.2.0"`)
 3. Ensure there is no `pgdata` directory in `dist/release/postgis`
 4. Verify the build succeeds locally with `./build-all.sh` or `./build-all.bat`
 
 ## Release Steps
+
 1. **Merge `dev` into `main`:**
+
    ```bash
    git checkout main
    git pull origin main
    git merge dev
    git push origin main
    ```
+
    Alternatively, create a pull request from `dev` → `main` on GitHub and merge it.
 
 2. **Tag the release on `main`:**
+
    ```bash
    git checkout main
    git pull origin main
@@ -125,8 +146,11 @@ Before releasing, ensure the following on the `dev` branch:
    - Create a GitHub Release with the build artifact and source archive
 
 # PostgreSQL Configuration
+
 There are some tweaks that can be made to the PostgreSQL configuration to make it perform better.
 Below is a list of suggested configuration parameters at varying levels of maximum system RAM.
+
+For instructions on configuring a standalone, non-Docker PostgreSQL installation with the proper database and extensions, please refer to the [Standard PostgreSQL Database Setup](dist/documentation/Standard_PostgreSQL_Setup.md) documentation.
 
 `shared_buffers` - Should be around 25% of maximum RAM
 `effective_cache_size` - Should be around 70-75% of maximum RAM
@@ -134,6 +158,7 @@ Below is a list of suggested configuration parameters at varying levels of maxim
 `maintenance_work_mem` - 512MB to 2GB. Depends on the load, but it's OK to try high numbers
 
 # Secure Node Over TLS (HTTPS)
+
 In order to secure the OSH node over TLS, you must generate a Java keystore with an SSL certificate.
 
 Below is the command to generate a keystore with a self-signed certificate.
@@ -146,20 +171,20 @@ An example of the `config.json`'s HTTP Server config is shown below:
 
 ```json
 {
-    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
-    "httpPort": 8282,
-    "httpsPort": 8443,
-    "servletsRootUrl": "/sensorhub",
-    "authMethod": "BASIC",
-    "keyStorePath": "osh-keystore.jks",
-    "keyStorePassword": "changeit",
-    "keyAlias": "oscar-key",
-    "trustStorePath": ".keystore/ssl_trust",
-    "enableCORS": true,
-    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.HttpServer",
-    "name": "HTTP Server"
+  "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+  "httpPort": 8282,
+  "httpsPort": 8443,
+  "servletsRootUrl": "/sensorhub",
+  "authMethod": "BASIC",
+  "keyStorePath": "osh-keystore.jks",
+  "keyStorePassword": "changeit",
+  "keyAlias": "oscar-key",
+  "trustStorePath": ".keystore/ssl_trust",
+  "enableCORS": true,
+  "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+  "autoStart": true,
+  "moduleClass": "org.sensorhub.impl.service.HttpServer",
+  "name": "HTTP Server"
 }
 ```
 
