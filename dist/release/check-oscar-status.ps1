@@ -4,266 +4,133 @@ param(
     [string]$OutFile = ""
 )
 
-$ErrorActionPreference = 'Stop'
-
-function Get-LatestMonitorDir {
-    param([string]$Root)
-    Get-ChildItem -Path $Root -Directory -Filter 'oscar-monitor-*' |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
-}
-
-function Get-SnapshotDirs {
-    param([string]$Dir)
-    Get-ChildItem -Path $Dir -Directory |
-        Where-Object { $_.Name -match '^\d{8}-\d{6}$' } |
-        Sort-Object Name
-}
-
-function Get-FirstMatchingLine {
-    param(
-        [string]$Path,
-        [string]$Pattern
-    )
-    if (-not (Test-Path $Path)) { return $null }
-    Select-String -Path $Path -Pattern $Pattern | Select-Object -First 1 | ForEach-Object { $_.Line }
-}
-
-function Add-Section {
-    param(
-        [System.Text.StringBuilder]$Sb,
-        [string]$Title,
-        [string[]]$Lines
-    )
-    [void]$Sb.AppendLine("=== $Title ===")
-    foreach ($line in $Lines) {
-        [void]$Sb.AppendLine($line)
-    }
-    [void]$Sb.AppendLine()
-}
-
-function Add-CommandOutput {
-    param(
-        [System.Text.StringBuilder]$Sb,
-        [string]$Title,
-        [scriptblock]$Script
-    )
-    [void]$Sb.AppendLine("=== $Title ===")
-    try {
-        $result = & $Script 2>&1 | Out-String
-        [void]$Sb.Append($result)
-    }
-    catch {
-        [void]$Sb.AppendLine("ERROR: $($_.Exception.Message)")
-    }
-    [void]$Sb.AppendLine()
-}
-
-$ResolvedBase = (Resolve-Path $BaseDir).Path
-Set-Location $ResolvedBase
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'SilentlyContinue'
+Set-Location $BaseDir
 
 if ([string]::IsNullOrWhiteSpace($MonitorDir)) {
-    $latest = Get-LatestMonitorDir -Root $ResolvedBase
-    if (-not $latest) {
-        throw "No oscar-monitor-* directory found in $ResolvedBase"
+    $MonitorDir = Get-ChildItem -Directory -Filter 'oscar-monitor-*' | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $MonitorDir -or -not (Test-Path $MonitorDir)) { throw 'No oscar-monitor-* directory found.' }
+if ([string]::IsNullOrWhiteSpace($OutFile)) { $OutFile = Join-Path (Get-Location) ("oscar-status-{0}.txt" -f (Get-Date -Format 'yyyyMMdd-HHmmss')) }
+
+$snaps = Get-ChildItem -Path $MonitorDir -Directory | Sort-Object Name
+$first = $snaps | Select-Object -First 1
+$last = $snaps | Select-Object -Last 1
+$jvmPidFile = Join-Path $MonitorDir 'jvm-pid.txt'
+$pidFromMonitor = if (Test-Path $jvmPidFile) { (Get-Content $jvmPidFile | Select-Object -First 1).Trim() } else { '' }
+$javaProc = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -match 'SensorHubWrapper' } | Select-Object -First 1
+
+function Read-Text([string]$Path) { if (Test-Path $Path) { Get-Content $Path -Raw } else { '' } }
+function Read-First([string]$Path) { if (Test-Path $Path) { (Get-Content $Path | Select-Object -First 1).Trim() } else { '' } }
+function Extract-DbCount([string]$Path, [string]$State) {
+    if (-not (Test-Path $Path)) { return '' }
+    foreach ($line in Get-Content $Path) {
+        $parts = $line -split '\|'
+        if ($parts.Count -ge 2 -and $parts[0].Trim() -eq $State) { return $parts[1].Trim() }
     }
-    $MonitorDir = $latest.FullName
-}
-elseif (-not [System.IO.Path]::IsPathRooted($MonitorDir)) {
-    $MonitorDir = Join-Path $ResolvedBase $MonitorDir
-}
-
-if (-not (Test-Path $MonitorDir)) {
-    throw "Monitor directory not found: $MonitorDir"
-}
-
-if ([string]::IsNullOrWhiteSpace($OutFile)) {
-    $OutFile = Join-Path $ResolvedBase ("oscar-status-{0}.txt" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
-}
-elseif (-not [System.IO.Path]::IsPathRooted($OutFile)) {
-    $OutFile = Join-Path $ResolvedBase $OutFile
-}
-
-$Snapshots = Get-SnapshotDirs -Dir $MonitorDir
-$FirstSnap = $Snapshots | Select-Object -First 1
-$LastSnap  = $Snapshots | Select-Object -Last 1
-
-$JvmPidFile = Join-Path $MonitorDir 'jvm-pid.txt'
-$PidFromMonitor = if (Test-Path $JvmPidFile) { (Get-Content $JvmPidFile -Raw).Trim() } else { '' }
-
-$LiveJava = Get-CimInstance Win32_Process -Filter "Name='java.exe'" | Where-Object {
-    $_.CommandLine -match 'com\.botts\.impl\.security\.SensorHubWrapper'
-} | Select-Object -First 1
-$LivePid = if ($LiveJava) { [string]$LiveJava.ProcessId } else { '' }
-
-$Sb = New-Object System.Text.StringBuilder
-[void]$Sb.AppendLine('OSCAR STATUS REPORT')
-[void]$Sb.AppendLine("Generated: $(Get-Date -Format o)")
-[void]$Sb.AppendLine("Base directory: $ResolvedBase")
-[void]$Sb.AppendLine("Monitor directory: $MonitorDir")
-[void]$Sb.AppendLine("Output file: $OutFile")
-[void]$Sb.AppendLine()
-
-Add-Section -Sb $Sb -Title 'PROCESS STATUS' -Lines @(
-    "PID from monitor: $PidFromMonitor",
-    "Live OSCAR PID:   $LivePid"
-)
-
-Add-CommandOutput -Sb $Sb -Title 'LIVE OSCAR PROCESS LIST' -Script {
-    Get-CimInstance Win32_Process -Filter "Name='java.exe'" |
-        Where-Object { $_.CommandLine -match 'com\.botts\.impl\.security\.SensorHubWrapper' } |
-        Select-Object ProcessId, Name, CommandLine | Format-List *
-}
-
-Add-CommandOutput -Sb $Sb -Title 'DOCKER STATUS' -Script {
-    docker ps --filter name=oscar-postgis-container
-}
-
-Add-CommandOutput -Sb $Sb -Title 'SYSTEM MEMORY' -Script {
-    $os = Get-CimInstance Win32_OperatingSystem
-    $totalGB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
-    $freeGB = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
-    $usedGB = [math]::Round($totalGB - $freeGB, 2)
-    $totalVirtGB = [math]::Round($os.TotalVirtualMemorySize / 1MB, 2)
-    $freeVirtGB = [math]::Round($os.FreeVirtualMemory / 1MB, 2)
-    $usedVirtGB = [math]::Round($totalVirtGB - $freeVirtGB, 2)
-    "Physical RAM total: $totalGB GB"
-    "Physical RAM used:  $usedGB GB"
-    "Physical RAM free:  $freeGB GB"
-    "Virtual total:      $totalVirtGB GB"
-    "Virtual used:       $usedVirtGB GB"
-    "Virtual free:       $freeVirtGB GB"
     ''
-    Get-Counter '\Memory\Committed Bytes','\Memory\Commit Limit','\Paging File(_Total)\% Usage' |
-        Select-Object -ExpandProperty CounterSamples |
-        Select-Object Path, CookedValue | Format-Table -AutoSize
+}
+function Calc-Slots($MaxConn, $Reserved) {
+    if ($MaxConn -match '^\d+$' -and $Reserved -match '^\d+$') { return [int]$MaxConn - [int]$Reserved }
+    ''
 }
 
-if ($LivePid) {
-    Add-CommandOutput -Sb $Sb -Title 'LIVE JVM PROCESS DETAILS' -Script {
-        $p = Get-Process -Id $LivePid
-        $perf = Get-CimInstance Win32_PerfFormattedData_PerfProc_Process | Where-Object { $_.IDProcess -eq [int]$LivePid }
-        $obj = [PSCustomObject]@{
-            Id = $p.Id
-            ProcessName = $p.ProcessName
-            CPU = $p.CPU
-            StartTime = $p.StartTime
-            WorkingSetMB = [math]::Round($p.WorkingSet64 / 1MB, 2)
-            PrivateMB = [math]::Round($p.PrivateMemorySize64 / 1MB, 2)
-            VirtualMB = [math]::Round($p.VirtualMemorySize64 / 1MB, 2)
-            HandleCount = $p.HandleCount
-            ThreadCount = $p.Threads.Count
-            PageFileMB = if ($perf) { [math]::Round($perf.PageFileBytes / 1MB, 2) } else { $null }
-            PerfWorkingSetMB = if ($perf) { [math]::Round($perf.WorkingSet / 1MB, 2) } else { $null }
-            PerfPrivateMB = if ($perf) { [math]::Round($perf.PrivateBytes / 1MB, 2) } else { $null }
-        }
-        $obj | Format-List *
-    }
+$sb = [System.Text.StringBuilder]::new()
+$null = $sb.AppendLine('OSCAR STATUS REPORT')
+$null = $sb.AppendLine("Generated: $(Get-Date -Format o)")
+$null = $sb.AppendLine("Base directory: $(Get-Location)")
+$null = $sb.AppendLine("Monitor directory: $MonitorDir")
+$null = $sb.AppendLine("Output file: $OutFile")
+$null = $sb.AppendLine()
+$null = $sb.AppendLine('=== PROCESS STATUS ===')
+$null = $sb.AppendLine("PID from monitor: $pidFromMonitor")
+$null = $sb.AppendLine(("Live OSCAR PID:   {0}" -f ($(if ($javaProc) { $javaProc.ProcessId } else { '<none>' }))))
+$null = $sb.AppendLine()
+$null = $sb.AppendLine((Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'monitor-oscar' } | Select-Object ProcessId, Name, CommandLine | Format-Table -AutoSize | Out-String))
+$null = $sb.AppendLine((Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'java.exe' -and $_.CommandLine -match 'SensorHubWrapper' } | Select-Object ProcessId, Name, CommandLine | Format-Table -AutoSize | Out-String))
+$null = $sb.AppendLine((& docker ps --filter name=oscar-postgis-container | Out-String))
+$null = $sb.AppendLine('=== SYSTEM MEMORY AND PAGEFILE ===')
+$null = $sb.AppendLine((Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory,TotalVirtualMemorySize,FreeVirtualMemory | Format-List | Out-String))
+$null = $sb.AppendLine((Get-Counter '\Memory\Committed Bytes','\Memory\Commit Limit','\Paging File(_Total)\% Usage' | Out-String))
 
-    if (Get-Command jcmd -ErrorAction SilentlyContinue) {
-        Add-CommandOutput -Sb $Sb -Title 'LIVE JVM JFR STATUS' -Script { jcmd $LivePid JFR.check }
-        Add-CommandOutput -Sb $Sb -Title 'LIVE JVM GC HEAP INFO' -Script { jcmd $LivePid GC.heap_info }
-        Add-CommandOutput -Sb $Sb -Title 'LIVE JVM NATIVE MEMORY SUMMARY' -Script { jcmd $LivePid VM.native_memory summary }
-    }
-    else {
-        Add-Section -Sb $Sb -Title 'LIVE JVM TOOLING' -Lines @('jcmd not found on PATH')
-    }
+if ($javaProc) {
+    $null = $sb.AppendLine('=== LIVE JVM PROCESS ===')
+    $null = $sb.AppendLine((Get-Process -Id $javaProc.ProcessId | Select-Object Id,ProcessName,Threads,VirtualMemorySize64,WorkingSet64,PrivateMemorySize64,CPU,StartTime | Format-List | Out-String))
+    $null = $sb.AppendLine('=== LIVE JVM JFR STATUS ===')
+    $null = $sb.AppendLine((& jcmd $javaProc.ProcessId JFR.check | Out-String))
+    $null = $sb.AppendLine('=== LIVE JVM GC HEAP INFO ===')
+    $null = $sb.AppendLine((& jcmd $javaProc.ProcessId GC.heap_info | Out-String))
+    $null = $sb.AppendLine('=== LIVE JVM NATIVE MEMORY SUMMARY ===')
+    $null = $sb.AppendLine((& jcmd $javaProc.ProcessId VM.native_memory summary | Out-String))
 }
 
-$FirstProc = if ($FirstSnap) { Join-Path $FirstSnap.FullName 'process.txt' } else { '' }
-$FirstPerf = if ($FirstSnap) { Join-Path $FirstSnap.FullName 'perfproc.txt' } else { '' }
-$FirstNmt  = if ($FirstSnap) { Join-Path $FirstSnap.FullName 'nmt-summary.txt' } else { '' }
-$FirstGc   = if ($FirstSnap) { Join-Path $FirstSnap.FullName 'gc-heap-info.txt' } else { '' }
+$lastMax = Read-First (Join-Path $last.FullName 'db-max-connections.txt')
+$lastReserved = Read-First (Join-Path $last.FullName 'db-superuser-reserved-connections.txt')
+$lastTotal = Read-First (Join-Path $last.FullName 'db-total-sessions.txt')
+$null = $sb.AppendLine('=== LIVE POSTGRES STATUS (FROM LAST SNAPSHOT) ===')
+$null = $sb.AppendLine("max_connections: $lastMax")
+$null = $sb.AppendLine("superuser_reserved_connections: $lastReserved")
+$null = $sb.AppendLine("usable_client_slots: $(Calc-Slots $lastMax $lastReserved)")
+$null = $sb.AppendLine("total_sessions: $lastTotal")
+$null = $sb.AppendLine("active: $(Extract-DbCount (Join-Path $last.FullName 'db-by-state.txt') 'active')")
+$null = $sb.AppendLine("idle: $(Extract-DbCount (Join-Path $last.FullName 'db-by-state.txt') 'idle')")
+$null = $sb.AppendLine("idle in transaction: $(Extract-DbCount (Join-Path $last.FullName 'db-by-state.txt') 'idle in transaction')")
+$null = $sb.AppendLine()
+$null = $sb.AppendLine('--- db-by-state ---')
+$null = $sb.AppendLine((Read-Text (Join-Path $last.FullName 'db-by-state.txt')))
+$null = $sb.AppendLine('--- db-by-app ---')
+$null = $sb.AppendLine((Read-Text (Join-Path $last.FullName 'db-by-app.txt')))
+$null = $sb.AppendLine('--- db-error ---')
+$null = $sb.AppendLine((Read-Text (Join-Path $last.FullName 'db-error.txt')))
 
-$LastProc = if ($LastSnap) { Join-Path $LastSnap.FullName 'process.txt' } else { '' }
-$LastPerf = if ($LastSnap) { Join-Path $LastSnap.FullName 'perfproc.txt' } else { '' }
-$LastNmt  = if ($LastSnap) { Join-Path $LastSnap.FullName 'nmt-summary.txt' } else { '' }
-$LastGc   = if ($LastSnap) { Join-Path $LastSnap.FullName 'gc-heap-info.txt' } else { '' }
+$null = $sb.AppendLine('=== FIRST SNAPSHOT SUMMARY ===')
+$null = $sb.AppendLine("First snapshot: $($first.FullName)")
+$null = $sb.AppendLine((Read-Text (Join-Path $first.FullName 'powershell-process.txt')))
+$null = $sb.AppendLine("db total sessions: $(Read-First (Join-Path $first.FullName 'db-total-sessions.txt'))")
+$null = $sb.AppendLine('=== LATEST SNAPSHOT SUMMARY ===')
+$null = $sb.AppendLine("Latest snapshot: $($last.FullName)")
+$null = $sb.AppendLine((Read-Text (Join-Path $last.FullName 'powershell-process.txt')))
+$null = $sb.AppendLine("db total sessions: $(Read-First (Join-Path $last.FullName 'db-total-sessions.txt'))")
 
-Add-Section -Sb $Sb -Title 'FIRST SNAPSHOT SUMMARY' -Lines @(
-    "First snapshot: $($FirstSnap.FullName)",
-    (Get-FirstMatchingLine -Path $FirstProc -Pattern '^WorkingSet64\s*:'),
-    (Get-FirstMatchingLine -Path $FirstProc -Pattern '^PrivateMemorySize64\s*:'),
-    (Get-FirstMatchingLine -Path $FirstProc -Pattern '^VirtualMemorySize64\s*:'),
-    (Get-FirstMatchingLine -Path $FirstProc -Pattern '^ThreadCount\s*:'),
-    (Get-FirstMatchingLine -Path $FirstPerf -Pattern '^PageFileBytes\s*:'),
-    (Get-FirstMatchingLine -Path $FirstNmt -Pattern '^Total:')
-).Where({ $_ }))
+$null = $sb.AppendLine('=== RECENT TREND (LAST 20 SNAPSHOTS) ===')
+foreach ($d in ($snaps | Select-Object -Last 20)) {
+    $dbTotal = Read-First (Join-Path $d.FullName 'db-total-sessions.txt')
+    $dbMax = Read-First (Join-Path $d.FullName 'db-max-connections.txt')
+    $dbReserved = Read-First (Join-Path $d.FullName 'db-superuser-reserved-connections.txt')
+    $dbActive = Extract-DbCount (Join-Path $d.FullName 'db-by-state.txt') 'active'
+    $dbIdle = Extract-DbCount (Join-Path $d.FullName 'db-by-state.txt') 'idle'
+    $proc = (Read-Text (Join-Path $d.FullName 'powershell-process.txt')) -replace '\r?\n',' '
+    $null = $sb.AppendLine("$($d.Name) $proc db_total=$dbTotal db_active=$dbActive db_idle=$dbIdle db_slots=$(Calc-Slots $dbMax $dbReserved)")
+}
+$null = $sb.AppendLine()
 
-if (Test-Path $FirstGc) {
-    Add-CommandOutput -Sb $Sb -Title 'FIRST SNAPSHOT GC HEAP INFO' -Script { Get-Content $FirstGc }
+$dbCsv = Join-Path $MonitorDir 'db-connection-trend.csv'
+if (Test-Path $dbCsv) {
+    $null = $sb.AppendLine('=== DB CONNECTION TREND CSV (LAST 40 LINES) ===')
+    $null = $sb.AppendLine(((Get-Content $dbCsv | Select-Object -Last 40) -join [Environment]::NewLine))
+    $null = $sb.AppendLine()
 }
 
-Add-Section -Sb $Sb -Title 'LATEST SNAPSHOT SUMMARY' -Lines @(
-    "Latest snapshot: $($LastSnap.FullName)",
-    (Get-FirstMatchingLine -Path $LastProc -Pattern '^WorkingSet64\s*:'),
-    (Get-FirstMatchingLine -Path $LastProc -Pattern '^PrivateMemorySize64\s*:'),
-    (Get-FirstMatchingLine -Path $LastProc -Pattern '^VirtualMemorySize64\s*:'),
-    (Get-FirstMatchingLine -Path $LastProc -Pattern '^ThreadCount\s*:'),
-    (Get-FirstMatchingLine -Path $LastPerf -Pattern '^PageFileBytes\s*:'),
-    (Get-FirstMatchingLine -Path $LastNmt -Pattern '^Total:')
-).Where({ $_ }))
+$null = $sb.AppendLine('=== LOG TAILS ===')
+$null = $sb.AppendLine('--- launch.stdout.log (last 50 lines) ---')
+$null = $sb.AppendLine(((Get-Content (Join-Path $MonitorDir 'launch.stdout.log') -Tail 50) -join [Environment]::NewLine))
+$null = $sb.AppendLine()
+$null = $sb.AppendLine('--- launch.stderr.log (last 50 lines) ---')
+$null = $sb.AppendLine(((Get-Content (Join-Path $MonitorDir 'launch.stderr.log') -Tail 50) -join [Environment]::NewLine))
+$null = $sb.AppendLine()
+$null = $sb.AppendLine('--- postgres docker logs (last captured 100 lines) ---')
+$null = $sb.AppendLine(((Get-Content (Join-Path $last.FullName 'docker-logs-tail.txt') -Tail 100) -join [Environment]::NewLine))
+$null = $sb.AppendLine()
 
-if (Test-Path $LastGc) {
-    Add-CommandOutput -Sb $Sb -Title 'LATEST SNAPSHOT GC HEAP INFO' -Script { Get-Content $LastGc }
-}
+$null = $sb.AppendLine('=== QUICK READ ===')
+$null = $sb.AppendLine("First DB total sessions:  $(Read-First (Join-Path $first.FullName 'db-total-sessions.txt'))")
+$null = $sb.AppendLine("Latest DB total sessions: $(Read-First (Join-Path $last.FullName 'db-total-sessions.txt'))")
+$null = $sb.AppendLine("Latest DB usable client slots: $(Calc-Slots $lastMax $lastReserved)")
+$null = $sb.AppendLine('Interpretation guide:')
+$null = $sb.AppendLine('- Healthy memory: process memory and JVM native memory plateau.')
+$null = $sb.AppendLine('- Healthy DB: total sessions rise at startup and then plateau well below usable client slots.')
+$null = $sb.AppendLine('- Suspicious DB: total sessions keep climbing, idle sessions pile up, or db-error shows too many clients already.')
 
-[void]$Sb.AppendLine('=== RECENT TREND (LAST 20 SNAPSHOTS) ===')
-$Recent = $Snapshots | Select-Object -Last 20
-foreach ($snap in $Recent) {
-    $proc = Join-Path $snap.FullName 'process.txt'
-    $perf = Join-Path $snap.FullName 'perfproc.txt'
-    $nmt  = Join-Path $snap.FullName 'nmt-summary.txt'
-    $parts = @($snap.Name)
-
-    $ws = Get-FirstMatchingLine -Path $proc -Pattern '^WorkingSet64\s*:'
-    if ($ws) { $parts += ($ws -replace '^\s+', '') }
-    $priv = Get-FirstMatchingLine -Path $proc -Pattern '^PrivateMemorySize64\s*:'
-    if ($priv) { $parts += ($priv -replace '^\s+', '') }
-    $thr = Get-FirstMatchingLine -Path $proc -Pattern '^ThreadCount\s*:'
-    if ($thr) { $parts += ($thr -replace '^\s+', '') }
-    $pf = Get-FirstMatchingLine -Path $perf -Pattern '^PageFileBytes\s*:'
-    if ($pf) { $parts += ($pf -replace '^\s+', '') }
-    $tot = Get-FirstMatchingLine -Path $nmt -Pattern '^Total:'
-    if ($tot) { $parts += $tot }
-
-    [void]$Sb.AppendLine(($parts -join ' | '))
-}
-[void]$Sb.AppendLine()
-
-$StdoutLog = Join-Path $MonitorDir 'launch.stdout.log'
-$StderrLog = Join-Path $MonitorDir 'launch.stderr.log'
-if (Test-Path $StdoutLog) {
-    Add-CommandOutput -Sb $Sb -Title 'LAUNCH STDOUT TAIL (LAST 50 LINES)' -Script { Get-Content $StdoutLog -Tail 50 }
-}
-if (Test-Path $StderrLog) {
-    Add-CommandOutput -Sb $Sb -Title 'LAUNCH STDERR TAIL (LAST 50 LINES)' -Script { Get-Content $StderrLog -Tail 50 }
-}
-
-$FirstWs = Get-FirstMatchingLine -Path $FirstProc -Pattern '^WorkingSet64\s*:'
-$LastWs  = Get-FirstMatchingLine -Path $LastProc -Pattern '^WorkingSet64\s*:'
-$FirstPriv = Get-FirstMatchingLine -Path $FirstProc -Pattern '^PrivateMemorySize64\s*:'
-$LastPriv  = Get-FirstMatchingLine -Path $LastProc -Pattern '^PrivateMemorySize64\s*:'
-$FirstThr = Get-FirstMatchingLine -Path $FirstProc -Pattern '^ThreadCount\s*:'
-$LastThr  = Get-FirstMatchingLine -Path $LastProc -Pattern '^ThreadCount\s*:'
-$FirstPf = Get-FirstMatchingLine -Path $FirstPerf -Pattern '^PageFileBytes\s*:'
-$LastPf  = Get-FirstMatchingLine -Path $LastPerf -Pattern '^PageFileBytes\s*:'
-
-Add-Section -Sb $Sb -Title 'QUICK READ' -Lines @(
-    "First WorkingSet64:  $FirstWs",
-    "Latest WorkingSet64: $LastWs",
-    "First PrivateMemory: $FirstPriv",
-    "Latest PrivateMemory: $LastPriv",
-    "First ThreadCount:   $FirstThr",
-    "Latest ThreadCount:  $LastThr",
-    "First PageFileBytes: $FirstPf",
-    "Latest PageFileBytes: $LastPf",
-    '',
-    'Interpretation guide:',
-    '- Healthy: working set, pagefile bytes, private bytes, and thread count rise at startup and then flatten.',
-    '- Suspicious: working set, pagefile bytes, private bytes, or thread count keep climbing hour after hour.',
-    '- Pagefile usage alone is not failure; rising committed bytes, shrinking available memory, and repeated hard faults are more concerning.'
-)
-
-[System.IO.File]::WriteAllText($OutFile, $Sb.ToString())
+[System.IO.File]::WriteAllText($OutFile, $sb.ToString())
 Write-Host "Wrote report to: $OutFile"

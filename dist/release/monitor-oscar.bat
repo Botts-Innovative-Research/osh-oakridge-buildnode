@@ -1,170 +1,129 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
+if "%~1"=="stop" goto :stop_mode
+
 set "SCRIPT_DIR=%~dp0"
-if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
-set "STATE_DIR=%SCRIPT_DIR%\.monitor-state"
-if not exist "%STATE_DIR%" mkdir "%STATE_DIR%"
+for %%I in ("%SCRIPT_DIR%.") do set "PROJECT_DIR=%%~fI"
+set "OUT_DIR=%PROJECT_DIR%\oscar-monitor-%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%-%TIME:~0,2%%TIME:~3,2%%TIME:~6,2%"
+set "OUT_DIR=%OUT_DIR: =0%"
+set "ENV_FILE=%PROJECT_DIR%\.env"
+set "CONTAINER_NAME=oscar-postgis-container"
+set "DB_NAME=gis"
+set "DB_USER=postgres"
+set "DB_PASSWORD=postgres"
+set "MATCH_EXPR=com.botts.impl.security.SensorHubWrapper"
+set "INTERVAL=60"
+set "JFR_NAME=oscar"
+set "JFR_MAX_AGE=4h"
+set "JFR_MAX_SIZE=1g"
+set "LAUNCH_CMD=%PROJECT_DIR%\launch-all.bat"
 
-if exist "%SCRIPT_DIR%\.env" call :load_env "%SCRIPT_DIR%\.env"
+if exist "%ENV_FILE%" (
+  for /f "usebackq tokens=1,* delims==" %%A in ("%ENV_FILE%") do (
+    if not "%%A"=="" if /i not "%%A:~0,1"=="#" set "%%A=%%B"
+  )
+)
 
-if not defined CONTAINER_NAME set "CONTAINER_NAME=oscar-postgis-container"
-if not defined MONITOR_INTERVAL set "MONITOR_INTERVAL=60"
-if not defined JFR_NAME set "JFR_NAME=oscar"
-if not defined JFR_MAX_AGE set "JFR_MAX_AGE=4h"
-if not defined JFR_MAX_SIZE set "JFR_MAX_SIZE=1g"
+if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
+echo timestamp,total_sessions,active,idle,idle_in_transaction,max_connections,superuser_reserved_connections,failed_psql>"%OUT_DIR%\db-connection-trend.csv"
 
-if /I "%~1"=="stop" goto :stop_stack
-
-for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%I"
-set "OUT_DIR=%SCRIPT_DIR%\oscar-monitor-%STAMP%"
-mkdir "%OUT_DIR%"
-
-echo %OUT_DIR%> "%STATE_DIR%\out_dir.txt"
-echo %CONTAINER_NAME%> "%STATE_DIR%\container_name.txt"
-
-echo Monitor output: %OUT_DIR%
-echo Launching OSCAR stack...
+echo %DATE% %TIME% Monitor output: %OUT_DIR%
+echo %DATE% %TIME% Launch command: %LAUNCH_CMD%
 
 where jcmd >nul 2>nul
-if errorlevel 1 (
-    echo Warning: jcmd not found. JFR and NMT snapshots will be skipped.
-)
+if errorlevel 1 echo Warning: jcmd not found. JFR and NMT snapshots will be limited.
 
-powershell -NoProfile -Command ^
-  "$stdout = [System.IO.Path]::Combine('%OUT_DIR%','launch.stdout.log'); $stderr = [System.IO.Path]::Combine('%OUT_DIR%','launch.stderr.log'); $p = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/c','call ""%SCRIPT_DIR%\launch-all.bat""') -WorkingDirectory '%SCRIPT_DIR%' -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru; $p.Id" > "%STATE_DIR%\launcher-pid.txt"
-if errorlevel 1 (
-    echo Error: failed to start launch-all.bat
-    exit /b 1
-)
+start "OSCAR_LAUNCH" /b cmd /c ""%LAUNCH_CMD%" 1>"%OUT_DIR%\launch.stdout.log" 2>"%OUT_DIR%\launch.stderr.log""
 
-set /p LAUNCHER_PID=<"%STATE_DIR%\launcher-pid.txt"
-echo Launcher PID: %LAUNCHER_PID%
-
-echo Waiting for JVM to appear...
-:wait_for_java
-call :find_java_pid
-if defined JVM_PID goto :java_found
-
-tasklist /FI "PID eq %LAUNCHER_PID%" | find "%LAUNCHER_PID%" >nul
-if errorlevel 1 (
-    echo Launch process exited before JVM appeared.
-    exit /b 1
-)
-
+:wait_for_jvm
 timeout /t 2 /nobreak >nul
-goto :wait_for_java
-
-:java_found
-echo Found JVM PID: %JVM_PID%
-echo %JVM_PID%> "%STATE_DIR%\jvm-pid.txt"
-
-powershell -NoProfile -Command ^
-  "$p = Get-CimInstance Win32_Process -Filter \"ProcessId=%JVM_PID%\"; if ($p) { [System.IO.File]::WriteAllText('%OUT_DIR%\\process-info.txt', ('Timestamp: ' + (Get-Date -Format o) + [Environment]::NewLine + 'Launcher PID: %LAUNCHER_PID%' + [Environment]::NewLine + 'JVM PID: %JVM_PID%' + [Environment]::NewLine + [Environment]::NewLine + 'Command line:' + [Environment]::NewLine + $p.CommandLine)) }"
-
-where jcmd >nul 2>nul
-if not errorlevel 1 (
-    jcmd %JVM_PID% JFR.start name=%JFR_NAME% settings=profile disk=true maxage=%JFR_MAX_AGE% maxsize=%JFR_MAX_SIZE% filename="%OUT_DIR%\%JFR_NAME%.jfr" > "%OUT_DIR%\jfr-start.txt" 2>&1
-    jcmd %JVM_PID% VM.native_memory baseline > "%OUT_DIR%\nmt-baseline.txt" 2>&1
+for /f "tokens=2 delims=," %%P in ('wmic process where "name='java.exe' and commandline like '%%SensorHubWrapper%%'" get processid^,commandline /format:csv ^| findstr /i SensorHubWrapper') do (
+  set "JVM_PID=%%P"
+  goto :have_jvm
 )
+goto :wait_for_jvm
 
+:have_jvm
+echo %JVM_PID%>"%OUT_DIR%\jvm-pid.txt"
+if exist "%PROJECT_DIR%\monitor.pid" del "%PROJECT_DIR%\monitor.pid"
+echo %PROCESS_ID%>"%PROJECT_DIR%\monitor.pid"
+
+jcmd %JVM_PID% JFR.start name=%JFR_NAME% settings=profile disk=true maxage=%JFR_MAX_AGE% maxsize=%JFR_MAX_SIZE% filename="%OUT_DIR%\%JFR_NAME%.jfr" >"%OUT_DIR%\jfr-start.txt" 2>&1
+jcmd %JVM_PID% VM.native_memory baseline >"%OUT_DIR%\nmt-baseline.txt" 2>&1
+
+:loop
 call :snapshot
-
-echo Monitor is running. Use monitor-oscar.bat stop to stop the stack and dump final data.
-:monitor_loop
-tasklist /FI "PID eq %JVM_PID%" | find "%JVM_PID%" >nul
-if errorlevel 1 goto :natural_exit
-
-timeout /t %MONITOR_INTERVAL% /nobreak >nul
-call :snapshot
-goto :monitor_loop
-
-:natural_exit
-call :jfr_dump
-echo JVM exited.
-exit /b 0
-
-:stop_stack
-if not exist "%STATE_DIR%\out_dir.txt" (
-    echo No active monitor state found.
-    exit /b 1
-)
-
-set /p OUT_DIR=<"%STATE_DIR%\out_dir.txt"
-if exist "%STATE_DIR%\container_name.txt" set /p CONTAINER_NAME=<"%STATE_DIR%\container_name.txt"
-if exist "%STATE_DIR%\jvm-pid.txt" set /p JVM_PID=<"%STATE_DIR%\jvm-pid.txt"
-if exist "%STATE_DIR%\launcher-pid.txt" set /p LAUNCHER_PID=<"%STATE_DIR%\launcher-pid.txt"
-
-echo Stopping OSCAR stack...
-if defined JVM_PID call :snapshot
-if defined JVM_PID call :jfr_dump
-
-if defined JVM_PID (
-    taskkill /PID %JVM_PID% /T /F > "%OUT_DIR%\taskkill-jvm.txt" 2>&1
-)
-if defined LAUNCHER_PID (
-    taskkill /PID %LAUNCHER_PID% /T /F > "%OUT_DIR%\taskkill-launcher.txt" 2>&1
-)
-
-where docker >nul 2>nul
-if not errorlevel 1 (
-    docker stop "%CONTAINER_NAME%" > "%OUT_DIR%\docker-stop.txt" 2>&1
-)
-
-echo Stack stopped.
-exit /b 0
+for /f "tokens=2 delims=," %%P in ('wmic process where "processid=%JVM_PID%" get processid /format:csv ^| findstr /r ",[0-9][0-9]*$"') do set "ALIVE=%%P"
+if not defined ALIVE goto :eof_ok
+set "ALIVE="
+timeout /t %INTERVAL% /nobreak >nul
+goto :loop
 
 :snapshot
-if not defined JVM_PID exit /b 0
+set "STAMP=%DATE:~10,4%%DATE:~4,2%%DATE:~7,2%-%TIME:~0,2%%TIME:~3,2%%TIME:~6,2%"
+set "STAMP=%STAMP: =0%"
+set "SNAP=%OUT_DIR%\%STAMP%"
+if not exist "%SNAP%" mkdir "%SNAP%"
 
-tasklist /FI "PID eq %JVM_PID%" | find "%JVM_PID%" >nul
-if errorlevel 1 exit /b 0
+echo Collecting snapshot at %STAMP% for PID %JVM_PID%
+wmic process where processid=%JVM_PID% get Name,ParentProcessId,ProcessId,ThreadCount,WorkingSetSize,VirtualSize /format:list >"%SNAP%\wmic-process.txt" 2>&1
+powershell -NoProfile -Command "$p=Get-Process -Id %JVM_PID% -ErrorAction SilentlyContinue; if($p){$p|Select-Object Id,ProcessName,Threads,VirtualMemorySize64,WorkingSet64,PrivateMemorySize64,CPU,StartTime|Format-List|Out-String}" >"%SNAP%\powershell-process.txt" 2>&1
+powershell -NoProfile -Command "Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory,TotalVirtualMemorySize,FreeVirtualMemory | Format-List | Out-String" >"%SNAP%\memory.txt" 2>&1
+powershell -NoProfile -Command "Get-Counter '\Memory\Committed Bytes','\Memory\Commit Limit','\Paging File(_Total)\%% Usage' | Out-String" >"%SNAP%\counters.txt" 2>&1
+jcmd %JVM_PID% VM.native_memory summary >"%SNAP%\nmt-summary.txt" 2>&1
+jcmd %JVM_PID% GC.heap_info >"%SNAP%\gc-heap-info.txt" 2>&1
+jcmd %JVM_PID% Thread.print >"%SNAP%\thread-print.txt" 2>&1
+jcmd %JVM_PID% JFR.check >"%SNAP%\jfr-check.txt" 2>&1
 
-for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "SNAPSTAMP=%%I"
-set "SNAP_DIR=%OUT_DIR%\%SNAPSTAMP%"
-mkdir "%SNAP_DIR%" >nul 2>nul
+docker ps --filter name=%CONTAINER_NAME% >"%SNAP%\docker-ps.txt" 2>&1
+docker logs --tail 100 %CONTAINER_NAME% >"%SNAP%\docker-logs-tail.txt" 2>&1
+call :db_snapshot "%SNAP%"
+exit /b 0
 
-tasklist /FI "PID eq %JVM_PID%" /V > "%SNAP_DIR%\tasklist.txt" 2>&1
-powershell -NoProfile -Command ^
-  "$p = Get-Process -Id %JVM_PID% -ErrorAction SilentlyContinue; if ($p) { $p | Select-Object Id,ProcessName,CPU,StartTime,WorkingSet64,PrivateMemorySize64,VirtualMemorySize64,HandleCount,@{Name='ThreadCount';Expression={$_.Threads.Count}} | Format-List * }" > "%SNAP_DIR%\process.txt" 2>&1
-powershell -NoProfile -Command ^
-  "Get-Counter '\Memory\Committed Bytes','\Memory\Commit Limit','\Paging File(_Total)\%% Usage' | Format-List *" > "%SNAP_DIR%\memory-counters.txt" 2>&1
-powershell -NoProfile -Command ^
-  "Get-CimInstance Win32_OperatingSystem | Select-Object TotalVisibleMemorySize,FreePhysicalMemory,TotalVirtualMemorySize,FreeVirtualMemory | Format-List *" > "%SNAP_DIR%\os-memory.txt" 2>&1
-powershell -NoProfile -Command ^
-  "$p = Get-CimInstance Win32_PerfFormattedData_PerfProc_Process | Where-Object { $_.IDProcess -eq %JVM_PID% }; if ($p) { $p | Select-Object Name,IDProcess,WorkingSet,PrivateBytes,PageFileBytes,ThreadCount,HandleCount | Format-List * }" > "%SNAP_DIR%\perfproc.txt" 2>&1
+:db_snapshot
+set "SNAP=%~1"
+set "DB_ERR=%SNAP%\db-error.txt"
+set "FAILED=0"
+set "MAX_CONN="
+set "SUPER_RESERVED="
+set "TOTAL_SESSIONS="
+set "ACTIVE_COUNT=0"
+set "IDLE_COUNT=0"
+set "IDLE_TX_COUNT=0"
 
-where jcmd >nul 2>nul
-if not errorlevel 1 (
-    jcmd %JVM_PID% VM.native_memory summary > "%SNAP_DIR%\nmt-summary.txt" 2>&1
-    jcmd %JVM_PID% GC.heap_info > "%SNAP_DIR%\gc-heap-info.txt" 2>&1
-    jcmd %JVM_PID% Thread.print > "%SNAP_DIR%\thread-print.txt" 2>&1
-    jcmd %JVM_PID% JFR.check > "%SNAP_DIR%\jfr-check.txt" 2>&1
+docker ps --format {{.Names}} | findstr /i /x "%CONTAINER_NAME%" >nul 2>&1
+if errorlevel 1 (
+  >"%DB_ERR%" echo Container %CONTAINER_NAME% not running
+  >>"%OUT_DIR%\db-connection-trend.csv" echo %DATE%T%TIME%,,,,,,,1
+  exit /b 0
 )
-exit /b 0
 
-:jfr_dump
-where jcmd >nul 2>nul
-if errorlevel 1 exit /b 0
-if not defined JVM_PID exit /b 0
-jcmd %JVM_PID% JFR.dump name=%JFR_NAME% filename="%OUT_DIR%\%JFR_NAME%-final.jfr" > "%OUT_DIR%\jfr-dump-final.txt" 2>&1
-exit /b 0
+docker exec -e PGPASSWORD=%DB_PASSWORD% %CONTAINER_NAME% psql -U %DB_USER% -d %DB_NAME% -At -c "show max_connections;" >"%SNAP%\db-max-connections.txt" 2>"%DB_ERR%"
+if errorlevel 1 set "FAILED=1"
+docker exec -e PGPASSWORD=%DB_PASSWORD% %CONTAINER_NAME% psql -U %DB_USER% -d %DB_NAME% -At -c "show superuser_reserved_connections;" >"%SNAP%\db-superuser-reserved-connections.txt" 2>>"%DB_ERR%"
+docker exec -e PGPASSWORD=%DB_PASSWORD% %CONTAINER_NAME% psql -U %DB_USER% -d %DB_NAME% -At -c "select count(*) from pg_stat_activity;" >"%SNAP%\db-total-sessions.txt" 2>>"%DB_ERR%"
+docker exec -e PGPASSWORD=%DB_PASSWORD% %CONTAINER_NAME% psql -U %DB_USER% -d %DB_NAME% -At -c "select coalesce(state,'<null>'), count(*) from pg_stat_activity group by state order by count(*) desc;" >"%SNAP%\db-by-state.txt" 2>>"%DB_ERR%"
+docker exec -e PGPASSWORD=%DB_PASSWORD% %CONTAINER_NAME% psql -U %DB_USER% -d %DB_NAME% -At -c "select coalesce(application_name,'<null>'), coalesce(usename,'<null>'), coalesce(client_addr::text,'<null>'), coalesce(state,'<null>'), count(*) from pg_stat_activity group by application_name, usename, client_addr, state order by count(*) desc limit 20;" >"%SNAP%\db-by-app.txt" 2>>"%DB_ERR%"
 
-:find_java_pid
-set "JVM_PID="
-for /f %%I in ('powershell -NoProfile -Command "$p = Get-CimInstance Win32_Process -Filter \"Name='java.exe'\" ^| Where-Object { $_.CommandLine -match 'com\.botts\.impl\.security\.SensorHubWrapper' } ^| Select-Object -First 1 -ExpandProperty ProcessId; if ($p) { $p }"') do set "JVM_PID=%%I"
-exit /b 0
-
-:load_env
-set "ENV_PATH=%~1"
-for /f "usebackq tokens=* delims=" %%L in ("%ENV_PATH%") do (
-    set "LINE=%%L"
-    if defined LINE (
-        if not "!LINE:~0,1!"=="#" (
-            for /f "tokens=1,* delims==" %%A in ("!LINE!") do (
-                if not "%%A"=="" set "%%A=%%B"
-            )
-        )
-    )
+for /f %%A in (%SNAP%\db-max-connections.txt) do set "MAX_CONN=%%A"
+for /f %%A in (%SNAP%\db-superuser-reserved-connections.txt) do set "SUPER_RESERVED=%%A"
+for /f %%A in (%SNAP%\db-total-sessions.txt) do set "TOTAL_SESSIONS=%%A"
+for /f "tokens=1,2 delims=|" %%A in (%SNAP%\db-by-state.txt) do (
+  if /i "%%A"=="active" set "ACTIVE_COUNT=%%B"
+  if /i "%%A"=="idle" set "IDLE_COUNT=%%B"
+  if /i "%%A"=="idle in transaction" set "IDLE_TX_COUNT=%%B"
 )
+>>"%OUT_DIR%\db-connection-trend.csv" echo %DATE%T%TIME%,%TOTAL_SESSIONS%,%ACTIVE_COUNT%,%IDLE_COUNT%,%IDLE_TX_COUNT%,%MAX_CONN%,%SUPER_RESERVED%,%FAILED%
+exit /b 0
+
+:stop_mode
+for /f %%P in (%~dp0monitor.pid) do set "MONPID=%%P"
+if defined MONPID taskkill /PID %MONPID% /T /F >nul 2>&1
+for /f "tokens=2 delims=," %%P in ('wmic process where "name='java.exe' and commandline like '%%SensorHubWrapper%%'" get processid^,commandline /format:csv ^| findstr /i SensorHubWrapper') do taskkill /PID %%P /T /F >nul 2>&1
+for /f %%C in ('docker ps --filter name=oscar-postgis-container --format {{.Names}}') do docker stop %%C >nul 2>&1
+echo OSCAR stack stop requested.
+exit /b 0
+
+:eof_ok
 exit /b 0

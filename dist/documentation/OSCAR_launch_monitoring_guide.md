@@ -1,402 +1,274 @@
-# OSCAR Launch, Monitoring, and Status Guide
+# OSCAR launch, monitoring, and database diagnostics guide
 
-This guide explains the purpose and use of the updated `.env`, `launch-all`, `launch`, `monitor-oscar`, and `check-oscar-status` scripts for both Linux and Windows. It covers profiles, dependencies, startup and shutdown flow, cleanup, and how to interpret the monitoring output.
+This guide explains the updated OSCAR launch and monitoring scripts for Linux and Windows. It covers:
 
-## 1. What changed and why
-
-The updated scripts were designed to make OSCAR easier to run, safer on smaller machines, and easier to diagnose when memory or stability problems appear.
-
-The main improvements are:
-
-- **Profile-based sizing** so Java and PostgreSQL use settings that fit the machine.
-- **Safer defaults** for a 16 GB machine and other profiles.
-- **Separation of responsibilities**:
-  - `.env` holds deployment settings.
-  - `launch-all` starts PostgreSQL and then launches OSCAR.
-  - `launch` starts the Java node with the right memory and diagnostics.
-  - `monitor-oscar` starts OSCAR and continuously collects diagnostic snapshots.
-  - `check-oscar-status` summarizes all collected data into a single report file.
-- **Built-in diagnostics** such as Native Memory Tracking and JFR support.
-- **Cleaner testing workflow** so you can compare runs and determine whether memory is stable or leaking.
+- the purpose of `.env`, `launch-all`, `launch`, `monitor-oscar`, and `check-oscar-status`
+- how to choose the right system profile
+- how to start and stop OSCAR safely
+- how to monitor memory and database usage
+- how to diagnose PostgreSQL connection exhaustion
+- how to clean up old artifacts
 
 ---
 
-## 2. Which files are involved
+## 1. What changed
+
+The launch scripts now do two different jobs:
+
+- **launch scripts** size Java and PostgreSQL for the selected hardware profile and start the OSCAR stack
+- **monitor scripts** capture time-series diagnostics while OSCAR runs
+- **check scripts** summarize the latest run into one report file
+
+The biggest recent addition is **database diagnostics**. The monitor now records PostgreSQL session counts, session states, and top session groups on each interval. The status-check script now includes database saturation analysis in the one-file report.
+
+---
+
+## 2. Files and what they do
 
 ### Shared configuration
 
-- `.env`
+#### `.env`
+Holds deployment settings such as:
 
-### Linux
+- `SYSTEM_PROFILE`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_PORT`
+- `DB_HOST`
+- `CONTAINER_NAME`
+- keystore and truststore passwords
+- optional JavaCPP and JFR overrides
 
-- `launch-all.sh`
-- `osh-node-oscar/launch.sh`
-- `monitor-oscar.sh`
-- `check-oscar-status.sh`
+This is the main place to choose the right profile.
 
-### Windows
+### Linux launch files
 
-- `launch-all.bat`
-- `osh-node-oscar\launch.bat`
-- `monitor-oscar.bat`
-- `check-oscar-status.ps1`
+#### `launch-all.sh`
+Builds and starts the PostGIS container with profile-specific PostgreSQL settings, waits for the database to be ready, then starts OSCAR by calling `osh-node-oscar/launch.sh`.
+
+#### `osh-node-oscar/launch.sh`
+Loads `.env`, chooses the Java heap settings for the selected profile, sets up certificates, enables Native Memory Tracking, and starts OSCAR.
+
+### Linux monitoring files
+
+#### `monitor-oscar.sh`
+Starts OSCAR, starts JFR, and captures repeated snapshots containing:
+
+- JVM memory
+- JFR status
+- NMT summary
+- thread dump
+- Linux memory and swap state
+- Docker status
+- PostgreSQL session counts and session-state breakdown
+- PostgreSQL tail logs
+
+It also writes `db-connection-trend.csv`, which is the easiest file to inspect when diagnosing connection growth.
+
+#### `check-oscar-status.sh`
+Reads the latest monitor directory and writes a single text report that combines:
+
+- current JVM state
+- current memory and swap state
+- current PostgreSQL session picture
+- first snapshot vs latest snapshot
+- last 20 snapshot trend lines
+- recent OSCAR and Postgres logs
+
+### Windows launch files
+
+#### `launch-all.bat`
+Windows equivalent of the Linux `launch-all.sh`. It starts the PostGIS container using the selected profile and then launches OSCAR.
+
+#### `osh-node-oscar\launch.bat`
+Windows equivalent of the Linux `launch.sh`. It starts OSCAR with the selected Java settings and Native Memory Tracking enabled.
+
+### Windows monitoring files
+
+#### `monitor-oscar.bat`
+Starts OSCAR, attaches JFR with `jcmd`, and writes repeated snapshots for:
+
+- JVM process state
+- Windows commit and pagefile counters
+- Docker status
+- PostgreSQL session counts and top session groups
+
+#### `check-oscar-status.ps1`
+Windows equivalent of `check-oscar-status.sh`. It writes one status report file summarizing the latest monitor run.
 
 ---
 
-## 3. What each file does
+## 3. Choosing the right profile
 
-## `.env`
+The most important setting in `.env` is:
 
-This file is the shared configuration layer. It tells the scripts which profile to use, how to connect to PostgreSQL, and which passwords to pass into the Java process.
-
-Typical variables:
-
-```env
+```text
 SYSTEM_PROFILE=16GB
-DB_NAME=gis
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_PORT=5432
-DB_HOST=localhost
-CONTAINER_NAME=oscar-postgis-container
-KEYSTORE_PASSWORD=CHANGE_ME
-TRUSTSTORE_PASSWORD=CHANGE_ME
-JAVACPP_MAX_BYTES=
-JAVACPP_MAX_PHYSICAL_BYTES=
-JFR_FILENAME=
 ```
 
-Why it is useful:
+Available profiles are usually:
 
-- keeps machine-specific configuration out of the launch scripts
-- lets you switch between profiles without editing multiple files
-- makes Linux and Windows setups consistent
+- `RPI4`
+- `8GB`
+- `16GB`
+- `32GB`
 
-How to modify it:
+Choose the profile based on the machine that is actually running OSCAR.
 
-- change `SYSTEM_PROFILE` when moving to a different machine size
-- change the DB settings if PostgreSQL is not local
-- change the passwords to match your real keystore and truststore values
-- optionally override JavaCPP or JFR paths only when needed
+### How to make sure you are using the right profile
 
----
-
-## `launch-all.sh` / `launch-all.bat`
-
-This is the top-level launcher. It reads `.env`, starts the PostGIS container with profile-appropriate settings, waits for PostgreSQL to become ready, and then starts OSCAR by calling the node-specific `launch` script.
-
-Why it is useful:
-
-- one command starts the full stack
-- PostgreSQL settings are tied to the profile
-- ensures the DB is available before Java starts
-- helps keep tests repeatable
-
-What it usually does:
-
-1. reads `.env`
-2. maps `SYSTEM_PROFILE` to PostgreSQL settings
-3. builds or starts the PostGIS container
-4. waits for `pg_isready`
-5. enters `osh-node-oscar`
-6. runs `launch.sh` or `launch.bat`
-
-How to modify it:
-
-- change PostgreSQL memory settings if your workload changes
-- change container name or port if you need multiple local deployments
-- change image/tag names if your Docker workflow changes
-
-Important note:
-
-If you change PostgreSQL settings, you need the container to be recreated or restarted in a way that actually applies the new settings. The updated launchers were designed to make that more predictable.
-
----
-
-## `osh-node-oscar/launch.sh` / `osh-node-oscar/launch.bat`
-
-This script starts the Java node itself. It reads `.env`, maps the selected profile to Java memory settings, sets up certificates, enables diagnostics, and launches the OSCAR process.
-
-Why it is useful:
-
-- central place for Java sizing
-- keeps profile logic out of the top-level launcher
-- enables Native Memory Tracking so memory problems can be investigated later
-- passes JavaCPP limits to help control native memory behavior
-
-Typical responsibilities:
-
-- choose `-Xms` and `-Xmx` from `SYSTEM_PROFILE`
-- set `-XX:+UnlockDiagnosticVMOptions`
-- set `-XX:NativeMemoryTracking=summary`
-- set JavaCPP limits such as:
-  - `-Dorg.bytedeco.javacpp.maxBytes=...`
-  - `-Dorg.bytedeco.javacpp.maxPhysicalBytes=...`
-- set keystore and truststore paths
-- start `com.botts.impl.security.SensorHubWrapper`
-
-How to modify it:
-
-- adjust profile memory values if testing shows a machine can safely handle more or needs less
-- change JavaCPP limits if native memory use is too tight or too loose
-- update certificate paths if the install layout changes
-- add temporary JVM flags for debugging
-
-What not to remove:
-
-- `-XX:+UnlockDiagnosticVMOptions`
-- `-XX:NativeMemoryTracking=summary`
-
-These are required for native memory inspection with `jcmd`.
-
----
-
-## `monitor-oscar.sh` / `monitor-oscar.bat`
-
-This is the diagnostic runner. It starts OSCAR, waits for the JVM to appear, starts JFR, and collects periodic snapshots into a timestamped `oscar-monitor-*` directory.
-
-Why it is useful:
-
-- gives you time-series data instead of one-off guesses
-- captures memory, swap or pagefile, threads, and JVM info while OSCAR is running
-- makes it easy to compare startup, steady state, and failure periods
-- can be used as the primary launch method when you are testing stability
-
-What it collects over time:
-
-- JVM PID and command line
-- process memory details
-- thread counts
-- heap information
-- native memory summaries
-- JFR recordings
-- system memory and swap or pagefile state
-- launch stdout and stderr logs
-
-Linux snapshots commonly include:
-
-- `/proc/<pid>/status`
-- `/proc/<pid>/smaps_rollup`
-- `pmap -x`
-- `free -h`
-- `vmstat`
-- `jcmd VM.native_memory summary`
-- `jcmd GC.heap_info`
-- `jcmd JFR.check`
-
-Windows snapshots commonly include the nearest equivalents through PowerShell, `tasklist`, `wmic` or CIM, performance counters, and `jcmd`.
-
-How to modify it:
-
-- change the snapshot interval if you want more or less detail
-- change the match expression if the Java main class changes
-- change the JFR size or age limits
-- add extra OS-level commands if you want more counters
-
----
-
-## `check-oscar-status.sh` / `check-oscar-status.ps1`
-
-This is a reporting script. It reads the latest monitor directory and writes one report file that summarizes the current run.
-
-Why it is useful:
-
-- gives you one file to review or share
-- compares first and latest snapshots
-- shows recent trend lines
-- shows whether memory is rising, flattening, or thrashing
-
-What it includes:
-
-- live process status
-- live JVM state
-- live JFR and NMT information
-- system memory and swap or pagefile status
-- first snapshot summary
-- latest snapshot summary
-- recent trend table
-- log tails
-- a quick interpretation section
-
-How to modify it:
-
-- change how many recent snapshots are included
-- add custom grep or PowerShell parsing for errors you care about
-- add application log searches for reconnect loops or parse failures
-
----
-
-## 4. Choosing the right profile
-
-`SYSTEM_PROFILE` is the most important setting in `.env`.
-
-### Recommended meanings
-
-- `RPI4`: very constrained system
-- `8GB`: small development or reduced-workload machine
-- `16GB`: reasonable full-node starting point
-- `32GB`: larger system with more headroom
-
-### How to make sure you use the right profile
-
-Use the profile that matches the **actual machine memory**, not what you hope the workload can handle.
+1. Open `.env`
+2. Confirm `SYSTEM_PROFILE` matches the host RAM class
+3. Start OSCAR with the normal launch script
+4. Check the launch output and verify the profile name printed by the script
+5. Verify Postgres settings after startup:
 
 Linux:
 
 ```bash
-free -h
+docker exec -it oscar-postgis-container psql -U postgres -d gis -c "show max_connections;"
 ```
 
 Windows PowerShell:
 
 ```powershell
-Get-CimInstance Win32_ComputerSystem | Select-Object TotalPhysicalMemory
+docker exec -it oscar-postgis-container psql -U postgres -d gis -c "show max_connections;"
 ```
 
-General rule:
+For the current tuned setup, the intended PostgreSQL connection caps are:
 
-- use `16GB` only on a machine with about 16 GB RAM
-- use `8GB` on smaller test systems
-- use `32GB` only when the machine really has that headroom
-- when in doubt, choose the **smaller** profile first
+- `RPI4`: 75
+- `8GB`: 125
+- `16GB`: 200
+- `32GB`: 300
 
-### Why this matters
-
-The Java heap is not the only consumer of memory. OSCAR also uses:
-
-- native libraries
-- thread stacks
-- PostgreSQL
-- Docker
-- OS page cache
-- FFmpeg or JavaCPP native memory if video is enabled
-
-A machine can fail even when Java heap is not full if native memory and database memory are too large.
+These are launch-script values, not `.env` values.
 
 ---
 
-## 5. Recommended profile behavior
+## 4. Why these scripts are useful
 
-The modified launchers use conservative sizing. A reasonable starting strategy is:
+### Launch scripts
 
-- smaller `Xms` than `Xmx`
-- conservative PostgreSQL settings on shared hosts
-- Native Memory Tracking enabled
-- JFR started by the monitor rather than by the Java launcher
+They keep OSCAR and Postgres sized consistently for the machine instead of using one oversized default everywhere.
 
-If a profile proves stable for your workload, you may increase it carefully. Do not scale memory up just because RAM exists.
+### Monitor scripts
+
+They answer questions like:
+
+- is Java memory still growing?
+- is swap/pagefile pressure building?
+- is JVM native memory growing?
+- is PostgreSQL session count rising toward the limit?
+- are errors in the logs happening at the same time as DB pressure?
+
+### Check scripts
+
+They turn a whole monitor directory into one readable summary so you do not have to open dozens of snapshot files manually.
 
 ---
 
-## 6. Installing dependencies
+## 5. Dependencies
 
 ## Linux dependencies
 
-You normally need:
+Install or verify these:
 
-- Java **JDK**, not just a JRE
 - Docker
+- Java JDK with `jcmd`
 - Bash
-- `jcmd` (comes with the JDK)
-- `pg_isready` inside the PostgreSQL container image
-- optional helpers: `pmap`, `vmstat`, `free`
+- `psql` inside the Postgres container
 
-### Ubuntu or Debian example
+Helpful but optional:
+
+- `pmap`
+- `vmstat`
+- `free`
+
+### How to install on Ubuntu
 
 ```bash
 sudo apt update
-sudo apt install -y openjdk-21-jdk docker.io procps psmisc
+sudo apt install openjdk-21-jdk docker.io procps psmisc
 ```
 
-Optional but useful:
+### How to check if they are installed
 
 ```bash
-sudo apt install -y net-tools sysstat
+which java
+which jcmd
+which docker
+which pmap
+which vmstat
 ```
 
-### Check whether dependencies are installed on Linux
+Check Docker:
+
+```bash
+docker --version
+```
+
+Check Java:
 
 ```bash
 java -version
-action="jcmd"; command -v "$action"
-docker --version
-bash --version
-free -h
-vmstat 1 1
-pmap $$ | head
+jcmd -h
 ```
-
----
 
 ## Windows dependencies
 
-You normally need:
+Install or verify these:
 
-- Java **JDK**, not only a JRE
-- Docker Desktop or a Docker Engine setup that provides `docker`
-- PowerShell for the status script
-- `jcmd.exe` from the JDK
+- Docker Desktop
+- JDK with `jcmd.exe`
+- PowerShell
 
-### Check whether dependencies are installed on Windows PowerShell
+### How to check on Windows
+
+PowerShell:
 
 ```powershell
-java -version
+gcm java
 gcm jcmd
-docker --version
-$PSVersionTable.PSVersion
+gcm docker
 ```
 
-If `gcm jcmd` does not return anything, the JDK `bin` directory is probably not on `PATH`.
-
-Typical `jcmd.exe` location:
-
-```text
-C:\Program Files\Java\jdk-<version>\bin\jcmd.exe
-```
+If `jcmd` is not found, install a JDK and add its `bin` directory to `PATH`.
 
 ---
 
-## 7. How to start the program
+## 6. Starting OSCAR
 
-## Linux normal startup
+## Linux normal start with monitoring
 
-If you want to start the stack normally:
+From the project root:
+
+```bash
+chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+echo $! > monitor.pid
+```
+
+This starts:
+
+- PostGIS
+- OSCAR
+- JFR
+- memory and DB monitoring
+
+## Linux start without monitoring
 
 ```bash
 ./launch-all.sh
 ```
 
-## Linux monitored startup
+## Windows normal start with monitoring
 
-If you want diagnostics and a monitor directory:
-
-```bash
-./monitor-oscar.sh
-```
-
-To run it detached:
-
-```bash
-nohup ./monitor-oscar.sh > monitor.out 2>&1 &
-echo $! > monitor.pid
-```
-
----
-
-## Windows normal startup
-
-From the project root:
+From the project root in `cmd`:
 
 ```bat
-launch-all.bat
-```
-
-## Windows monitored startup
-
-From the project root:
-
-```bat
-monitor-oscar.bat
+start /b monitor-oscar.bat
 ```
 
 Or from PowerShell:
@@ -405,70 +277,119 @@ Or from PowerShell:
 Start-Process -FilePath .\monitor-oscar.bat
 ```
 
+## Windows start without monitoring
+
+```bat
+launch-all.bat
+```
+
 ---
 
-## 8. How to stop the program
+## 7. Stopping OSCAR
 
 ## Linux
 
-If you started with `monitor-oscar.sh` and the script was written to stop the whole stack on signal:
+If you used the monitor script:
 
 ```bash
 kill "$(cat monitor.pid)"
 ```
 
-If needed, stop parts manually:
+The monitor script is designed to stop:
 
-```bash
-pgrep -af 'com.botts.impl.security.SensorHubWrapper'
-kill <java_pid>
-docker stop oscar-postgis-container
-```
+- itself
+- the OSCAR JVM
+- the PostGIS container
 
 ## Windows
-
-If the Windows monitor script supports a stop command:
 
 ```bat
 monitor-oscar.bat stop
 ```
 
-Otherwise stop the Java process and container manually:
-
-PowerShell:
-
-```powershell
-Get-Process java | Stop-Process
- docker stop oscar-postgis-container
-```
-
-Be careful if multiple Java processes are running on the machine.
+This requests the same full-stack stop.
 
 ---
 
-## 9. How to check that the monitor is working
+## 8. How to use the monitor output
 
-## Linux
+Each monitor run creates a directory such as:
 
-```bash
-pgrep -af monitor-oscar.sh
-pgrep -af 'com.botts.impl.security.SensorHubWrapper'
-docker ps --filter name=oscar-postgis-container
-ls -td oscar-monitor-* | head -n 1
-tail -f monitor.out
+```text
+oscar-monitor-20260503-174333
 ```
 
-## Windows PowerShell
+Inside it are:
 
-```powershell
-Get-Process java
-Get-ChildItem . -Directory oscar-monitor-* | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-Get-Content .\monitor.out -Tail 50 -Wait
-```
+- `launch.stdout.log`
+- `launch.stderr.log`
+- `jvm-pid.txt`
+- `db-connection-trend.csv`
+- one snapshot directory per interval
+
+Each snapshot includes memory and DB files, for example:
+
+- `nmt-summary.txt`
+- `gc-heap-info.txt`
+- `thread-print.txt`
+- `db-total-sessions.txt`
+- `db-by-state.txt`
+- `db-by-app.txt`
+- `db-activity-detail.txt`
+- `db-error.txt`
+- `docker-logs-tail.txt`
 
 ---
 
-## 10. How to generate a one-file status report
+## 9. How to analyze the data
+
+### Memory analysis
+
+Look for whether these plateau:
+
+- RSS / working set
+- swap / pagefile usage
+- thread count
+- NMT committed memory
+
+A healthy system usually rises at startup and then flattens.
+
+### Database analysis
+
+Look at:
+
+- `db-total-sessions.txt`
+- `db-by-state.txt`
+- `db-by-app.txt`
+- `db-connection-trend.csv`
+
+A healthy DB profile usually looks like:
+
+- total sessions rise at startup
+- then total sessions plateau
+- idle sessions stay reasonable
+- total sessions remain comfortably below usable client slots
+
+A suspicious DB profile looks like:
+
+- total sessions keep climbing over time
+- idle or idle-in-transaction sessions pile up
+- `db-error.txt` contains `too many clients already`
+- Postgres logs show repeated connection failures
+
+### Important DB formula
+
+Use:
+
+```text
+usable client slots = max_connections - superuser_reserved_connections
+```
+
+If total sessions are approaching that number, Postgres is near saturation.
+
+---
+
+## 10. How to create a one-file report
 
 ## Linux
 
@@ -476,10 +397,10 @@ Get-Content .\monitor.out -Tail 50 -Wait
 ./check-oscar-status.sh
 ```
 
-This produces a file like:
+This writes a file like:
 
 ```text
-oscar-status-20260504-000101.txt
+oscar-status-20260504-102524.txt
 ```
 
 ## Windows
@@ -488,199 +409,135 @@ oscar-status-20260504-000101.txt
 powershell -ExecutionPolicy Bypass -File .\check-oscar-status.ps1
 ```
 
-This produces a similar one-file report.
+That also writes a single status report file.
 
 ---
 
-## 11. How to analyze the data
+## 11. How to modify the scripts
 
-The most important sections are:
+### To change the profile mapping
 
-- `LIVE JVM /proc STATUS` or the Windows live process section
-- `LIVE JVM NATIVE MEMORY SUMMARY`
-- `LIVE JVM GC HEAP INFO`
-- `RECENT TREND`
-- `vmstat` on Linux or pagefile/commit counters on Windows
-- application log tails
+Edit `launch-all.sh` or `launch-all.bat` for PostgreSQL sizing.
 
-### Healthy pattern
+Edit `osh-node-oscar/launch.sh` or `osh-node-oscar\launch.bat` for Java sizing.
 
-A healthy run usually looks like this:
+### To change monitoring frequency
 
-- RSS rises during startup, then flattens
-- heap usage rises and falls with normal GC activity
-- NMT committed memory stays in a narrow band
-- thread count stabilizes
-- swap or pagefile use may rise some but stops growing
-- system still has plenty of available memory
-- there is little or no sustained swap-in and swap-out pressure
+Edit `INTERVAL` in `monitor-oscar.sh` or `monitor-oscar.bat`.
 
-### Suspicious pattern
+### To collect more DB detail
 
-A suspicious run usually looks like this:
+Add more `psql` queries in the monitor script and save them into the snapshot directory.
 
-- RSS rises hour after hour without flattening
-- VmSwap or pagefile keeps increasing steadily
-- NMT committed memory keeps rising steadily
-- thread count keeps climbing
-- logs show reconnect loops and memory rises after each one
-- system available memory keeps shrinking
-- OS starts heavy paging or swapping activity
+### To change JFR output size or retention
 
-### Linux-specific interpretation tips
+Edit:
 
-- `VmRSS`: resident memory in RAM
-- `VmSwap`: memory for that process currently swapped out
-- `vmstat si/so`: swap in and swap out activity
-- `GC.heap_info`: whether Java heap is actually pressured
-- `VM.native_memory summary`: whether JVM-managed native memory is rising
-
-### Windows-specific interpretation tips
-
-Watch these especially:
-
-- process working set
-- private bytes or commit size
-- system commit charge versus commit limit
-- pagefile usage
-- `jcmd VM.native_memory summary`
-
-### Important distinction
-
-A process can fail from **native memory exhaustion** even when Java heap is not full. That was the original reason these scripts were added.
+- `JFR_MAX_AGE`
+- `JFR_MAX_SIZE`
+- `JFR_NAME`
 
 ---
 
-## 12. How to tell whether there is a leak
+## 12. When to delete files
 
-Do not judge from the first hour alone. Startup always causes growth.
+You should delete monitor output when:
 
-Suggested checkpoints:
+- you no longer need old runs
+- the monitor directories are consuming too much disk space
+- you have already captured the final report you need
 
-- **30 to 60 minutes**: look for obvious runaway behavior
-- **2 to 4 hours**: see whether memory is leveling off
-- **12 to 24 hours**: determine whether the process is stable or slowly drifting
+## Linux cleanup
 
-What proves stability:
-
-- recent trend lines become narrow and flat
-- NMT committed memory stays near one range
-- threads stay near one range
-- swap or pagefile stops rising
-
-What suggests a leak:
-
-- all trend lines keep climbing across many hours
-- the slope stays positive even after warmup
-- memory jumps after every reconnect or retry cycle and never comes down
-
----
-
-## 13. When to delete files
-
-The monitor and status scripts generate files that can grow over time.
-
-### Files you can delete safely after a run is complete
-
-- old `oscar-status-*.txt` reports
-- old `monitor.out`
-- old monitor directories such as `oscar-monitor-20260503-174333`
-- old JFR files that you no longer need
-
-### Files you should keep while investigating a problem
-
-- the monitor directory for the run you care about
-- its `launch.stdout.log` and `launch.stderr.log`
-- any `*.jfr` files
-- any JVM crash logs such as `hs_err_pid*.log`
-
-### Good cleanup practice
-
-Delete old monitor directories only after:
-
-- the run has been reviewed
-- any useful JFR files have been copied somewhere safe
-- you no longer need to compare against older runs
-
-Linux cleanup example:
+Delete old monitor output:
 
 ```bash
-rm -rf oscar-monitor-20260503-174333
+rm -rf oscar-monitor-2026*
+```
+
+Delete old one-file reports:
+
+```bash
 rm -f oscar-status-*.txt
 ```
 
-Windows PowerShell cleanup example:
+## Windows cleanup
+
+In PowerShell:
 
 ```powershell
-Remove-Item .\oscar-monitor-20260503-174333 -Recurse -Force
-Remove-Item .\oscar-status-*.txt
+Remove-Item .\oscar-monitor-* -Recurse -Force
+Remove-Item .\oscar-status-*.txt -Force
+```
+
+Do **not** delete:
+
+- `.env`
+- `launch-all` scripts
+- `launch` scripts
+- keystore or truststore files
+- `pgdata` unless you intend to wipe the database
+
+---
+
+## 13. Files you normally should not delete
+
+Avoid deleting these unless you intentionally want to rebuild or reset the environment:
+
+- `pgdata/`
+- `osh-node-oscar/db/`
+- `osh-node-oscar/osh-keystore.p12`
+- `osh-node-oscar/truststore.jks`
+- your main `.env`
+
+---
+
+## 14. How to verify dependencies after changes
+
+## Linux quick check
+
+```bash
+which java
+which jcmd
+which docker
+docker ps
+```
+
+## Windows quick check
+
+```powershell
+gcm java
+gcm jcmd
+gcm docker
+docker ps
 ```
 
 ---
 
-## 14. How to modify the scripts safely
+## 15. Recommended workflow for database issues
 
-When changing the scripts, change one category at a time:
+1. set the correct `SYSTEM_PROFILE`
+2. start with `monitor-oscar`
+3. let OSCAR run long enough to reach steady state
+4. run `check-oscar-status`
+5. inspect:
+   - DB total sessions
+   - DB by state
+   - DB by app
+   - Postgres logs
+6. decide whether sessions plateau or keep climbing
 
-1. profile memory sizes
-2. PostgreSQL memory settings
-3. monitoring interval
-4. extra diagnostics
-5. container or path settings
+If they keep climbing, you likely need one or more of:
 
-After each change, run a monitored test and compare the new `oscar-status-*.txt` report against an older stable run.
-
-Do not change everything at once or you will not know what helped.
-
----
-
-## 15. Recommended workflow
-
-For a new machine:
-
-1. put the correct `.env` in place
-2. verify dependencies
-3. verify the chosen `SYSTEM_PROFILE`
-4. start with `monitor-oscar`
-5. let it run at least 2 to 4 hours
-6. generate a status report
-7. check whether RSS, swap or pagefile, NMT committed, and threads plateau
-8. only then decide whether to raise or lower memory settings
-
-For production confidence:
-
-1. run monitored overnight
-2. generate a final status report
-3. verify that recent trend lines are flat
-4. archive one known-good monitor directory and status report for comparison
+- larger `max_connections`
+- smaller Hikari pool limits
+- reduced reconnect churn
+- PgBouncer
 
 ---
 
-## 16. Common mistakes to avoid
+## 16. Current practical interpretation
 
-- using a profile larger than the machine really supports
-- assuming Java heap is the only memory that matters
-- removing NMT flags from the Java launcher
-- starting JFR twice from both the launcher and the monitor without intending to
-- judging a leak from startup-only growth
-- deleting monitor directories before reviewing them
-- forgetting that repeated reconnects can be a logic problem even when memory looks stable
+If memory plateaus but DB sessions keep climbing, the primary issue is no longer memory. It is database connection growth or connection retention.
 
----
-
-## 17. Bottom line
-
-The updated scripts give you a repeatable way to:
-
-- choose the right memory profile
-- start OSCAR consistently
-- capture memory diagnostics during the run
-- summarize results into one report file
-- distinguish between startup growth, stable operation, and a real leak
-
-For day-to-day use, the most important steps are:
-
-- set the correct `SYSTEM_PROFILE`
-- start with `monitor-oscar` when testing
-- use `check-oscar-status` to review the run
-- keep the diagnostic files until you know the run is healthy
+That is why the updated monitor and check scripts now collect DB session data as first-class diagnostics.
