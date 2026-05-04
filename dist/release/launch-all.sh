@@ -19,38 +19,38 @@ case "${SYSTEM_PROFILE:-8GB}" in
   "RPI4")
     PG_SHARED="256MB"
     PG_CACHE="1GB"
-    PG_WORK_MEM="4MB"
+    PG_WORK_MEM="2MB"
     PG_MAINT="64MB"
-    PG_MAX_CONN="50"
+    PG_MAX_CONN="75"
     ;;
   "8GB")
     PG_SHARED="512MB"
     PG_CACHE="2GB"
-    PG_WORK_MEM="8MB"
+    PG_WORK_MEM="4MB"
     PG_MAINT="128MB"
-    PG_MAX_CONN="75"
+    PG_MAX_CONN="125"
     ;;
   "16GB")
     PG_SHARED="1GB"
     PG_CACHE="4GB"
-    PG_WORK_MEM="16MB"
+    PG_WORK_MEM="8MB"
     PG_MAINT="256MB"
-    PG_MAX_CONN="100"
+    PG_MAX_CONN="200"
     ;;
   "32GB")
     PG_SHARED="2GB"
     PG_CACHE="8GB"
-    PG_WORK_MEM="32MB"
+    PG_WORK_MEM="16MB"
     PG_MAINT="512MB"
-    PG_MAX_CONN="150"
+    PG_MAX_CONN="300"
     ;;
   *)
     echo "Unknown profile '${SYSTEM_PROFILE}', using 8GB defaults."
     PG_SHARED="512MB"
     PG_CACHE="2GB"
-    PG_WORK_MEM="8MB"
+    PG_WORK_MEM="4MB"
     PG_MAINT="128MB"
-    PG_MAX_CONN="75"
+    PG_MAX_CONN="125"
     ;;
 esac
 
@@ -89,6 +89,10 @@ docker run \
   -c work_mem="${PG_WORK_MEM}" \
   -c maintenance_work_mem="${PG_MAINT}" \
   -c max_connections="${PG_MAX_CONN}" \
+  -c superuser_reserved_connections=10 \
+  -c idle_session_timeout=600000 \
+  -c log_connections=on \
+  -c log_disconnections=on \
   -c wal_buffers=16MB \
   -c random_page_cost=1.1 \
   -c effective_io_concurrency=200 \
