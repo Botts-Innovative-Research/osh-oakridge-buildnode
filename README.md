@@ -1,180 +1,284 @@
 # OSH OAKRIDGE BUILDNODE
 
-This repository combines all the OSH modules and dependencies to deploy the OSH server and client for ORNL.
+This repository packages the OSH server and OSCAR client deployment used for ORNL field and test systems.
 
 ## Requirements
-- [Java 21.0.10+](https://www.oracle.com/java/technologies/downloads/#java21)
-- [Docker engine](https://www.docker.com)
-- [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
-- Node v22
 
-## Quick Start
-1. **Download the latest release**
-   - Go to the Releases section of the repository and download the latest compiled release archive (for example, `oscar-3.3.5.zip`).
-2. **Extract the archive**
-   - Extract the downloaded ZIP file to a directory of your choice.
-3. **Verify Docker Engine**
-   - Ensure that [Docker engine](https://www.docker.com) is installed and actively running on your host machine.
-4. **Launch the system**
-   - Open a terminal or command prompt in the extracted directory and run the OS-specific launch script:
-     - **Windows:** Run `launch-all.bat`
-     - **Linux/macOS:** Run `./launch-all.sh`
-     - **ARM systems:** Run `./launch-all-arm.sh`
+- Java 21 or newer
+- Docker Engine or Docker Desktop, running before launch
+- A packaged OSCAR release archive, or a local source checkout for build workflows
+- Node v22 only when building from source
 
-For a complete guide covering architecture, deployment, configuration, operations, and troubleshooting, please refer to the [OSCAR System Documentation Manual](dist/documentation/OSCAR_System_Documentation_Manual_3.5.md).
+## OSCAR 3.5.1 packaged release quick start
 
-## Installation
-Clone the repository and update all submodules recursively
+This section is for operators using the **prebuilt OSCAR 3.5.1 release ZIP**.
+
+### 1. Verify required dependencies
+
+Windows PowerShell:
+
+```powershell
+java -version
+docker version
+```
+
+Linux:
+
+```bash
+java -version
+docker version
+```
+
+Use **Java 21 or newer**. The launch scripts validate dependencies and will stop early if Java or Docker is missing or too old.
+
+### 2. If you were previously running OSCAR, start fresh
+
+Before extracting **OSCAR 3.5.1**, stop the old deployment and remove old local runtime artifacts.
+
+Windows PowerShell:
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.Name -match '^java(\.exe)?$' -and
+    $_.CommandLine -like '*com.botts.impl.security.SensorHubWrapper*'
+  } |
+  Select-Object ProcessId, CommandLine
+
+# Stop the old OSCAR JVM if one is still running
+Stop-Process -Id <old_pid> -Force
+
+# Stop and remove the old PostGIS container
+docker rm -f oscar-postgis-container
+
+# Remove the old Docker network if it exists
+docker network rm oscar-postgis-network
+```
+
+Linux:
+
+```bash
+pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+kill <old_pid>
+
+docker rm -f oscar-postgis-container
+docker network rm oscar-postgis-network || true
+```
+
+Then delete the old extracted release folder, such as **oscar-3.5.0**, before extracting **oscar-3.5.1**.
+
+### 3. Extract the release archive
+
+Extract the downloaded ZIP to a fresh working directory.
+
+### 4. Create the runtime environment file
+
+For packaged releases, use the environment file that ships with the archive:
+
+- if the package includes **env.txt**, rename it to **.env**
+- if the package includes **env.template**, copy it to **.env**
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .\env.template .\.env
+```
+
+Linux:
+
+```bash
+cp env.template .env
+```
+
+Edit `.env` before first launch and at minimum confirm:
+
+- `SYSTEM_PROFILE`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_PORT`
+- `CONTAINER_NAME`
+
+Useful optional settings include:
+
+- `FORCE_RESTART=1` to replace an already-running OSCAR instance
+- `ATTACH_TO_EXISTING=1` to monitor an already-running OSCAR instance
+- `MAX_WAIT_SECONDS=300`
+- `RETRY_MAX=120`
+- `RETRY_INTERVAL=2`
+- `POSTGIS_READY_DELAY=5`
+
+### 5. Preferred first start: use the monitoring script
+
+For testing, burn-in, and side-by-side field deployment, start OSCAR with the monitoring wrapper instead of launching the node directly.
+
+Windows:
+
+```bat
+monitor-oscar.bat
+```
+
+Linux:
+
+```bash
+chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
+./monitor-oscar.sh
+```
+
+This is the recommended first-run path because it:
+
+- starts PostGIS and OSCAR using the current launch scripts
+- captures memory, thread, JFR, and database snapshots over time
+- produces a monitor directory and status report inputs automatically
+
+### 6. Routine start without monitoring
+
+When monitoring is not needed, use the top-level launch script:
+
+Windows:
+
+```bat
+launch-all.bat
+```
+
+Linux:
+
+```bash
+./launch-all.sh
+```
+
+Prefer these **sessionless top-level launchers** over calling `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
+
+### 7. Running-instance handling
+
+The launch and monitor scripts now detect already-running OSCAR JVMs.
+
+Default behavior:
+
+- `launch-all` refuses to start if OSCAR is already running
+- `monitor-oscar` refuses to start if OSCAR is already running
+
+Optional behaviors:
+
+- set `FORCE_RESTART=1` to stop the running OSCAR instance and start fresh
+- set `ATTACH_TO_EXISTING=1` when using `monitor-oscar` to monitor the running instance instead of replacing it
+
+### 8. Generate a status report after startup
+
+After the system has been up long enough to settle, generate a one-file report.
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\check-oscar-status.ps1
+```
+
+Linux:
+
+```bash
+./check-oscar-status.sh
+```
+
+### 9. Admin access
+
+The admin username is typically **admin**. Do **not** assume the packaged password is always `admin`.
+
+For packaged releases, the initial password should be managed through the packaged secret file or environment-driven password initialization flow. Verify the package contents, then change the password before production use.
+
+## Building from source
+
+Clone the repository and update all submodules recursively:
 
 ```bash
 git clone git@github.com:Botts-Innovative-Research/osh-oakridge-buildnode.git --recursive
 ```
-If you've already cloned without `--recursive`, run:
+
+If you already cloned without `--recursive`, run:
+
 ```bash
 cd path/to/osh-oakridge-buildnode
 git submodule update --init --recursive
 ```
-## Build 
+
+## Build
+
 Navigate to the project directory:
 
 ```bash
 cd path/to/osh-oakridge-buildnode
 ```
 
-Run the build script (macOS/Linux):
+Run the build script.
+
+Linux/macOS:
 
 ```bash
 ./build-all.sh
 ```
 
-Run the build script (Windows):
+Windows:
 
-```bash
-./build-all.bat
+```bat
+build-all.bat
 ```
 
-After the build completes, it can be located in `build/distributions/` 
+After the build completes, the output is written under `build/distributions/`.
 
-## Deploy and Start OSH Node
-1. Unzip the distribution using the command line or File Explorer:
+## Source-tree deployment
 
-    Option 1: Command Line
-    ```bash
-    unzip build/distributions/osh-node-oscar-1.0.zip
-    cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
-   ```bash
-    tar -xf build/distributions/osh-node-oscar-1.0.zip
-    cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
-   Option 2: Use File Explorer
-    1. Navigate to `path/to/osh-oakridge-buildnode/build/distributions/`
-    2. Right-click `osh-node-oscar-1.0.zip`.
-    3. Select **Extract All..**
-    4. Choose your destination, (or leave the default) and extract.
-1. Launch the OSH node:
-   Run the launch script, "launch.sh" for linux/mac and "launch.bat" for windows.
-2. Access the OSH Node
-- Remote: **[ip-address]:8282/sensorhub/admin**
-- Locally:  **http://localhost:8282/sensorhub/admin**
+If you are testing from a source checkout instead of a packaged release:
 
-The default credentials to access the OSH Node are admin:admin. This can be changed in the Security section of the admin page.
+1. create `.env` from `env.template`
+2. verify Java 21 and Docker
+3. launch with `monitor-oscar` for first-run validation
+4. use `check-oscar-status` after the system reaches steady state
 
-For documentation on configuring a Lane System on the OSH Admin panel, please refer to the OSCAR Documentation provided in the Google Drive documentation folder.
+## MediaMTX for larger camera deployments
 
-## Deploy the Client
-After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clients endpoint:
-- Remote: **[ip-address]:8282**
-- Local: **http://localhost:8282/**
+For test systems and larger multi-lane deployments, consider placing **MediaMTX** in front of camera streams so OSCAR connects to stable local RTSP proxy paths instead of directly to every camera. See the updated MediaMTX guide in `dist/documentation/MediaMTX_OSCAR_camera_proxy_guide.md`.
 
-For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
+## PostgreSQL tuning
 
-# Releasing a New Version
+The packaged launch scripts now size PostgreSQL by `SYSTEM_PROFILE`.
 
-## Release Checklist
-Before releasing, ensure the following on the `dev` branch:
-1. Update `version` in `build.gradle` to match the release version (e.g. `"3.2.0"`)
-2. Update `deploymentName` in `dist/config/standard/config.json` to `"OSCAR <version>"` (e.g. `"OSCAR 3.2.0"`)
-3. Ensure there is no `pgdata` directory in `dist/release/postgis`
-4. Verify the build succeeds locally with `./build-all.sh` or `./build-all.bat`
+Representative values:
 
-## Release Steps
-1. **Merge `dev` into `main`:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git merge dev
-   git push origin main
-   ```
-   Alternatively, create a pull request from `dev` → `main` on GitHub and merge it.
+- `RPI4` -> max_connections 75
+- `8GB` -> max_connections 125
+- `16GB` -> max_connections 200
+- `32GB` -> max_connections 300
 
-2. **Tag the release on `main`:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git tag v<version>    # e.g. git tag v3.2.0
-   git push origin v<version>
-   ```
+The launchers also set:
 
-3. **The release workflow runs automatically.** It will:
-   - Validate that the tag is on the `main` branch
-   - Verify version numbers match the tag in `build.gradle` and `config.json`
-   - Check that `pgdata` does not exist in the release directory
-   - Build the project (Gradle + oscar-viewer)
-   - Package the source code with all submodules included
-   - Create a GitHub Release with the build artifact and source archive
+- `superuser_reserved_connections=10`
+- `idle_session_timeout=600000`
+- connection and disconnection logging
 
-# PostgreSQL Configuration
-There are some tweaks that can be made to the PostgreSQL configuration to make it perform better.
-Below is a list of suggested configuration parameters at varying levels of maximum system RAM.
+## Secure node over TLS
 
-`shared_buffers` - Should be around 25% of maximum RAM
-`effective_cache_size` - Should be around 70-75% of maximum RAM
-`work_mem` - 16MB to 64MB. Depends on maximum system memory and size of the load
-`maintenance_work_mem` - 512MB to 2GB. Depends on the load, but it's OK to try high numbers
+To secure the OSH node over TLS, generate a Java keystore with an SSL certificate.
 
-# Secure Node Over TLS (HTTPS)
-In order to secure the OSH node over TLS, you must generate a Java keystore with an SSL certificate.
-
-Below is the command to generate a keystore with a self-signed certificate.
-
-`keytool -genkeypair -alias <alias_name> -keyalg RSA -keysize 2048 -validity <days> -keystore <keystore_filename>.jks -storepass <keystore_password> -keypass <key_password> -dname "CN=<Common Name>, OU=<Organizational Unit>, O=<Organization>, L=<Locality>, ST=<State>, C=<Country>" -ext "SAN=<Subject Alternative Name>"`
-
-Then, in your OSH config (`config.json`), or in the Admin Panel under `Network` -> `HTTP Server`, you must specify the key store path, password, key alias, and HTTPS port.
-
-An example of the `config.json`'s HTTP Server config is shown below:
-
-```json
-{
-    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
-    "httpPort": 8282,
-    "httpsPort": 8443,
-    "servletsRootUrl": "/sensorhub",
-    "authMethod": "BASIC",
-    "keyStorePath": "osh-keystore.jks",
-    "keyStorePassword": "changeit",
-    "keyAlias": "oscar-key",
-    "trustStorePath": ".keystore/ssl_trust",
-    "enableCORS": true,
-    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.HttpServer",
-    "name": "HTTP Server"
-}
+```text
+keytool -genkeypair -alias <alias_name> -keyalg RSA -keysize 2048 -validity <days> -keystore <keystore_filename>.jks -storepass <keystore_password> -keypass <key_password> -dname "CN=<Common Name>, OU=<Organizational Unit>, O=<Organization>, L=<Locality>, ST=<State>, C=<Country>" -ext "SAN=<Subject Alternative Name>"
 ```
 
-You can also edit this information in the OSH launch scripts at `osh-node-oscar/launch.(sh|bat)`
+Then configure the keystore path, password, alias, and HTTPS port in `config.json` or in the Admin Panel under **Network -> HTTP Server**.
 
-```shell
-java -Xms6g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError \
-	-Dlogback.configurationFile=./logback.xml \
-	-cp "lib/*" \
-	-Djava.system.class.loader="org.sensorhub.utils.NativeClassLoader" \
-	-Djavax.net.ssl.keyStore="./osh-keystore.jks" \
-	-Djavax.net.ssl.keyStorePassword="changeit" \
-	-Djavax.net.ssl.trustStore="$SCRIPT_DIR/trustStore.jks" \
-	-Djavax.net.ssl.trustStorePassword="changeit" \
-	-Djava.library.path="./nativelibs" \
-	com.botts.impl.security.SensorHubWrapper ./config.json ./db
+## Releasing a new version
 
-```
+### Release checklist
+
+Before releasing from `dev`:
+
+1. update `version` in `build.gradle`
+2. update `deploymentName` in `dist/config/standard/config.json`
+3. ensure `dist/release/postgis/pgdata` is not packaged
+4. verify the release ZIP name matches the intended version, such as `oscar-3.5.1.zip`
+5. verify the release root directory name also matches the intended version
+6. verify `env.template`, release notes, README, and launch documentation all reflect the same version
+
+### Release steps
+
+1. merge `dev` into `main`
+2. tag the release on `main`
+3. push the release tag and allow the workflow to build and publish the release artifacts

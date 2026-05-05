@@ -1,5 +1,29 @@
 # OSCAR Build Node Change Log
-All notable changes to this project will be documented in this file. 
+
+All notable changes to this project will be documented in this file.
+
+## 3.5.1 2026-05-05
+
+### Added
+- Added profile-based launch sizing for packaged deployments.
+- Added Linux and Windows monitoring workflows for first-run validation and field burn-in.
+- Added one-file status report scripts for Linux and Windows.
+- Added support for attach-or-restart monitor behavior through environment settings.
+- Added MediaMTX deployment guidance for camera proxy use in larger test and field systems.
+
+### Changed
+- Updated launch scripts to validate Java and Docker before startup.
+- Updated launch scripts to detect an already-running OSCAR instance and fail fast unless `FORCE_RESTART=1` is set.
+- Updated monitor scripts to attach to an existing OSCAR instance when `ATTACH_TO_EXISTING=1` is set.
+- Updated PostGIS launch flow so an existing named container is replaced cleanly before startup settings are reapplied.
+- Updated Windows launch and monitoring logic to use PowerShell and CIM-based process detection instead of WMIC.
+- Updated release documentation for the prebuilt 3.5.1 unzip-and-run workflow.
+
+### Fixed
+- Fixed PostgreSQL session over-allocation caused by oversized Hikari idle pooling.
+- Fixed startup and monitoring friction on Windows around Java detection, trust store creation, and process discovery.
+- Fixed release packaging/documentation drift around launch steps, cleanup expectations, and version naming.
+
 ## 3.5.0 2026-04-24
 ### Changes
 - Updated LaneSystem README
@@ -163,8 +187,8 @@ This is the official first release of 3.0.0
 ### Changed
 - Restructured repository, moving most directories that are unused in development under `dist`
 
-## [2.3.0] 
-Release 2.3.0 
+## [2.3.0]
+Release 2.3.0
 
 ### Added
 - Added Deployment version to config.json
@@ -177,14 +201,12 @@ Removed dependency to log4j
 - [#90](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode/issues/90)
 Aspect Charts:The prior issue mentioned the Aspect RPMs and the Admin Panel, but this encompasses Aspects issues on the client as well.
 - [#]()
-Update charts in client to display Rapiscan and Aspect charts 
+Update charts in client to display Rapiscan and Aspect charts
 - [#]()
   Node Form Fix: Updated NodeForm to check if node is reachable before adding it to the list of Nodes, so when configuring a node it will ensure that you can access that node before it continues processing and updating the UI.
 
-
 ## [2.2] - 2025-07-30
 Release 2.2 request, no updates since 1.3.7.
-
 
 ## [1.3.7] 2025-07-18
 
