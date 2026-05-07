@@ -1,283 +1,359 @@
 # OSCAR launch, monitoring, and database diagnostics guide
 
-This guide explains the updated OSCAR launch and monitoring scripts for Linux and Windows. It covers:
+This guide covers the current **OSCAR 3.5.1 packaged deployment workflow** for Linux and Windows.
 
-- the purpose of `.env`, `launch-all`, `launch`, `monitor-oscar`, and `check-oscar-status`
-- how to choose the right system profile
-- how to start and stop OSCAR safely
-- how to monitor memory and database usage
-- how to diagnose PostgreSQL connection exhaustion
-- how to clean up old artifacts
+It explains:
 
----
-
-## 1. What changed
-
-The launch scripts now do two different jobs:
-
-- **launch scripts** size Java and PostgreSQL for the selected hardware profile and start the OSCAR stack
-- **monitor scripts** capture time-series diagnostics while OSCAR runs
-- **check scripts** summarize the latest run into one report file
-
-The biggest recent addition is **database diagnostics**. The monitor now records PostgreSQL session counts, session states, and top session groups on each interval. The status-check script now includes database saturation analysis in the one-file report.
+- how to prepare a fresh prebuilt release
+- how to create `.env`
+- how the updated `launch-all`, `launch`, `monitor-oscar`, `stop-all`, `reset-all`, and `check-oscar-status` scripts behave
+- how already-running OSCAR instances are handled
+- how to validate Java, Docker, memory, and database health
+- how to use MediaMTX and status reports during testing and side-by-side field deployment
 
 ---
 
-## 2. Files and what they do
+## 1. Recommended operating model
 
-### Shared configuration
+For **testing, burn-in, and side-by-side field deployment**, the preferred workflow is:
 
-#### `.env`
-Holds deployment settings such as:
+1. unzip the prebuilt release into a fresh folder
+2. create `.env`
+3. verify **Java 21+** and **Docker**
+4. start with the **monitoring script**
+5. let the system warm up
+6. run the **status-check script**
+7. review JVM, thread, and PostgreSQL behavior before wider deployment
 
-- `SYSTEM_PROFILE`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_PORT`
-- `DB_HOST`
-- `CONTAINER_NAME`
-- keystore and truststore passwords
-- optional JavaCPP and JFR overrides
+Use the top-level **sessionless launchers** when possible:
 
-This is the main place to choose the right profile.
+- `launch-all.sh` / `launch-all.bat`
+- `monitor-oscar.sh` / `monitor-oscar.bat`
 
-### Linux launch files
-
-#### `launch-all.sh`
-Builds and starts the PostGIS container with profile-specific PostgreSQL settings, waits for the database to be ready, then starts OSCAR by calling `osh-node-oscar/launch.sh`.
-
-#### `osh-node-oscar/launch.sh`
-Loads `.env`, chooses the Java heap settings for the selected profile, sets up certificates, enables Native Memory Tracking, and starts OSCAR.
-
-### Linux monitoring files
-
-#### `monitor-oscar.sh`
-Starts OSCAR, starts JFR, and captures repeated snapshots containing:
-
-- JVM memory
-- JFR status
-- NMT summary
-- thread dump
-- Linux memory and swap state
-- Docker status
-- PostgreSQL session counts and session-state breakdown
-- PostgreSQL tail logs
-
-It also writes `db-connection-trend.csv`, which is the easiest file to inspect when diagnosing connection growth.
-
-#### `check-oscar-status.sh`
-Reads the latest monitor directory and writes a single text report that combines:
-
-- current JVM state
-- current memory and swap state
-- current PostgreSQL session picture
-- first snapshot vs latest snapshot
-- last 20 snapshot trend lines
-- recent OSCAR and Postgres logs
-
-### Windows launch files
-
-#### `launch-all.bat`
-Windows equivalent of the Linux `launch-all.sh`. It starts the PostGIS container using the selected profile and then launches OSCAR.
-
-#### `osh-node-oscar\launch.bat`
-Windows equivalent of the Linux `launch.sh`. It starts OSCAR with the selected Java settings and Native Memory Tracking enabled.
-
-### Windows monitoring files
-
-#### `monitor-oscar.bat`
-Starts OSCAR, attaches JFR with `jcmd`, and writes repeated snapshots for:
-
-- JVM process state
-- Windows commit and pagefile counters
-- Docker status
-- PostgreSQL session counts and top session groups
-
-#### `check-oscar-status.ps1`
-Windows equivalent of `check-oscar-status.sh`. It writes one status report file summarizing the latest monitor run.
+Avoid launching `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
 
 ---
 
-## 3. Choosing the right profile
+## 2. Fresh install and upgrade cleanup
 
-The most important setting in `.env` is:
+If the machine has previously run OSCAR, clean up the old deployment before extracting **OSCAR 3.5.1**.
 
-```text
-SYSTEM_PROFILE=16GB
-```
-
-Available profiles are usually:
-
-- `RPI4`
-- `8GB`
-- `16GB`
-- `32GB`
-
-Choose the profile based on the machine that is actually running OSCAR.
-
-### How to make sure you are using the right profile
-
-1. Open `.env`
-2. Confirm `SYSTEM_PROFILE` matches the host RAM class
-3. Start OSCAR with the normal launch script
-4. Check the launch output and verify the profile name printed by the script
-5. Verify Postgres settings after startup:
-
-Linux:
+### Linux
 
 ```bash
-docker exec -it oscar-postgis-container psql -U postgres -d gis -c "show max_connections;"
+pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+kill <old_pid>
+
+docker rm -f oscar-postgis-container
+docker network rm oscar-postgis-network || true
+rm -rf /path/to/old/oscar-3.5.0
 ```
 
-Windows PowerShell:
+### Windows PowerShell
 
 ```powershell
-docker exec -it oscar-postgis-container psql -U postgres -d gis -c "show max_connections;"
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.Name -match '^java(\.exe)?$' -and
+    $_.CommandLine -like '*com.botts.impl.security.SensorHubWrapper*'
+  } |
+  Select-Object ProcessId, CommandLine
+
+Stop-Process -Id <old_pid> -Force
+
+docker rm -f oscar-postgis-container
+docker network rm oscar-postgis-network
+Remove-Item -Recurse -Force .\oscar-3.5.0
 ```
 
-For the current tuned setup, the intended PostgreSQL connection caps are:
+If the Docker network does not exist, that is fine. The goal is to avoid carrying old container state or an old extracted release folder into the new test run.
 
-- `RPI4`: 75
-- `8GB`: 125
-- `16GB`: 200
-- `32GB`: 300
-
-These are launch-script values, not `.env` values.
+For a full local reset between side-by-side test installs, use `reset-all.sh` or `reset-all.bat`.
 
 ---
 
-## 4. Why these scripts are useful
+## 3. Required dependencies
 
-### Launch scripts
+### Linux
 
-They keep OSCAR and Postgres sized consistently for the machine instead of using one oversized default everywhere.
+Required:
 
-### Monitor scripts
-
-They answer questions like:
-
-- is Java memory still growing?
-- is swap/pagefile pressure building?
-- is JVM native memory growing?
-- is PostgreSQL session count rising toward the limit?
-- are errors in the logs happening at the same time as DB pressure?
-
-### Check scripts
-
-They turn a whole monitor directory into one readable summary so you do not have to open dozens of snapshot files manually.
-
----
-
-## 5. Dependencies
-
-## Linux dependencies
-
-Install or verify these:
-
-- Docker
-- Java JDK with `jcmd`
 - Bash
-- `psql` inside the Postgres container
+- Java 21 or newer
+- `keytool`
+- Docker
 
-Helpful but optional:
+Recommended for monitoring:
 
+- `jcmd`
 - `pmap`
-- `vmstat`
 - `free`
+- `vmstat`
 
-### How to install on Ubuntu
+Ubuntu example:
 
 ```bash
 sudo apt update
 sudo apt install openjdk-21-jdk docker.io procps psmisc
 ```
 
-### How to check if they are installed
-
-```bash
-which java
-which jcmd
-which docker
-which pmap
-which vmstat
-```
-
-Check Docker:
-
-```bash
-docker --version
-```
-
-Check Java:
+Verify:
 
 ```bash
 java -version
-jcmd -h
+which keytool
+which docker
+which jcmd
 ```
 
-## Windows dependencies
+### Windows
 
-Install or verify these:
+Required:
 
-- Docker Desktop
-- JDK with `jcmd.exe`
 - PowerShell
+- Java 21 or newer
+- Docker Desktop or Docker Engine
 
-### How to check on Windows
+Recommended:
 
-PowerShell:
+- `jcmd.exe`
+
+Verify:
 
 ```powershell
-gcm java
-gcm jcmd
-gcm docker
+java -version
+docker version
+Get-Command java
+Get-Command docker
+Get-Command jcmd
 ```
 
-If `jcmd` is not found, install a JDK and add its `bin` directory to `PATH`.
+The Windows launchers now use **PowerShell/CIM**-based process discovery. They do not depend on `wmic`.
+
+### Important dependency policy
+
+The updated scripts distinguish between **required** dependencies and **optional** runtime extras.
+
+Hard failures are for things such as:
+
+- Java
+- Docker
+- `keytool` where the script needs it
+- required packaged files and directories such as `osh-node-oscar/lib`
+
+Warning-only cases include:
+
+- missing `.env` when defaults are available
+- missing `trusted_certificates`
+- missing `nativelibs`
+- missing optional monitoring helpers such as `pmap` or `vmstat`
+
+A missing `nativelibs` directory no longer stops startup by itself.
 
 ---
 
-## 6. Starting OSCAR
+## 4. Environment file setup
 
-## Linux normal start with monitoring
+Create `.env` before launch.
 
-From the project root:
+- if the packaged release ships **env.txt**, rename it to **.env**
+- if the source tree ships **env.template**, copy it to **.env**
+
+Linux:
 
 ```bash
-chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
-nohup ./monitor-oscar.sh > monitor.out 2>&1 &
-echo $! > monitor.pid
+cp env.template .env
 ```
 
-This starts:
+Windows PowerShell:
 
-- PostGIS
-- OSCAR
-- JFR
-- memory and DB monitoring
+```powershell
+Copy-Item .\env.template .\.env
+```
 
-## Linux start without monitoring
+### Core settings
+
+```dotenv
+SYSTEM_PROFILE=16GB
+DB_NAME=gis
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_PORT=5432
+DB_HOST=localhost
+CONTAINER_NAME=oscar-postgis-container
+```
+
+### Process and monitor behavior settings
+
+```dotenv
+FORCE_RESTART=0
+ATTACH_TO_EXISTING=0
+MAX_WAIT_SECONDS=300
+RETRY_MAX=120
+RETRY_INTERVAL=2
+POSTGIS_READY_DELAY=5
+```
+
+### What these mean
+
+- `FORCE_RESTART=0` -> refuse to start if OSCAR is already running
+- `FORCE_RESTART=1` -> stop the running OSCAR instance and start fresh
+- `ATTACH_TO_EXISTING=0` -> monitor script refuses to attach to a running OSCAR process
+- `ATTACH_TO_EXISTING=1` -> monitor script attaches to the running OSCAR process instead of replacing it
+- `MAX_WAIT_SECONDS` -> how long monitor scripts wait for the Java process to appear
+- `RETRY_MAX`, `RETRY_INTERVAL`, `POSTGIS_READY_DELAY` -> PostGIS readiness timing
+
+---
+
+## 5. Profile-based sizing
+
+The launchers size Java and PostgreSQL by `SYSTEM_PROFILE`.
+
+Supported profiles:
+
+- `RPI4`
+- `8GB`
+- `16GB`
+- `32GB`
+
+Representative PostgreSQL `max_connections` values:
+
+- `RPI4` -> 75
+- `8GB` -> 125
+- `16GB` -> 200
+- `32GB` -> 300
+
+The launchers also set:
+
+- `superuser_reserved_connections=10`
+- `idle_session_timeout=600000`
+- connection and disconnection logging
+
+---
+
+## 6. Launch scripts and what they do
+
+### `launch-all.sh` / `launch-all.bat`
+
+These are the supported top-level launchers.
+
+They:
+
+- load `.env` when present
+- validate Java and Docker
+- detect an already-running OSCAR instance
+- size PostgreSQL for the selected profile
+- rebuild or reuse the PostGIS image
+- remove the existing named PostGIS container if necessary
+- start a new PostGIS container with the current settings
+- wait for PostgreSQL readiness
+- call `osh-node-oscar/launch.(sh|bat)`
+
+### `osh-node-oscar/launch.sh` / `osh-node-oscar/launch.bat`
+
+These launch only the OSCAR Java node.
+
+They:
+
+- load `.env` when present
+- validate Java and `keytool`
+- detect an already-running OSCAR instance
+- choose heap and JavaCPP settings for the selected profile
+- build or refresh the Java trust store
+- initialize the packaged admin password flow
+- start the Java process with Native Memory Tracking enabled
+
+Optional runtime extras are handled gracefully:
+
+- if `nativelibs` exists, the launcher adds `java.library.path`
+- if `nativelibs` does not exist, the launcher warns and continues
+- if `trusted_certificates` does not exist, the trust-store helper uses the copied default Java `cacerts` store and continues
+
+Use these direct node launchers mainly for debugging.
+
+---
+
+## 7. How already-running OSCAR instances are handled
+
+### Launch behavior
+
+By default, if an OSCAR JVM is already running, `launch-all` and `launch` stop and print an error instead of silently starting another instance.
+
+Typical message:
+
+```text
+OSCAR is already running with PID(s): ...
+Stop the running instance first, or set FORCE_RESTART=1 to replace it.
+```
+
+### Force replacement
+
+Set:
+
+```dotenv
+FORCE_RESTART=1
+```
+
+Then the scripts attempt to stop the running OSCAR process before starting a new one.
+
+### Monitor attach behavior
+
+For monitor wrappers, you have two supported choices:
+
+- `FORCE_RESTART=1` -> replace the running OSCAR instance and monitor the new one
+- `ATTACH_TO_EXISTING=1` -> keep the running OSCAR instance and attach monitoring to it
+
+---
+
+## 8. Starting OSCAR
+
+### Recommended first-run start with monitoring
+
+#### Linux
+
+```bash
+./monitor-oscar.sh
+```
+
+The packaged Linux build now marks all shipped `*.sh` files executable. If your unzip tool strips execute bits, restore them with:
+
+```bash
+chmod +x *.sh osh-node-oscar/*.sh
+```
+
+#### Windows
+
+```bat
+monitor-oscar.bat
+```
+
+This creates an output directory such as:
+
+```text
+oscar-monitor-20260505-032622
+```
+
+and captures:
+
+- launch stdout and stderr
+- JVM PID information
+- JFR status
+- GC heap information
+- native memory summaries
+- thread dumps
+- Docker status
+- PostgreSQL session and activity data
+- trend CSV files for database sessions
+
+### Routine start without monitoring
+
+#### Linux
 
 ```bash
 ./launch-all.sh
 ```
 
-## Windows normal start with monitoring
-
-From the project root in `cmd`:
-
-```bat
-start /b monitor-oscar.bat
-```
-
-Or from PowerShell:
-
-```powershell
-Start-Process -FilePath .\monitor-oscar.bat
-```
-
-## Windows start without monitoring
+#### Windows
 
 ```bat
 launch-all.bat
@@ -285,259 +361,187 @@ launch-all.bat
 
 ---
 
-## 7. Stopping OSCAR
+## 9. Stopping and resetting OSCAR
 
-## Linux
+### `stop-all`
 
-If you used the monitor script:
+The `stop-all` scripts now begin by asking the monitor to stop first.
+
+Behavior:
+
+- attempt to stop the monitor
+- do not wait indefinitely for monitor exit
+- continue with direct fallback shutdown of OSCAR and PostGIS if needed
+
+This avoids `stop-all` getting stuck on a monitor-closing attempt.
+
+### `reset-all`
+
+Use `reset-all` when you want a clean local test surface before trying a different packaged installation on the same machine.
+
+It:
+
+- asks the monitor to stop first
+- stops OSCAR Java processes
+- removes the PostGIS container and volumes
+- clears local runtime state used by the packaged installation
+
+Linux:
 
 ```bash
-kill "$(cat monitor.pid)"
+./reset-all.sh
 ```
 
-The monitor script is designed to stop:
-
-- itself
-- the OSCAR JVM
-- the PostGIS container
-
-## Windows
+Windows:
 
 ```bat
-monitor-oscar.bat stop
+reset-all.bat
 ```
-
-This requests the same full-stack stop.
 
 ---
 
-## 8. How to use the monitor output
+## 10. Status reports
 
-Each monitor run creates a directory such as:
-
-```text
-oscar-monitor-20260503-174333
-```
-
-Inside it are:
-
-- `launch.stdout.log`
-- `launch.stderr.log`
-- `jvm-pid.txt`
-- `db-connection-trend.csv`
-- one snapshot directory per interval
-
-Each snapshot includes memory and DB files, for example:
-
-- `nmt-summary.txt`
-- `gc-heap-info.txt`
-- `thread-print.txt`
-- `db-total-sessions.txt`
-- `db-by-state.txt`
-- `db-by-app.txt`
-- `db-activity-detail.txt`
-- `db-error.txt`
-- `docker-logs-tail.txt`
-
----
-
-## 9. How to analyze the data
-
-### Memory analysis
-
-Look for whether these plateau:
-
-- RSS / working set
-- swap / pagefile usage
-- thread count
-- NMT committed memory
-
-A healthy system usually rises at startup and then flattens.
-
-### Database analysis
-
-Look at:
-
-- `db-total-sessions.txt`
-- `db-by-state.txt`
-- `db-by-app.txt`
-- `db-connection-trend.csv`
-
-A healthy DB profile usually looks like:
-
-- total sessions rise at startup
-- then total sessions plateau
-- idle sessions stay reasonable
-- total sessions remain comfortably below usable client slots
-
-A suspicious DB profile looks like:
-
-- total sessions keep climbing over time
-- idle or idle-in-transaction sessions pile up
-- `db-error.txt` contains `too many clients already`
-- Postgres logs show repeated connection failures
-
-### Important DB formula
-
-Use:
-
-```text
-usable client slots = max_connections - superuser_reserved_connections
-```
-
-If total sessions are approaching that number, Postgres is near saturation.
-
----
-
-## 10. How to create a one-file report
-
-## Linux
+### Linux
 
 ```bash
 ./check-oscar-status.sh
 ```
 
-This writes a file like:
-
-```text
-oscar-status-20260504-102524.txt
-```
-
-## Windows
+### Windows
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\check-oscar-status.ps1
 ```
 
-That also writes a single status report file.
+These scripts summarize the latest monitor run into a single text report that includes:
+
+- process status
+- live JVM information
+- heap and native memory summaries
+- current container status
+- PostgreSQL activity snapshots
+- first-versus-latest trend comparison
+- recent log tails
 
 ---
 
-## 11. How to modify the scripts
+## 11. What healthy startup looks like
 
-### To change the profile mapping
+A healthy first-run profile typically looks like this:
 
-Edit `launch-all.sh` or `launch-all.bat` for PostgreSQL sizing.
+- Java RSS rises during startup and then levels out
+- thread count rises during startup and then stabilizes
+- PostgreSQL sessions rise during startup and then plateau well below usable client slots
+- swap or pagefile usage stays low
+- `db-error` remains empty
 
-Edit `osh-node-oscar/launch.sh` or `osh-node-oscar\launch.bat` for Java sizing.
+### Important PostgreSQL rule
 
-### To change monitoring frequency
+```text
+usable client slots = max_connections - superuser_reserved_connections
+```
 
-Edit `INTERVAL` in `monitor-oscar.sh` or `monitor-oscar.bat`.
-
-### To collect more DB detail
-
-Add more `psql` queries in the monitor script and save them into the snapshot directory.
-
-### To change JFR output size or retention
-
-Edit:
-
-- `JFR_MAX_AGE`
-- `JFR_MAX_SIZE`
-- `JFR_NAME`
+If total sessions keep climbing toward that number, PostgreSQL is nearing saturation.
 
 ---
 
-## 12. When to delete files
+## 12. Interpreting the monitor output
 
-You should delete monitor output when:
+Key files in a monitor directory:
 
-- you no longer need old runs
-- the monitor directories are consuming too much disk space
-- you have already captured the final report you need
+- `launch.stdout.log`
+- `launch.stderr.log`
+- `jvm-pid.txt`
+- `db-connection-trend.csv`
+- one timestamped snapshot directory per interval
 
-## Linux cleanup
+Key per-snapshot files:
 
-Delete old monitor output:
+- `nmt-summary.txt`
+- `gc-heap-info.txt`
+- `thread-print.txt`
+- `db-max-connections.txt`
+- `db-total-sessions.txt`
+- `db-by-state.txt`
+- `db-by-app.txt`
+- `db-activity-detail.txt`
+- `docker-logs-tail.txt`
 
-```bash
-rm -rf oscar-monitor-2026*
-```
+Use `db-connection-trend.csv` as the fastest way to spot connection growth, plateauing, or saturation.
 
-Delete old one-file reports:
+---
 
-```bash
-rm -f oscar-status-*.txt
-```
+## 13. MediaMTX during field testing
 
-## Windows cleanup
+For larger camera configurations or side-by-side test deployments:
 
-In PowerShell:
+1. start OSCAR with `monitor-oscar`
+2. route camera streams through MediaMTX
+3. let the system run long enough to capture reconnect and thread behavior
+4. run `check-oscar-status`
+5. compare JVM threads, reconnect logs, and PostgreSQL sessions before and after enabling MediaMTX
 
-```powershell
-Remove-Item .\oscar-monitor-* -Recurse -Force
-Remove-Item .\oscar-status-*.txt -Force
-```
+MediaMTX is especially helpful when many logical lane-camera assignments reuse a smaller number of real camera streams.
 
-Do **not** delete:
+---
+
+## 14. Troubleshooting checklist
+
+### Launch fails before Java starts
+
+Check:
+
+- `.env` exists if you intend to override defaults
+- Java 21+ is installed
+- Docker is running
+- required directories such as `osh-node-oscar/lib` exist
+- the trust store and keystore files exist where the launch script expects them
+
+Remember:
+
+- missing `nativelibs` is warning-only
+- missing `trusted_certificates` is warning-only if the default Java trust store can be copied successfully
+
+### Monitor hangs waiting for Java
+
+Check `launch.stdout.log` and `launch.stderr.log` inside the newest monitor directory.
+
+Common causes:
+
+- PostGIS container startup failed
+- the OSCAR Java process exited immediately after launch
+- a required runtime path is missing
+- a certificate, trust store, or password-initialization step failed
+
+### PostgreSQL sessions keep climbing
+
+Inspect:
+
+- `db-total-sessions.txt`
+- `db-by-state.txt`
+- `db-by-app.txt`
+- `db-activity-detail.txt`
+- `db-connection-trend.csv`
+
+### Thread count keeps climbing
+
+Inspect:
+
+- `thread-print.txt`
+- reconnect-related warnings in `launch.stdout.log`
+- MediaMTX versus direct-camera behavior under the same test workload
+
+---
+
+## 15. Files you normally should not delete
+
+Do not delete these unless you intentionally want to reset state:
 
 - `.env`
-- `launch-all` scripts
-- `launch` scripts
-- keystore or truststore files
-- `pgdata` unless you intend to wipe the database
-
----
-
-## 13. Files you normally should not delete
-
-Avoid deleting these unless you intentionally want to rebuild or reset the environment:
-
-- `pgdata/`
 - `osh-node-oscar/db/`
+- `pgdata/`
 - `osh-node-oscar/osh-keystore.p12`
 - `osh-node-oscar/truststore.jks`
-- your main `.env`
 
----
-
-## 14. How to verify dependencies after changes
-
-## Linux quick check
-
-```bash
-which java
-which jcmd
-which docker
-docker ps
-```
-
-## Windows quick check
-
-```powershell
-gcm java
-gcm jcmd
-gcm docker
-docker ps
-```
-
----
-
-## 15. Recommended workflow for database issues
-
-1. set the correct `SYSTEM_PROFILE`
-2. start with `monitor-oscar`
-3. let OSCAR run long enough to reach steady state
-4. run `check-oscar-status`
-5. inspect:
-   - DB total sessions
-   - DB by state
-   - DB by app
-   - Postgres logs
-6. decide whether sessions plateau or keep climbing
-
-If they keep climbing, you likely need one or more of:
-
-- larger `max_connections`
-- smaller Hikari pool limits
-- reduced reconnect churn
-- PgBouncer
-
----
-
-## 16. Current practical interpretation
-
-If memory plateaus but DB sessions keep climbing, the primary issue is no longer memory. It is database connection growth or connection retention.
-
-That is why the updated monitor and check scripts now collect DB session data as first-class diagnostics.
+It is safe to delete old monitor directories and generated status reports once you have kept the reports you need.

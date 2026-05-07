@@ -11,8 +11,23 @@ JFR_NAME="${JFR_NAME:-oscar}"
 JFR_MAX_AGE="${JFR_MAX_AGE:-4h}"
 JFR_MAX_SIZE="${JFR_MAX_SIZE:-1g}"
 ENV_FILE="${ENV_FILE:-$PROJECT_DIR/.env}"
+MONITOR_PID_FILE="$PROJECT_DIR/monitor.pid"
+
+if [ "${1:-}" = "stop" ]; then
+    if [ -f "$MONITOR_PID_FILE" ]; then
+        monitor_pid="$(tr -d '[:space:]' < "$MONITOR_PID_FILE")"
+        if [ -n "$monitor_pid" ] && kill -0 "$monitor_pid" 2>/dev/null; then
+            kill "$monitor_pid" 2>/dev/null || true
+            echo "OSCAR monitor stop requested for PID $monitor_pid."
+            exit 0
+        fi
+    fi
+    echo "OSCAR monitor is not running."
+    exit 0
+fi
 
 mkdir -p "$OUT_DIR"
+echo "$$" > "$MONITOR_PID_FILE"
 
 CONTAINER_NAME="oscar-postgis-container"
 DB_NAME="gis"
@@ -43,6 +58,7 @@ log "Database: $DB_NAME user=$DB_USER"
 
 if [ ! -x "$LAUNCH_CMD" ]; then
     echo "Error: launch command is not executable: $LAUNCH_CMD"
+    rm -f "$MONITOR_PID_FILE"
     exit 1
 fi
 
@@ -191,6 +207,7 @@ on_signal() {
 
 on_exit() {
     final_dump
+    rm -f "$MONITOR_PID_FILE"
 }
 
 trap on_signal INT TERM
