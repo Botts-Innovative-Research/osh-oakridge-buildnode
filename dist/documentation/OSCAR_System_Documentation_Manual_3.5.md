@@ -16,8 +16,8 @@
 | **Field**       | **Value**                                                                                                                                           |
 |-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | Document type   | Technical reference and operations guide                                                                                                            |
-| Baseline        | OSCAR v3.5.1 packaged deployment guidance with legacy architectural background                                                                                                         |
-| Version context | Updated with OSCAR 3.5.1 deployment, monitoring, and prebuilt-release operational guidance while retaining broader architecture and feature context                                  |
+| Baseline        | OSCAR v3.3.2 / 3.5 pause-point feature line                                                                                                         |
+| Version context | Centered on v3.3.2, the feature-complete build expected to become the 3.5 pause point after an internal test cycle                                  |
 | Audience        | Deployment engineers, operators, testers, and maintainers                                                                                           |
 | Scope           | Administrative configuration, viewer/PWA, database, file handling, Web ID integration, offline conversion, reporting, scaling, and upgrade guidance |
 
@@ -53,22 +53,6 @@ Operationally, OSCAR supports two practical deployment patterns: a default singl
 | Evidence model     | Events can combine spectra, N42 files, uploaded evidence, QR code data, videos, Web ID results, adjudication history, and generated reports.                                |
 | Major integrations | Rapiscan, Aspect, and RSI lanes, FFmpeg-recognized camera streams, Web ID, Cambio, MQTT, and a role-aware file API.                                                         |
 
-
-## 3.5.1 packaged release note
-
-This manual now includes **OSCAR 3.5.1** packaged deployment guidance for the current prebuilt release workflow.
-
-The most important operational changes in this release line are:
-
-- Java 21 and Docker are required prerequisites for packaged launchers
-- the launchers now validate dependencies before startup
-- the top-level launch and monitor scripts detect already-running OSCAR instances
-- the monitor scripts can either attach to or replace an already-running OSCAR process
-- profile-based Java and PostgreSQL sizing is now part of the standard deployment flow
-- MediaMTX is recommended for larger test or field deployments that reuse a smaller number of real camera streams
-
-For first-run field validation, the preferred workflow is to start with the monitoring wrapper and then generate a status report after the system reaches steady state.
-
 # 2. System architecture
 
 OSCAR is best understood as a node-centric application host that serves both configuration and operator workflows while coordinating external devices and services. Lanes are the operational units. Each lane can have detector inputs, camera feeds, event history, and associated evidence. Events and statistics are persisted in PostgreSQL, while files such as videos, reports, site diagrams, CSV imports, and adjudication artifacts remain on the application host file system.
@@ -102,40 +86,32 @@ The diagram below condenses the system relationships. It is not a source-code cl
 
 # 3. Installation and initial startup
 
-Installation for the current packaged release is intentionally simple: download the **OSCAR 3.5.1** release archive, extract it into a fresh directory, verify **Java 21+** and **Docker**, create `.env`, and start the system with the OS-specific top-level launcher or monitoring wrapper. The database and application come up together in the default deployment path.
-
-For test and side-by-side field deployment, the preferred first start is the monitoring wrapper rather than a direct node launch.
+Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific launch-all script (`launch-all.bat` for Windows, `launch-all.sh` for Linux/macOS, or `launch-all-arm.sh` for ARM systems). The database and application come up together in the default deployment path.
 
 ## Prerequisites
 
 | **Item**                        | **Why it matters**                                              | **Notes**                                                                                                    |
 |---------------------------------|-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| Supported host OS               | The release package contains OS-specific launch scripts.        | Windows and Linux are the primary packaged deployment paths discussed in the 3.5.1 workflow.                |
-| Java 21 or newer                | Required by the packaged launch and monitoring scripts.         | The launchers validate the Java version at startup and fail fast if Java is missing or too old.             |
-| Docker                          | Required for the default local PostgreSQL deployment.           | Docker must already be running before `launch-all` or `monitor-oscar` is started.                           |
+| Supported host OS               | The release package contains OS-specific launch scripts.        | Windows has the strongest support, although the packaging also includes scripts for other operating systems. |
+| Docker                          | Required for the default local PostgreSQL deployment.           | PostgreSQL replaces the older embedded H2 option in the current release line.                                |
 | Browser with PWA support        | Needed for installed desktop/mobile viewer experiences.         | Chrome-like browsers support the install flow; notifications depend on secure hosting.                       |
 | Optional SSL keystore           | Needed to host the application over HTTPS.                      | The HTTPS configuration expects a keystore path, password, alias, and selected port.                         |
 | Optional remote PostgreSQL host | Useful for larger sites or more robust infrastructure.          | Remote database connection parameters can be entered in the admin configuration.                             |
 | Optional Web ID endpoint        | Enables automated isotope analysis for evidence and RS350 data. | A remote default root can be used, but the root URL is configurable for local or offline hosting.            |
-| Optional MediaMTX host          | Recommended for larger camera-heavy systems.                    | MediaMTX can proxy a smaller set of upstream camera streams to many logical lane assignments.                |
 
 ## Startup sequence
 
-> 1\. Download the desired release from the repository releases page and extract it to a **fresh working directory**. If an older extracted OSCAR release is already present on the same host, stop the old OSCAR JVM, remove the old PostGIS container and any old OSCAR-specific Docker network, and delete the old extracted folder before proceeding.
+> 1\. Download the desired release from the repository releases page and extract it to a working directory.
 >
-> 2\. Verify **Java 21 or newer** and **Docker** before starting OSCAR.
+> 2\. Install Docker and verify that the Docker service is running before starting OSCAR.
 >
-> 3\. Create `.env`. In packaged releases this may mean renaming `env.txt` to `.env`. In source-style layouts this means copying `env.template` to `.env`.
+> 3\. Run the launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
 >
-> 4\. For test and side-by-side field deployment, start with the monitoring wrapper (`monitor-oscar.bat` or `monitor-oscar.sh`). For routine startup without monitoring, use the top-level `launch-all` script. Avoid direct use of the node-level launch script unless you are debugging.
+> 4\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
 >
-> 5\. The launchers now validate dependencies, detect already-running OSCAR instances, and either refuse to proceed or replace the running instance depending on `FORCE_RESTART`. The monitor wrappers can also attach to an already-running OSCAR process when `ATTACH_TO_EXISTING=1` is set.
+> 5\. Sign in with the initial admin account. The initial password is configurable before launch, but the exact shipped username and password should be verified against the release README or package contents.
 >
-> 6\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
->
-> 7\. Sign in with the initial admin account. The initial username is typically `admin`, but the exact packaged password should be verified from the release package or release notes rather than assuming a universal default.
->
-> 8\. Before production use, change the initial admin password and then generate a first-run status report with `check-oscar-status` after the system reaches steady state.
+> 6\. Before production use, change the initial admin password using the dot-prefixed settings or environment file and run the set-initial-admin-password script so the password is written in the hashed form expected by the system.
 
 <table>
 <colgroup>
@@ -144,7 +120,7 @@ For test and side-by-side field deployment, the preferred first start is the mon
 <thead>
 <tr class="header">
 <th><p><strong>Operational note</strong></p>
-<p>If multiple extracted versions exist on the same machine, explicitly stop the old OSCAR JVM and remove the old `oscar-postgis-container` before launching the new package. Reusing an old container or old extracted directory can populate data in the wrong place and create confusion during configuration or tuning.</p></th>
+<p>If multiple extracted versions exist on the same machine, use the stop-all script to fully stop the application and Dockerized database for the version you were running. An older running container can accidentally populate data in the wrong directory and create confusion during configuration or tuning.</p></th>
 </tr>
 </thead>
 <tbody>
@@ -404,18 +380,6 @@ Configuration of video retention lives in the “OSCAR Service Module.”
 
 Configuration of additional users / permissions exists under the “Security” tab. Users can be configured with fine-grained permissions to access / write to the system.
 
-
-## 3.5.1 deployment operations guidance
-
-For packaged 3.5.1 deployments, the most practical first-run validation sequence is:
-
-1. launch with the monitoring wrapper
-2. let the system warm up long enough to reach a steady operating state
-3. generate the one-file status report
-4. confirm that Java memory, thread count, and PostgreSQL session counts plateau rather than climb continuously
-
-This deployment workflow is especially important when evaluating reconnect churn, thread growth, or database session growth in larger simulated or camera-heavy systems.
-
 # 9. Performance, scale, and deployment guidance
 
 Default deployment begins to strain as lane counts, event volume, and camera counts increase. The following guidance is useful for planning, even though it is not a formal support limit.
@@ -519,25 +483,3 @@ This section captures known gaps and enhancement ideas so they are not confused 
 | PWA          | Progressive web app. The installable version of the viewer for desktop or mobile use.                              |
 | RS350        | A supported backpack-style mobile detector lane type.                                                              |
 
-
-# Appendix C. Packaged 3.5.1 field-deployment checklist
-
-> 1\. Verify Java 21+ and Docker.
->
-> 2\. If an older OSCAR release was previously used on the host, stop the old OSCAR JVM, remove the old PostGIS container and old OSCAR-specific Docker network, and delete the old extracted release folder.
->
-> 3\. Extract the 3.5.1 release into a fresh directory.
->
-> 4\. Create `.env` from the packaged environment file and confirm the correct `SYSTEM_PROFILE`.
->
-> 5\. Prefer the monitoring wrapper for first-run validation.
->
-> 6\. If OSCAR is already running, decide whether to stop it, set `FORCE_RESTART=1`, or use `ATTACH_TO_EXISTING=1` for the monitor wrapper.
->
-> 7\. If the deployment uses many camera references, put MediaMTX in front of the cameras and point the OSCAR lane CSV to MediaMTX paths instead of directly to every physical camera.
->
-> 8\. After warm-up, generate the one-file status report and confirm memory, threads, and PostgreSQL sessions have stabilized.
->
-> 9\. Change the initial admin password before production use.
->
-> 10\. Keep the launch/monitoring guide and MediaMTX guide with the release package so operators follow the same tested startup path.

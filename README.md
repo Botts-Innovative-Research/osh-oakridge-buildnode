@@ -29,7 +29,7 @@ java -version
 docker version
 ```
 
-Use **Java 21 or newer**. The launch scripts validate dependencies and will stop early if Java or Docker is missing or too old.
+Use **Java 21 or newer**. The launch scripts validate dependencies and stop early if Java or Docker is missing or too old.
 
 ### 2. If you were previously running OSCAR, start fresh
 
@@ -70,6 +70,12 @@ Then delete the old extracted release folder, such as **oscar-3.5.0**, before ex
 ### 3. Extract the release archive
 
 Extract the downloaded ZIP to a fresh working directory.
+
+The packaged release archive is expected to be named:
+
+```text
+oscar-3.5.1.zip
+```
 
 ### 4. Create the runtime environment file
 
@@ -121,8 +127,13 @@ monitor-oscar.bat
 Linux:
 
 ```bash
-chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
 ./monitor-oscar.sh
+```
+
+The packaged Linux release is built so the shipped `*.sh` files are already executable. If your unzip tool strips execute bits, restore them with:
+
+```bash
+chmod +x *.sh osh-node-oscar/*.sh
 ```
 
 This is the recommended first-run path because it:
@@ -151,7 +162,7 @@ Prefer these **sessionless top-level launchers** over calling `osh-node-oscar/la
 
 ### 7. Running-instance handling
 
-The launch and monitor scripts now detect already-running OSCAR JVMs.
+The launch and monitor scripts detect already-running OSCAR JVMs.
 
 Default behavior:
 
@@ -179,7 +190,25 @@ Linux:
 ./check-oscar-status.sh
 ```
 
-### 9. Admin access
+### 9. Clean reset between side-by-side test installs
+
+When you need to clear the local OSCAR runtime state before standing up a different installation on the same machine, use the reset script for your platform.
+
+Windows:
+
+```bat
+reset-all.bat
+```
+
+Linux:
+
+```bash
+./reset-all.sh
+```
+
+These scripts stop monitor and OSCAR processes, remove the PostGIS container and volumes, and clear local runtime data used by the packaged deployment.
+
+### 10. Admin access
 
 The admin username is typically **admin**. Do **not** assume the packaged password is always `admin`.
 
@@ -222,7 +251,17 @@ Windows:
 build-all.bat
 ```
 
-After the build completes, the output is written under `build/distributions/`.
+After the build completes, the packaged release is written under `build/distributions/` and should be named:
+
+```text
+oscar-3.5.1.zip
+```
+
+The build now also:
+
+- makes all packaged `*.sh` files executable
+- preserves Linux shell-script execute bits in the release archive
+- standardizes the release ZIP name for the 3.5.1 package
 
 ## Source-tree deployment
 
@@ -239,7 +278,7 @@ For test systems and larger multi-lane deployments, consider placing **MediaMTX*
 
 ## PostgreSQL tuning
 
-The packaged launch scripts now size PostgreSQL by `SYSTEM_PROFILE`.
+The packaged launch scripts size PostgreSQL by `SYSTEM_PROFILE`.
 
 Representative values:
 
@@ -275,7 +314,8 @@ Before releasing from `dev`:
 3. ensure `dist/release/postgis/pgdata` is not packaged
 4. verify the release ZIP name matches the intended version, such as `oscar-3.5.1.zip`
 5. verify the release root directory name also matches the intended version
-6. verify `env.template`, release notes, README, and launch documentation all reflect the same version
+6. verify packaged Linux `*.sh` files are executable in the built archive
+7. verify `env.template`, release notes, README, and launch documentation all reflect the same version
 
 ### Release steps
 

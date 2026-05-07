@@ -1,30 +1,70 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 
 set "SCRIPT_DIR=%~dp0"
-set "MATCH_EXPR=com.botts.impl.security.SensorHubWrapper"
-set "FORCE_RESTART=%FORCE_RESTART%"
-if not defined FORCE_RESTART set "FORCE_RESTART=0"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
 set "ENV_FILE="
-if exist "%SCRIPT_DIR%.env" (
-    set "ENV_FILE=%SCRIPT_DIR%.env"
-) else if exist "%SCRIPT_DIR%..\.env" (
-    set "ENV_FILE=%SCRIPT_DIR%..\.env"
+if exist "%SCRIPT_DIR%\.env" (
+    set "ENV_FILE=%SCRIPT_DIR%\.env"
+) else if exist "%SCRIPT_DIR%\..\.env" (
+    set "ENV_FILE=%SCRIPT_DIR%\..\.env"
 )
 
 if defined ENV_FILE call :load_env "%ENV_FILE%"
 
-call :check_java
-if errorlevel 1 exit /b %ERRORLEVEL%
+if not defined SYSTEM_PROFILE set "SYSTEM_PROFILE=8GB"
+if not defined FORCE_RESTART set "FORCE_RESTART=0"
+
+where java >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: Java was not found in PATH.
+    exit /b 1
+)
+
+where keytool >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: keytool was not found in PATH.
+    exit /b 1
+)
+
+if not exist "%SCRIPT_DIR%\lib" (
+    echo ERROR: Missing library directory: "%SCRIPT_DIR%\lib"
+    exit /b 1
+)
+
+if not exist "%SCRIPT_DIR%\config.json" (
+    echo ERROR: Missing config file: "%SCRIPT_DIR%\config.json"
+    exit /b 1
+)
+
+if not exist "%SCRIPT_DIR%\load_trusted_certs.bat" (
+    echo ERROR: Missing trusted-certs helper: "%SCRIPT_DIR%\load_trusted_certs.bat"
+    exit /b 1
+)
+
+if not exist "%SCRIPT_DIR%\set-initial-admin-password.bat" (
+    echo ERROR: Missing admin-password helper: "%SCRIPT_DIR%\set-initial-admin-password.bat"
+    exit /b 1
+)
 
 call :check_existing_oscar
-if errorlevel 1 exit /b %ERRORLEVEL%
-
-call :ensure_runtime_paths
-if errorlevel 1 exit /b %ERRORLEVEL%
-
-if not defined SYSTEM_PROFILE set "SYSTEM_PROFILE=8GB"
+if defined OSCAR_PID (
+    if /I "%FORCE_RESTART%"=="1" (
+        echo OSCAR is already running with PID !OSCAR_PID!. FORCE_RESTART=1, stopping it first...
+        call :stop_existing_oscar
+        call :wait_for_oscar_stop 60
+        call :check_existing_oscar
+        if defined OSCAR_PID (
+            echo ERROR: OSCAR is still running with PID !OSCAR_PID! after stop attempt.
+            exit /b 1
+        )
+    ) else (
+        echo OSCAR is already running with PID !OSCAR_PID!.
+        echo Run stop-all.bat first, or set FORCE_RESTART=1 to replace the existing OSCAR process.
+        exit /b 1
+    )
+)
 
 if /I "%SYSTEM_PROFILE%"=="RPI4" (
     set "JAVA_XMS=512m"
@@ -47,7 +87,7 @@ if /I "%SYSTEM_PROFILE%"=="RPI4" (
     set "JAVACPP_MAX_BYTES_DEFAULT=4g"
     set "JAVACPP_MAX_PHYSICAL_BYTES_DEFAULT=16g"
 ) else (
-    echo Unknown profile '%SYSTEM_PROFILE%', using 8GB defaults.
+    echo WARNING: Unknown SYSTEM_PROFILE "%SYSTEM_PROFILE%". Using 8GB defaults.
     set "JAVA_XMS=1g"
     set "JAVA_XMX=2g"
     set "JAVACPP_MAX_BYTES_DEFAULT=1g"
@@ -56,21 +96,7 @@ if /I "%SYSTEM_PROFILE%"=="RPI4" (
 
 if not defined JAVACPP_MAX_BYTES set "JAVACPP_MAX_BYTES=%JAVACPP_MAX_BYTES_DEFAULT%"
 if not defined JAVACPP_MAX_PHYSICAL_BYTES set "JAVACPP_MAX_PHYSICAL_BYTES=%JAVACPP_MAX_PHYSICAL_BYTES_DEFAULT%"
-if not defined JFR_FILENAME set "JFR_FILENAME=%SCRIPT_DIR%oscar.jfr"
-
-if not defined HOME if defined USERPROFILE set "HOME=%USERPROFILE%"
-
-set "PATH=%JAVA_HOME_DETECTED%\bin;%PATH%"
-set "KEYSTORE=%SCRIPT_DIR%osh-keystore.p12"
-set "KEYSTORE_TYPE=PKCS12"
-if not defined KEYSTORE_PASSWORD set "KEYSTORE_PASSWORD=atakatak"
-
-set "TRUSTSTORE=%SCRIPT_DIR%truststore.jks"
-set "TRUSTSTORE_TYPE=JKS"
-if not defined TRUSTSTORE_PASSWORD set "TRUSTSTORE_PASSWORD=changeit"
-
-set "INITIAL_ADMIN_PASSWORD_FILE=%SCRIPT_DIR%.s"
-if not exist "%INITIAL_ADMIN_PASSWORD_FILE%" if not defined INITIAL_ADMIN_PASSWORD set "INITIAL_ADMIN_PASSWORD=admin"
+if not defined JFR_FILENAME set "JFR_FILENAME=%SCRIPT_DIR%\oscar.jfr"
 
 echo Starting OSH Node with Profile: %SYSTEM_PROFILE%
 echo   Heap: %JAVA_XMS% / %JAVA_XMX%
@@ -78,11 +104,29 @@ echo   JavaCPP maxBytes: %JAVACPP_MAX_BYTES%
 echo   JavaCPP maxPhysicalBytes: %JAVACPP_MAX_PHYSICAL_BYTES%
 echo   JFR file: %JFR_FILENAME%
 
-call "%SCRIPT_DIR%load_trusted_certs.bat"
+call "%SCRIPT_DIR%\load_trusted_certs.bat"
 if errorlevel 1 exit /b %ERRORLEVEL%
 
-call "%SCRIPT_DIR%set-initial-admin-password.bat"
+set "KEYSTORE=%SCRIPT_DIR%\osh-keystore.p12"
+set "KEYSTORE_TYPE=PKCS12"
+if not defined KEYSTORE_PASSWORD set "KEYSTORE_PASSWORD=atakatak"
+
+set "TRUSTSTORE=%SCRIPT_DIR%\truststore.jks"
+set "TRUSTSTORE_TYPE=JKS"
+if not defined TRUSTSTORE_PASSWORD set "TRUSTSTORE_PASSWORD=changeit"
+
+set "INITIAL_ADMIN_PASSWORD_FILE=%SCRIPT_DIR%\.s"
+if not exist "%INITIAL_ADMIN_PASSWORD_FILE%" if not defined INITIAL_ADMIN_PASSWORD set "INITIAL_ADMIN_PASSWORD=admin"
+
+call "%SCRIPT_DIR%\set-initial-admin-password.bat"
 if errorlevel 1 exit /b %ERRORLEVEL%
+
+set "JAVA_LIBRARY_OPT="
+if exist "%SCRIPT_DIR%\nativelibs" (
+    set "JAVA_LIBRARY_OPT=-Djava.library.path=%SCRIPT_DIR%\nativelibs"
+) else (
+    echo WARNING: Optional native library directory not found: "%SCRIPT_DIR%\nativelibs"
+)
 
 java ^
     -Xms%JAVA_XMS% ^
@@ -97,136 +141,43 @@ java ^
     "-Dorg.bytedeco.javacpp.maxPhysicalBytes=%JAVACPP_MAX_PHYSICAL_BYTES%" ^
     -Dorg.bytedeco.javacpp.maxRetries=2 ^
     -Dorg.bytedeco.javacpp.mxbean=true ^
-    "-Dlogback.configurationFile=%SCRIPT_DIR%logback.xml" ^
-    -cp "%SCRIPT_DIR%lib\*" ^
+    "-Dlogback.configurationFile=%SCRIPT_DIR%\logback.xml" ^
+    -cp "%SCRIPT_DIR%\lib\*" ^
     "-Djava.system.class.loader=org.sensorhub.utils.NativeClassLoader" ^
     "-Djavax.net.ssl.keyStore=%KEYSTORE%" ^
     "-Djavax.net.ssl.keyStorePassword=%KEYSTORE_PASSWORD%" ^
     "-Djavax.net.ssl.trustStore=%TRUSTSTORE%" ^
     "-Djavax.net.ssl.trustStorePassword=%TRUSTSTORE_PASSWORD%" ^
-    "-Djava.library.path=%SCRIPT_DIR%nativelibs" ^
-    com.botts.impl.security.SensorHubWrapper "%SCRIPT_DIR%config.json" "%SCRIPT_DIR%db"
+    !JAVA_LIBRARY_OPT! ^
+    com.botts.impl.security.SensorHubWrapper "%SCRIPT_DIR%\config.json" "%SCRIPT_DIR%\db"
 
 set "JAVA_EXIT_CODE=%ERRORLEVEL%"
 endlocal & exit /b %JAVA_EXIT_CODE%
 
-:check_java
-where java >nul 2>nul
-if errorlevel 1 (
-    echo Error: java was not found on PATH. Install OpenJDK 21 or newer.
-    exit /b 1
-)
-
-set "JAVA_HOME_LINE="
-for /f "delims=" %%A in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.home ="') do (
-    set "JAVA_HOME_LINE=%%A"
-    goto :check_java_home_line
-)
-
-:check_java_home_line
-if not defined JAVA_HOME_LINE (
-    echo Error: could not determine java.home from the installed Java runtime.
-    exit /b 1
-)
-
-for /f "tokens=1,* delims==" %%A in ("%JAVA_HOME_LINE%") do set "JAVA_HOME_DETECTED=%%B"
-for /f "tokens=* delims= " %%A in ("%JAVA_HOME_DETECTED%") do set "JAVA_HOME_DETECTED=%%A"
-
-if not exist "%JAVA_HOME_DETECTED%\bin\java.exe" (
-    echo Error: Java executable not found under "%JAVA_HOME_DETECTED%\bin\java.exe".
-    exit /b 1
-)
-
-if not exist "%JAVA_HOME_DETECTED%\bin\keytool.exe" (
-    echo Error: keytool.exe not found under "%JAVA_HOME_DETECTED%\bin\keytool.exe".
-    exit /b 1
-)
-
-set "JAVA_VERSION_LINE="
-for /f "delims=" %%A in ('"%JAVA_HOME_DETECTED%\bin\java.exe" -version 2^>^&1 ^| findstr /r /c:"version \""') do (
-    set "JAVA_VERSION_LINE=%%A"
-    goto :check_java_version_line
-)
-
-:check_java_version_line
-if not defined JAVA_VERSION_LINE (
-    echo Error: could not determine Java version. OpenJDK 21 or newer is required.
-    exit /b 1
-)
-
-for /f "tokens=2 delims=\"" %%A in ("%JAVA_VERSION_LINE%") do set "JAVA_VERSION_RAW=%%A"
-for /f "tokens=1 delims=." %%A in ("%JAVA_VERSION_RAW%") do set "JAVA_MAJOR=%%A"
-
-if not defined JAVA_MAJOR (
-    echo Error: could not parse Java version from "%JAVA_VERSION_LINE%".
-    exit /b 1
-)
-
-if %JAVA_MAJOR% LSS 21 (
-    echo Error: Java 21 or newer is required. Found Java %JAVA_MAJOR%.
-    exit /b 1
-)
-
-exit /b 0
-
-:find_existing_oscar
-set "OSCAR_PID="
-for /f %%P in ('powershell -NoProfile -Command "$p = Get-CimInstance Win32_Process ^| Where-Object { $_.Name -match ''^java(\.exe)?$'' -and $_.CommandLine -like ''*com.botts.impl.security.SensorHubWrapper*'' } ^| Select-Object -ExpandProperty ProcessId -First 1; if ($p) { Write-Output $p }"') do set "OSCAR_PID=%%P"
-exit /b 0
-
 :check_existing_oscar
-call :find_existing_oscar
-if not defined OSCAR_PID exit /b 0
-
-if "%FORCE_RESTART%"=="1" (
-    echo Existing OSCAR instance found with PID %OSCAR_PID%. Replacing because FORCE_RESTART=1.
-    taskkill /PID %OSCAR_PID% /T /F >nul 2>nul
-    timeout /t 2 /nobreak >nul
-    call :find_existing_oscar
-    if defined OSCAR_PID (
-        echo Error: could not stop the existing OSCAR instance.
-        exit /b 1
-    )
-    exit /b 0
-)
-
-echo OSCAR is already running with PID %OSCAR_PID%.
-echo Close the existing instance first, or set FORCE_RESTART=1 to replace it.
-exit /b 1
-
-:ensure_runtime_paths
-if not exist "%SCRIPT_DIR%load_trusted_certs.bat" (
-    echo Error: load_trusted_certs.bat not found in "%SCRIPT_DIR%".
-    exit /b 1
-)
-
-if not exist "%SCRIPT_DIR%set-initial-admin-password.bat" (
-    echo Error: set-initial-admin-password.bat not found in "%SCRIPT_DIR%".
-    exit /b 1
-)
-
-if not exist "%SCRIPT_DIR%config.json" (
-    echo Error: missing config file: "%SCRIPT_DIR%config.json".
-    exit /b 1
-)
-
-if not exist "%SCRIPT_DIR%lib" (
-    echo Error: missing library directory: "%SCRIPT_DIR%lib".
-    exit /b 1
-)
-
-if not exist "%SCRIPT_DIR%nativelibs" (
-    echo Error: missing native library directory: "%SCRIPT_DIR%nativelibs".
-    exit /b 1
-)
-
-if not exist "%SCRIPT_DIR%db" mkdir "%SCRIPT_DIR%db" >nul 2>nul
-if not exist "%SCRIPT_DIR%db" (
-    echo Error: could not create database directory: "%SCRIPT_DIR%db".
-    exit /b 1
-)
-
+set "OSCAR_PID="
+for /f "usebackq delims=" %%P in (`
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$procs = Get-CimInstance Win32_Process; foreach ($proc in $procs) { if ($proc.Name -match '^(java|javaw)(\.exe)?$' -and $null -ne $proc.CommandLine -and $proc.CommandLine -like '*com.botts.impl.security.SensorHubWrapper*') { [Console]::Write($proc.ProcessId); break } }" 2^>nul
+`) do set "OSCAR_PID=%%P"
 exit /b 0
+
+:stop_existing_oscar
+if not defined OSCAR_PID exit /b 0
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Stop-Process -Id %OSCAR_PID% -Force -ErrorAction Stop } catch {}" >nul 2>nul
+exit /b 0
+
+:wait_for_oscar_stop
+set "WAIT_LIMIT=%~1"
+if not defined WAIT_LIMIT set "WAIT_LIMIT=60"
+set /a WAITED=0
+
+:wait_for_oscar_stop_loop
+call :check_existing_oscar
+if not defined OSCAR_PID exit /b 0
+if !WAITED! GEQ %WAIT_LIMIT% exit /b 0
+timeout /t 1 /nobreak >nul
+set /a WAITED+=1
+goto wait_for_oscar_stop_loop
 
 :load_env
 for /f "usebackq tokens=1,* delims==" %%A in ("%~1") do (

@@ -43,33 +43,6 @@ require_cmd() {
     fi
 }
 
-get_java_major() {
-    java -version 2>&1 | awk -F'"' '/version/ { split($2, v, "."); print v[1]; exit }'
-}
-
-check_dependencies() {
-    require_cmd bash
-    require_cmd java
-    require_cmd keytool
-    require_cmd docker
-
-    if ! docker info >/dev/null 2>&1; then
-        echo "Error: Docker is installed, but the Docker daemon is not running."
-        exit 1
-    fi
-
-    local java_major
-    java_major="$(get_java_major || true)"
-    if [[ -z "$java_major" || ! "$java_major" =~ ^[0-9]+$ ]]; then
-        echo "Error: could not determine Java version. Java 21 or newer is required."
-        exit 1
-    fi
-    if [ "$java_major" -lt 21 ]; then
-        echo "Error: Java 21 or newer is required. Found Java $java_major."
-        exit 1
-    fi
-}
-
 find_existing_oscar_pids() {
     pgrep -f "$MATCH_EXPR" || true
 }
@@ -121,15 +94,6 @@ check_existing_oscar() {
     exit 1
 }
 
-require_env() {
-    local name="$1"
-    local value="${!name:-}"
-    if [ -z "$value" ]; then
-        echo "Error: ${name} is not set in .env."
-        exit 1
-    fi
-}
-
 require_number() {
     local name="$1"
     local value="${!name:-}"
@@ -165,27 +129,35 @@ ensure_project_layout() {
     mkdir -p "$PROJECT_DIR/pgdata"
 }
 
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Error: .env file not found in $PROJECT_DIR"
-    echo "Create it by copying env.template to .env and editing the values."
-    exit 1
+if [ -f "$ENV_FILE" ]; then
+    load_env "$ENV_FILE"
+else
+    echo "Warning: .env file not found in $PROJECT_DIR"
+    if [ -f "$PROJECT_DIR/env.template" ]; then
+        echo "Warning: using built-in defaults. Copy env.template to .env to customize settings."
+    else
+        echo "Warning: using built-in defaults."
+    fi
 fi
-
-load_env "$ENV_FILE"
-check_dependencies
-check_existing_oscar
-ensure_project_layout
 
 SYSTEM_PROFILE="${SYSTEM_PROFILE:-8GB}"
 CONTAINER_NAME="${CONTAINER_NAME:-oscar-postgis-container}"
+DB_NAME="${DB_NAME:-gis}"
+DB_USER="${DB_USER:-postgres}"
+DB_PASSWORD="${DB_PASSWORD:-postgres}"
+DB_PORT="${DB_PORT:-5432}"
 DB_HOST="${DB_HOST:-localhost}"
-export SYSTEM_PROFILE CONTAINER_NAME DB_HOST RETRY_MAX RETRY_INTERVAL POSTGIS_READY_DELAY IMAGE_NAME POSTGIS_DOCKERFILE POSTGIS_PLATFORM
+export SYSTEM_PROFILE CONTAINER_NAME DB_NAME DB_USER DB_PASSWORD DB_PORT DB_HOST
+export RETRY_MAX RETRY_INTERVAL POSTGIS_READY_DELAY IMAGE_NAME POSTGIS_DOCKERFILE POSTGIS_PLATFORM
 
-require_env DB_NAME
-require_env DB_USER
-require_env DB_PASSWORD
-require_env DB_PORT
+require_cmd docker
+if ! docker info >/dev/null 2>&1; then
+    echo "Error: Docker is installed, but the Docker daemon is not running."
+    exit 1
+fi
 
+check_existing_oscar
+ensure_project_layout
 require_number DB_PORT
 require_number RETRY_MAX
 require_number RETRY_INTERVAL
@@ -233,9 +205,7 @@ case "${SYSTEM_PROFILE^^}" in
         PG_MAINT="128MB"
         PG_MAX_CONN="125"
         ;;
- esac
-
-export SYSTEM_PROFILE CONTAINER_NAME DB_NAME DB_USER DB_PASSWORD DB_PORT
+esac
 
 echo "Building PostGIS Docker image for Apple Silicon / ARM64..."
 (

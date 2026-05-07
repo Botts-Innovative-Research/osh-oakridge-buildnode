@@ -6,16 +6,28 @@ PROJECT_DIR="${PROJECT_DIR:-$SCRIPT_DIR}"
 LAUNCH_CMD="${LAUNCH_CMD:-$PROJECT_DIR/launch-all.sh}"
 MATCH_EXPR="${MATCH_EXPR:-com.botts.impl.security.SensorHubWrapper}"
 INTERVAL="${INTERVAL:-60}"
-MAX_WAIT_SECONDS="${MAX_WAIT_SECONDS:-300}"
 OUT_DIR="${OUT_DIR:-$PROJECT_DIR/oscar-monitor-$(date +%Y%m%d-%H%M%S)}"
 JFR_NAME="${JFR_NAME:-oscar}"
 JFR_MAX_AGE="${JFR_MAX_AGE:-4h}"
 JFR_MAX_SIZE="${JFR_MAX_SIZE:-1g}"
 ENV_FILE="${ENV_FILE:-$PROJECT_DIR/.env}"
-ATTACH_TO_EXISTING="${ATTACH_TO_EXISTING:-0}"
-FORCE_RESTART="${FORCE_RESTART:-0}"
+MONITOR_PID_FILE="$PROJECT_DIR/monitor.pid"
+
+if [ "${1:-}" = "stop" ]; then
+    if [ -f "$MONITOR_PID_FILE" ]; then
+        monitor_pid="$(tr -d '[:space:]' < "$MONITOR_PID_FILE")"
+        if [ -n "$monitor_pid" ] && kill -0 "$monitor_pid" 2>/dev/null; then
+            kill "$monitor_pid" 2>/dev/null || true
+            echo "OSCAR monitor stop requested for PID $monitor_pid."
+            exit 0
+        fi
+    fi
+    echo "OSCAR monitor is not running."
+    exit 0
+fi
 
 mkdir -p "$OUT_DIR"
+echo "$$" > "$MONITOR_PID_FILE"
 
 CONTAINER_NAME="oscar-postgis-container"
 DB_NAME="gis"
@@ -38,71 +50,25 @@ log() {
     printf '%s %s\n' "$(date -Is)" "$*"
 }
 
-require_cmd() {
-    local cmd="$1"
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Error: required command not found: $cmd"
-        exit 1
-    fi
-}
+log "Monitor output: $OUT_DIR"
+log "Launch command: $LAUNCH_CMD"
+log "JVM match: $MATCH_EXPR"
+log "Container name: $CONTAINER_NAME"
+log "Database: $DB_NAME user=$DB_USER"
 
-get_java_major() {
-    java -version 2>&1 | awk -F'"' '/version/ { split($2, v, "."); print v[1]; exit }'
-}
+if [ ! -x "$LAUNCH_CMD" ]; then
+    echo "Error: launch command is not executable: $LAUNCH_CMD"
+    rm -f "$MONITOR_PID_FILE"
+    exit 1
+fi
 
-check_dependencies() {
-    require_cmd bash
-    require_cmd java
-    require_cmd docker
-    require_cmd pgrep
+if ! command -v jcmd >/dev/null 2>&1; then
+    log "Warning: jcmd not found. JFR/NMT snapshots will be skipped."
+fi
 
-    local java_major
-    java_major="$(get_java_major || true)"
-    if [[ -z "$java_major" || ! "$java_major" =~ ^[0-9]+$ || "$java_major" -lt 21 ]]; then
-        echo "Error: Java 21 or newer is required to run OSCAR monitoring."
-        exit 1
-    fi
-
-    if ! command -v jcmd >/dev/null 2>&1; then
-        log "Warning: jcmd not found. JFR/NMT snapshots will be skipped."
-    fi
-}
-
-find_existing_oscar_pid() {
-    pgrep -f "$MATCH_EXPR" | head -n 1 || true
-}
-
-find_all_existing_oscar_pids() {
-    pgrep -f "$MATCH_EXPR" || true
-}
-
-stop_existing_oscar() {
-    local pids="$1"
-    if [ -z "$pids" ]; then
-        return 0
-    fi
-
-    log "Stopping existing OSCAR instance(s): $pids"
-    kill $pids 2>/dev/null || true
-
-    local waited=0
-    while [ "$waited" -lt 15 ]; do
-        sleep 1
-        waited=$((waited + 1))
-        if [ -z "$(find_all_existing_oscar_pids)" ]; then
-            return 0
-        fi
-    done
-
-    log "Force killing existing OSCAR instance(s): $pids"
-    kill -9 $pids 2>/dev/null || true
-    sleep 1
-
-    if [ -n "$(find_all_existing_oscar_pids)" ]; then
-        echo "Error: unable to stop existing OSCAR instance(s)."
-        exit 1
-    fi
-}
+LAUNCH_PID=""
+PID=""
+STOPPING=0
 
 run_db_query() {
     local sql="$1"
@@ -116,7 +82,7 @@ collect_db_snapshot() {
     ts="$(date -Is)"
     failed=0
 
-    if ! docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+    if ! command -v docker >/dev/null 2>&1 || ! docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
         echo "Container ${CONTAINER_NAME} not running" > "$d/db-error.txt"
         echo "$ts,,,,,,,1" >> "$DB_CSV"
         return 0
@@ -179,9 +145,11 @@ dump_once() {
         jcmd "$PID" JFR.check > "$d/jfr-check.txt" 2>&1 || true
     fi
 
-    docker ps --filter "name=$CONTAINER_NAME" > "$d/docker-ps.txt" 2>&1 || true
-    docker logs --tail 100 "$CONTAINER_NAME" > "$d/docker-logs-tail.txt" 2>&1 || true
-    collect_db_snapshot "$d"
+    if command -v docker >/dev/null 2>&1; then
+        docker ps --filter "name=$CONTAINER_NAME" > "$d/docker-ps.txt" 2>&1 || true
+        docker logs --tail 100 "$CONTAINER_NAME" > "$d/docker-logs-tail.txt" 2>&1 || true
+        collect_db_snapshot "$d"
+    fi
 }
 
 final_dump() {
@@ -195,7 +163,7 @@ final_dump() {
 }
 
 stop_stack() {
-    if [ "${STOPPING:-0}" -eq 1 ]; then
+    if [ "$STOPPING" -eq 1 ]; then
         return 0
     fi
     STOPPING=1
@@ -223,9 +191,11 @@ stop_stack() {
         kill "$LAUNCH_PID" 2>/dev/null || true
     fi
 
-    if docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
-        log "Stopping container ${CONTAINER_NAME}"
-        docker stop "$CONTAINER_NAME" > "$OUT_DIR/docker-stop.txt" 2>&1 || true
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
+            log "Stopping container ${CONTAINER_NAME}"
+            docker stop "$CONTAINER_NAME" > "$OUT_DIR/docker-stop.txt" 2>&1 || true
+        fi
     fi
 }
 
@@ -237,76 +207,37 @@ on_signal() {
 
 on_exit() {
     final_dump
+    rm -f "$MONITOR_PID_FILE"
 }
 
 trap on_signal INT TERM
 trap on_exit EXIT
 
-check_dependencies
+log "Starting OSCAR..."
+"$LAUNCH_CMD" > "$OUT_DIR/launch.stdout.log" 2> "$OUT_DIR/launch.stderr.log" &
+LAUNCH_PID=$!
+echo "$LAUNCH_PID" > "$OUT_DIR/launcher-pid.txt"
 
-log "Monitor output: $OUT_DIR"
-log "Launch command: $LAUNCH_CMD"
-log "JVM match: $MATCH_EXPR"
-log "Container name: $CONTAINER_NAME"
-log "Database: $DB_NAME user=$DB_USER"
-
-if [ ! -x "$LAUNCH_CMD" ] && [ "$ATTACH_TO_EXISTING" != "1" ]; then
-    echo "Error: launch command is not executable: $LAUNCH_CMD"
-    exit 1
-fi
-
-LAUNCH_PID=""
-PID=""
-STOPPING=0
-USE_EXISTING=0
-
-existing_pids="$(find_all_existing_oscar_pids)"
-if [ -n "$existing_pids" ]; then
-    if [ "$ATTACH_TO_EXISTING" = "1" ]; then
-        PID="$(printf '%s\n' "$existing_pids" | head -n 1)"
-        USE_EXISTING=1
-        log "Attaching monitor to existing OSCAR PID $PID"
-    elif [ "$FORCE_RESTART" = "1" ]; then
-        log "Existing OSCAR instance found: $existing_pids"
-        stop_existing_oscar "$existing_pids"
-    else
-        echo "OSCAR is already running with PID(s): $existing_pids"
-        echo "Set ATTACH_TO_EXISTING=1 to monitor the running instance, or FORCE_RESTART=1 to replace it."
+log "Waiting for JVM to appear..."
+while true; do
+    PID="$(pgrep -f "$MATCH_EXPR" | head -n 1 || true)"
+    if [ -n "$PID" ]; then
+        break
+    fi
+    if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then
+        log "Launch process exited before JVM appeared."
+        wait "$LAUNCH_PID" || true
         exit 1
     fi
-fi
-
-if [ "$USE_EXISTING" = "0" ]; then
-    log "Starting OSCAR..."
-    "$LAUNCH_CMD" > "$OUT_DIR/launch.stdout.log" 2> "$OUT_DIR/launch.stderr.log" &
-    LAUNCH_PID=$!
-    echo "$LAUNCH_PID" > "$OUT_DIR/launcher-pid.txt"
-
-    log "Waiting for JVM to appear..."
-    waited=0
-    while true; do
-        PID="$(find_existing_oscar_pid)"
-        if [ -n "$PID" ]; then
-            break
-        fi
-        if [ "$waited" -ge "$MAX_WAIT_SECONDS" ]; then
-            log "Timed out waiting for JVM after ${MAX_WAIT_SECONDS}s"
-            exit 1
-        fi
-        sleep 2
-        waited=$((waited + 2))
-    done
-else
-    : > "$OUT_DIR/launch.stdout.log"
-    : > "$OUT_DIR/launch.stderr.log"
-fi
+    sleep 2
+done
 
 log "Found JVM PID: $PID"
 echo "$PID" > "$OUT_DIR/jvm-pid.txt"
 
 {
     echo "Timestamp: $(date -Is)"
-    echo "Launcher PID: ${LAUNCH_PID:-}"
+    echo "Launcher PID: $LAUNCH_PID"
     echo "JVM PID: $PID"
     echo
     echo "Command line:"
@@ -337,6 +268,4 @@ while kill -0 "$PID" 2>/dev/null; do
 done
 
 log "JVM exited."
-if [ -n "$LAUNCH_PID" ]; then
-    wait "$LAUNCH_PID" || true
-fi
+wait "$LAUNCH_PID" || true

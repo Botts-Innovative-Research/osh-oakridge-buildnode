@@ -6,7 +6,7 @@ It explains:
 
 - how to prepare a fresh prebuilt release
 - how to create `.env`
-- how the updated `launch-all`, `launch`, `monitor-oscar`, and `check-oscar-status` scripts behave
+- how the updated `launch-all`, `launch`, `monitor-oscar`, `stop-all`, `reset-all`, and `check-oscar-status` scripts behave
 - how already-running OSCAR instances are handled
 - how to validate Java, Docker, memory, and database health
 - how to use MediaMTX and status reports during testing and side-by-side field deployment
@@ -68,6 +68,8 @@ Remove-Item -Recurse -Force .\oscar-3.5.0
 
 If the Docker network does not exist, that is fine. The goal is to avoid carrying old container state or an old extracted release folder into the new test run.
 
+For a full local reset between side-by-side test installs, use `reset-all.sh` or `reset-all.bat`.
+
 ---
 
 ## 3. Required dependencies
@@ -81,7 +83,7 @@ Required:
 - `keytool`
 - Docker
 
-Recommended:
+Recommended for monitoring:
 
 - `jcmd`
 - `pmap`
@@ -127,6 +129,26 @@ Get-Command jcmd
 ```
 
 The Windows launchers now use **PowerShell/CIM**-based process discovery. They do not depend on `wmic`.
+
+### Important dependency policy
+
+The updated scripts distinguish between **required** dependencies and **optional** runtime extras.
+
+Hard failures are for things such as:
+
+- Java
+- Docker
+- `keytool` where the script needs it
+- required packaged files and directories such as `osh-node-oscar/lib`
+
+Warning-only cases include:
+
+- missing `.env` when defaults are available
+- missing `trusted_certificates`
+- missing `nativelibs`
+- missing optional monitoring helpers such as `pmap` or `vmstat`
+
+A missing `nativelibs` directory no longer stops startup by itself.
 
 ---
 
@@ -217,7 +239,7 @@ These are the supported top-level launchers.
 
 They:
 
-- load `.env`
+- load `.env` when present
 - validate Java and Docker
 - detect an already-running OSCAR instance
 - size PostgreSQL for the selected profile
@@ -233,13 +255,19 @@ These launch only the OSCAR Java node.
 
 They:
 
-- load `.env`
-- validate Java and keytool
+- load `.env` when present
+- validate Java and `keytool`
 - detect an already-running OSCAR instance
 - choose heap and JavaCPP settings for the selected profile
 - build or refresh the Java trust store
 - initialize the packaged admin password flow
 - start the Java process with Native Memory Tracking enabled
+
+Optional runtime extras are handled gracefully:
+
+- if `nativelibs` exists, the launcher adds `java.library.path`
+- if `nativelibs` does not exist, the launcher warns and continues
+- if `trusted_certificates` does not exist, the trust-store helper uses the copied default Java `cacerts` store and continues
 
 Use these direct node launchers mainly for debugging.
 
@@ -284,8 +312,13 @@ For monitor wrappers, you have two supported choices:
 #### Linux
 
 ```bash
-chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
 ./monitor-oscar.sh
+```
+
+The packaged Linux build now marks all shipped `*.sh` files executable. If your unzip tool strips execute bits, restore them with:
+
+```bash
+chmod +x *.sh osh-node-oscar/*.sh
 ```
 
 #### Windows
@@ -328,43 +361,41 @@ launch-all.bat
 
 ---
 
-## 9. Stopping OSCAR
+## 9. Stopping and resetting OSCAR
 
-### Linux
+### `stop-all`
 
-If you started with `monitor-oscar.sh`, stop the monitor shell or the Java PID it discovered.
+The `stop-all` scripts now begin by asking the monitor to stop first.
 
-To stop a running OSCAR JVM manually:
+Behavior:
+
+- attempt to stop the monitor
+- do not wait indefinitely for monitor exit
+- continue with direct fallback shutdown of OSCAR and PostGIS if needed
+
+This avoids `stop-all` getting stuck on a monitor-closing attempt.
+
+### `reset-all`
+
+Use `reset-all` when you want a clean local test surface before trying a different packaged installation on the same machine.
+
+It:
+
+- asks the monitor to stop first
+- stops OSCAR Java processes
+- removes the PostGIS container and volumes
+- clears local runtime state used by the packaged installation
+
+Linux:
 
 ```bash
-pgrep -af 'com.botts.impl.security.SensorHubWrapper'
-kill <pid>
+./reset-all.sh
 ```
 
-To stop PostGIS:
-
-```bash
-docker stop oscar-postgis-container
-```
-
-### Windows PowerShell
-
-```powershell
-Get-CimInstance Win32_Process |
-  Where-Object {
-    $_.Name -match '^java(\.exe)?$' -and
-    $_.CommandLine -like '*com.botts.impl.security.SensorHubWrapper*'
-  } |
-  Select-Object ProcessId, CommandLine
-
-Stop-Process -Id <pid> -Force
-docker stop oscar-postgis-container
-```
-
-The Windows monitor script also supports:
+Windows:
 
 ```bat
-monitor-oscar.bat stop
+reset-all.bat
 ```
 
 ---
@@ -461,11 +492,16 @@ MediaMTX is especially helpful when many logical lane-camera assignments reuse a
 
 Check:
 
-- `.env` exists
+- `.env` exists if you intend to override defaults
 - Java 21+ is installed
 - Docker is running
-- required directories such as `osh-node-oscar/lib` and `osh-node-oscar/nativelibs` exist
+- required directories such as `osh-node-oscar/lib` exist
 - the trust store and keystore files exist where the launch script expects them
+
+Remember:
+
+- missing `nativelibs` is warning-only
+- missing `trusted_certificates` is warning-only if the default Java trust store can be copied successfully
 
 ### Monitor hangs waiting for Java
 

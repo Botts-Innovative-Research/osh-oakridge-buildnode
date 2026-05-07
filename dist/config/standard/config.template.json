@@ -1,0 +1,239 @@
+[
+  {
+    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
+    "httpPort": 8282,
+    "httpsPort": 0,
+    "staticDocsRootUrl": "null",
+    "staticDocsRootDir": "null",
+    "servletsRootUrl": "/sensorhub",
+    "authMethod": "BASIC",
+    "keyStorePath": ".keystore/ssl_keys",
+    "keyAlias": "jetty",
+    "trustStorePath": ".keystore/ssl_trust",
+    "enableCORS": true,
+    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.HttpServer",
+    "name": "HTTP Server"
+  },
+  {
+    "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig",
+    "users": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "admin",
+        "name": "Administrator",
+        "password": "__INITIAL_ADMIN_PASSWORD__",
+        "roles": [
+          "admin"
+        ],
+        "allow": [
+          "fileserver[af72442c-1ce6-4baa-a126-ed41dda26910]"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
+        "id": "anonymous",
+        "name": "Anonymous User",
+        "password": "",
+        "roles": [
+          "anon"
+        ],
+        "allow": [],
+        "deny": []
+      }
+    ],
+    "roles": [
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "admin",
+        "allow": [
+          "*"
+        ],
+        "deny": []
+      },
+      {
+        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
+        "id": "anon",
+        "allow": [
+          "sos[*]/get/*"
+        ],
+        "deny": []
+      }
+    ],
+    "id": "bd112969-8838-4f62-8d10-1edf1baa6669",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.security.BasicSecurityRealm",
+    "name": "Users"
+  },
+  {
+    "objClass": "org.sensorhub.ui.AdminUIConfig",
+    "widgetSet": "org.sensorhub.ui.SensorHubWidgetSet",
+    "bundleRepoUrls": [],
+    "customPanels": [],
+    "customForms": [
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.system.lane.config.LaneOptionsConfig",
+        "uiClass": "com.botts.ui.oscar.forms.LaneConfigForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
+        "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.service.oscar.siteinfo.SiteDiagramConfig",
+        "uiClass": "com.botts.ui.oscar.forms.OSCARServiceForm"
+      }
+    ],
+    "deploymentName": "OSCAR 3.5.0",
+    "enableLandingPage": false,
+    "id": "5cb05c9c-9123-4fa1-8731-ffaa51489678",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.ui.AdminUIModule",
+    "name": "Admin UI"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.ConSysApiServiceConfig",
+    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "exposedResources": {
+      "objClass": "org.sensorhub.impl.datastore.view.ObsSystemDatabaseViewConfig",
+      "sourceDatabaseId": "a445cf15-c2ab-4d92-beab-3241667a8976"
+    },
+    "customFormats": [],
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": false,
+      "requireAuth": true
+    },
+    "enableTransactional": true,
+    "maxResponseLimit": 100000,
+    "defaultLiveTimeout": 600.0,
+    "uriPrefixMap": [],
+    "ogcCapabilitiesInfo": {
+      "objClass": "org.sensorhub.impl.service.ogc.OGCServiceConfig$CapabilitiesInfo",
+      "serviceProvider": {
+        "objClass": "org.vast.util.ResponsibleParty",
+        "voiceNumbers": [],
+        "faxNumbers": [],
+        "deliveryPoints": [],
+        "emails": [],
+        "hrefPresent": false
+      }
+    },
+    "enableHttpGET": true,
+    "enableHttpPOST": true,
+    "enableSOAP": true,
+    "endPoint": "/api",
+    "id": "6697cb4a-2e99-4fee-bba6-d1202d24dea5",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.ConSysApiService",
+    "name": "Connected Systems API Service"
+  },
+  {
+    "objClass": "com.botts.impl.service.oscar.OSCARServiceConfig",
+    "videoRetentionConfig": {
+      "objClass": "com.botts.impl.service.oscar.video.VideoRetentionConfig",
+      "timeToRetention": 7,
+      "videoQueryPeriod": 1,
+      "enableFrameRetention": true,
+      "frameRetentionCount": 5
+    },
+    "nodeId": "default",
+    "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "statsFrequencyMinutes": 60,
+    "webIdApiRoot": "https://full-spectrum.sandia.gov/api/v1",
+    "id": "09422f61-0098-4ac2-bb0e-3f42ec470524",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.oscar.OSCARServiceModule",
+    "name": "OSCAR Service Module"
+  },
+  {
+    "objClass": "com.botts.impl.service.bucket.BucketServiceConfig",
+    "security": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": true,
+      "requireAuth": true
+    },
+    "enableCORS": true,
+    "initialBuckets": [
+      "sitemap",
+      "reports",
+      "videos",
+      "adjudication"
+    ],
+    "fileStoreRootDir": "files",
+    "endPoint": "/buckets",
+    "id": "51a2a980-cf7a-4e53-9a78-fa8f32e65cbb",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.bucket.BucketService",
+    "name": "Bucket Storage Service"
+  },
+  {
+    "objClass": "org.sensorhub.impl.database.system.SystemDriverDatabaseConfig",
+    "dbConfig": {
+      "objClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabaseConfig",
+      "url": "localhost:5432",
+      "dbName": "gis",
+      "login": "postgres",
+      "password": "postgres",
+      "idProviderType": "SEQUENTIAL",
+      "autoCommitPeriod": 10,
+      "useBatch": false,
+      "id": "bfbd6d58-1a4a-40b4-999d-381a1489cbb5",
+      "autoStart": false,
+      "moduleClass": "org.sensorhub.impl.datastore.postgis.database.PostgisObsSystemDatabase"
+    },
+    "systemUIDs": [
+      "*"
+    ],
+    "autoPurgeConfig": [],
+    "minCommitPeriod": 10000,
+    "databaseNum": 4,
+    "id": "a445cf15-c2ab-4d92-beab-3241667a8976",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.database.system.SystemDriverDatabase",
+    "name": "PostGIS Database"
+  },
+  {
+    "objClass": "com.botts.impl.service.fileserver.FileServerConfig",
+    "staticDocsRootUrl": "/",
+    "staticDocsRootDir": "web",
+    "securityConfig": {
+      "objClass": "org.sensorhub.api.security.SecurityConfig",
+      "enableAccessControl": true,
+      "requireAuth": true
+    },
+    "id": "af72442c-1ce6-4baa-a126-ed41dda26910",
+    "autoStart": true,
+    "moduleClass": "com.botts.impl.service.fileserver.FileServer",
+    "name": "OSCAR Client"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.hivemq.MqttServerConfig",
+    "configFolder": "hivemq-config",
+    "dataFolder": "hivemq-data",
+    "webSocketProxyEndpoint": "/mqtt",
+    "enableWebSocketProxy": true,
+    "requireAuth": true,
+    "id": "0a0d9999-5d16-434a-8bb7-e245b474ba1d",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.hivemq.MqttServer",
+    "name": "MQTT Server (HiveMQ)"
+  },
+  {
+    "objClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttServiceConfig",
+    "id": "e7c35780-dbb6-4481-9fbe-556a7e44045d",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.service.consys.mqtt.ConSysApiMqttService",
+    "name": "Connected Systems API MQTT Extension"
+  }
+]

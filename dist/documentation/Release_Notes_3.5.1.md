@@ -27,6 +27,8 @@ Install these before running OSCAR 3.5.1:
 * **OpenJDK 21**
 * **Docker**
 
+The packaged release archive is expected to be named **`oscar-3.5.1.zip`**.
+
 ### Recommended deployment model
 
 For testing, side-by-side field deployment, and first-run validation:
@@ -36,6 +38,7 @@ For testing, side-by-side field deployment, and first-run validation:
 * select the correct system profile in `.env`
 * use **MediaMTX** for camera-heavy deployments
 * start OSCAR with the **sessionless monitoring launch** when possible
+* use the new reset scripts when you need to clear a previous local test install before switching releases
 * use the **check/status script** to review performance
 
 ---
@@ -66,6 +69,7 @@ Launch scripts were updated for both Linux and Windows so they can:
 * provide a more consistent startup path across environments
 * check for required dependencies before launch
 * stop or refuse duplicate OSCAR launches based on script settings
+* avoid hard failure on optional runtime paths such as `nativelibs` or extra trusted-certificate drop-ins when they are not present
 
 ### Safer process handling
 
@@ -94,6 +98,8 @@ Improvements include:
 * updated environment template support for launch and monitor behavior
 
 These changes make prebuilt deployment more reliable, especially on fresh Windows systems.
+
+The current launcher checks now distinguish between required dependencies and optional runtime extras. Missing required tools such as Java or Docker still stop startup. Missing optional paths such as `nativelibs` or `trusted_certificates` no longer stop startup by themselves.
 
 ### PostgreSQL tuning improvements
 
@@ -151,6 +157,16 @@ These scripts can now:
 * capture PostgreSQL session counts and saturation state
 * capture database activity detail
 * produce a single-file health and status report for rapid review
+
+### Reset and shutdown scripts
+
+The deployment scripts now also support cleaner teardown between test installs.
+
+These updates include:
+
+* `stop-all` scripts that try to stop the monitor first, then continue with direct fallback shutdown
+* `reset-all` scripts that stop OSCAR processes, remove the PostGIS container and volumes, and clear local runtime state for clean retesting
+* better support for side-by-side installation testing on the same host
 
 ### Improved database diagnostics
 
@@ -329,6 +345,8 @@ If you are unsure whether a dedicated OSCAR Docker network exists, list networks
 
 Extract OSCAR **3.5.1** into a new folder.
 
+The packaged release archive is expected to be named `oscar-3.5.1.zip`.
+
 Example:
 
 ```text
@@ -341,6 +359,8 @@ Make sure the machine has:
 
 * **OpenJDK 21**
 * **Docker**
+
+The packaged release archive is expected to be named **`oscar-3.5.1.zip`**.
 
 ### Step 3: configure the environment file
 
@@ -355,6 +375,8 @@ Rename it to:
 ```text
 .env
 ```
+
+For Linux packaged builds, the `*.sh` files in the archive are now packaged executable. If your unzip tool strips permissions, restore them with `chmod +x *.sh osh-node-oscar/*.sh` before launching.
 
 Then edit the file and select the correct hardware profile:
 
@@ -434,6 +456,7 @@ For testing and side-by-side field deployment, users should:
 9. configure and use **MediaMTX** for camera-heavy systems
 10. start OSCAR with the **sessionless monitoring launch** when possible
 11. use the check or status script to compare system behavior and performance
+12. use the reset script when you need to remove the local OSCAR runtime state before testing another package on the same machine
 
 This is the preferred workflow for:
 

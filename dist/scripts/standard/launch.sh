@@ -13,6 +13,7 @@ load_env() {
         esac
         local name="${line%%=*}"
         local value="${line#*=}"
+        value="${value%$'\r'}"
         export "${name}=${value}"
     done < "$env_file"
 }
@@ -108,13 +109,6 @@ ensure_runtime_paths() {
         exit 1
     fi
 
-    if [ ! -d "$SCRIPT_DIR/nativelibs" ]; then
-        echo "Error: missing native library directory: $SCRIPT_DIR/nativelibs"
-        exit 1
-    fi
-
-    mkdir -p "$SCRIPT_DIR/db"
-
     if [ ! -f "$SCRIPT_DIR/load_trusted_certs.sh" ]; then
         echo "Error: load_trusted_certs.sh not found in $SCRIPT_DIR"
         exit 1
@@ -124,6 +118,8 @@ ensure_runtime_paths() {
         echo "Error: set-initial-admin-password.sh not found in $SCRIPT_DIR"
         exit 1
     fi
+
+    mkdir -p "$SCRIPT_DIR/db"
 }
 
 ENV_FILE=""
@@ -187,17 +183,24 @@ export KEYSTORE="${KEYSTORE:-$SCRIPT_DIR/osh-keystore.p12}"
 export KEYSTORE_TYPE="${KEYSTORE_TYPE:-PKCS12}"
 export KEYSTORE_PASSWORD="${KEYSTORE_PASSWORD:-atakatak}"
 
-export TRUSTSTORE="${TRUSTSTORE:-$SCRIPT_DIR/truststore.jks}"
+export TRUSTSTORE="${TRUSTSTORE:-$SCRIPT_DIR/trustStore.jks}"
 export TRUSTSTORE_TYPE="${TRUSTSTORE_TYPE:-JKS}"
 export TRUSTSTORE_PASSWORD="${TRUSTSTORE_PASSWORD:-changeit}"
 
 export INITIAL_ADMIN_PASSWORD_FILE="${INITIAL_ADMIN_PASSWORD_FILE:-$SCRIPT_DIR/.s}"
 if [ ! -f "$INITIAL_ADMIN_PASSWORD_FILE" ] && [ -z "${INITIAL_ADMIN_PASSWORD:-}" ]; then
-    export INITIAL_ADMIN_PASSWORD="admin"
+    export INITIAL_ADMIN_PASSWORD="oscar"
 fi
 
 if [ -z "${HOME:-}" ] && [ -n "${USER:-}" ]; then
     export HOME="/home/${USER}"
+fi
+
+JAVA_LIBRARY_PATH_ARG=()
+if [ -d "$SCRIPT_DIR/nativelibs" ]; then
+    JAVA_LIBRARY_PATH_ARG=("-Djava.library.path=$SCRIPT_DIR/nativelibs")
+else
+    echo "Warning: optional native library directory not found: $SCRIPT_DIR/nativelibs"
 fi
 
 echo "Starting OSH Node with Profile: $SYSTEM_PROFILE"
@@ -225,5 +228,5 @@ exec java \
     "-Dlogback.configurationFile=$SCRIPT_DIR/logback.xml" \
     -cp "$SCRIPT_DIR/lib/*" \
     "-Djava.system.class.loader=org.sensorhub.utils.NativeClassLoader" \
-    "-Djava.library.path=$SCRIPT_DIR/nativelibs" \
+    "${JAVA_LIBRARY_PATH_ARG[@]}" \
     com.botts.impl.security.SensorHubWrapper "$SCRIPT_DIR/config.json" "$SCRIPT_DIR/db"

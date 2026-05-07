@@ -2,7 +2,7 @@ apply from: gradle.oshCoreDir + '/common.gradle'
 description = ''
 
 allprojects {
-    version = "3.5.0"
+    version = "3.5.1"
 }
 
 subprojects {
@@ -67,6 +67,11 @@ distributions{
     rel {
         distributionBaseName = 'oscar'
         contents {
+            eachFile {
+                if (it.name.endsWith('.sh')) {
+                    it.mode = 0755
+                }
+            }
             // OSH NODE
             into("osh-node-oscar/") {
                 from 'dist/scripts/standard'
