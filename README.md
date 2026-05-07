@@ -114,9 +114,11 @@ Useful optional settings include:
 - `RETRY_INTERVAL=2`
 - `POSTGIS_READY_DELAY=5`
 
-### 5. Preferred first start: use the monitoring script
+### 5. Preferred first start: use the monitoring script sessionless
 
-For testing, burn-in, and side-by-side field deployment, start OSCAR with the monitoring wrapper instead of launching the node directly.
+For testing, burn-in, side-by-side field deployment, and normal field operation, start OSCAR with the monitoring wrapper instead of launching the node directly.
+
+Make **sessionless** operation the default on both Linux and Windows. SSH sessions fail, RDP windows get closed, and terminals get closed during normal operations. Treat attached launches as troubleshooting-only.
 
 Windows:
 
@@ -124,7 +126,15 @@ Windows:
 monitor-oscar.bat
 ```
 
-Linux:
+For normal deployment on Windows, run `monitor-oscar.bat` from a **Scheduled Task** or service wrapper instead of a visible console window.
+
+Linux preferred sessionless start:
+
+```bash
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+Linux attached troubleshooting start:
 
 ```bash
 ./monitor-oscar.sh
@@ -136,6 +146,14 @@ The packaged Linux release is built so the shipped `*.sh` files are already exec
 chmod +x *.sh osh-node-oscar/*.sh
 ```
 
+Useful Linux follow-up commands:
+
+```bash
+tail -f monitor.out
+./check-oscar-status.sh
+pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+```
+
 This is the recommended first-run path because it:
 
 - starts PostGIS and OSCAR using the current launch scripts
@@ -144,7 +162,7 @@ This is the recommended first-run path because it:
 
 ### 6. Routine start without monitoring
 
-When monitoring is not needed, use the top-level launch script:
+When monitoring is intentionally not needed, use the top-level launch script.
 
 Windows:
 
@@ -152,7 +170,15 @@ Windows:
 launch-all.bat
 ```
 
-Linux:
+For sessionless Windows operation, run `launch-all.bat` from a **Scheduled Task** or service wrapper instead of a console window.
+
+Linux sessionless start:
+
+```bash
+nohup ./launch-all.sh > launch.out 2>&1 &
+```
+
+Linux attached troubleshooting start:
 
 ```bash
 ./launch-all.sh
@@ -208,7 +234,53 @@ Linux:
 
 These scripts stop monitor and OSCAR processes, remove the PostGIS container and volumes, and clear local runtime data used by the packaged deployment.
 
-### 10. Admin access
+#### Important recovery note when old lanes still appear after reset
+
+If a user runs `reset-all` and the next monitor run still shows **old lanes** or other stale state, do **not** keep reusing the same extracted OSCAR folder.
+
+Instead:
+
+1. run `stop-all` to stop the monitor and any remaining OSCAR processes
+2. delete the **entire extracted OSCAR folder**
+3. unzip `oscar-3.5.1.zip` again into a fresh folder
+4. recreate `.env`
+5. start again with the sessionless monitoring command
+
+Linux recovery example:
+
+```bash
+./stop-all.sh
+cd ..
+sudo rm -rf oscar-3.5.1
+unzip oscar-3.5.1.zip
+cd oscar-3.5.1
+cp env.template .env
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+`sudo rm -rf` may be required on Linux because Dockerized PostgreSQL or earlier privileged operations can leave some files in the extracted tree owned by `root`.
+
+Windows recovery example:
+
+```powershell
+.\stop-all.bat
+Remove-Item -Recurse -Force .\oscar-3.5.1
+Expand-Archive .\oscar-3.5.1.zip -DestinationPath .
+Copy-Item .\oscar-3.5.1\env.template .\oscar-3.5.1\.env
+```
+
+Then restart `monitor-oscar.bat` from your scheduled task or service wrapper.
+
+### 10. Long-lived sessionless deployments
+
+For systems that must survive logout, SSH disconnects, terminal closure, and host reboot, use the operating system service manager instead of a terminal window.
+
+- Linux: use `systemd`
+- Windows: use **Task Scheduler** for built-in startup behavior, or **NSSM** if you want a true Windows service with explicit Docker dependency handling
+
+The detailed examples live in `dist/documentation/OSCAR_launch_monitoring_guide.md`.
+
+### 11. Admin access
 
 The admin username is typically **admin**. Do **not** assume the packaged password is always `admin`.
 

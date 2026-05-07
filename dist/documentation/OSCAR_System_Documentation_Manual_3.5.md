@@ -86,7 +86,7 @@ The diagram below condenses the system relationships. It is not a source-code cl
 
 # 3. Installation and initial startup
 
-Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific launch-all script (`launch-all.bat` for Windows, `launch-all.sh` for Linux/macOS, or `launch-all-arm.sh` for ARM systems). The database and application come up together in the default deployment path.
+Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific release scripts. For packaged 3.5.1 deployments, the preferred default is the **sessionless monitoring launcher** rather than an attached console window. On Linux that typically means `nohup ./monitor-oscar.sh > monitor.out 2>&1 &`, while on Windows the preferred sessionless pattern is to run `monitor-oscar.bat` from Task Scheduler or a service wrapper. The database and application come up together in the default deployment path.
 
 ## Prerequisites
 
@@ -105,7 +105,7 @@ Installation is intentionally simple: download a release archive, extract it, en
 >
 > 2\. Install Docker and verify that the Docker service is running before starting OSCAR.
 >
-> 3\. Run the launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
+> 3\. For packaged 3.5.1 deployments, prefer the sessionless monitoring launcher for first start and field operation. On Linux, a representative command is `nohup ./monitor-oscar.sh > monitor.out 2>&1 &`. On Windows, the equivalent operational pattern is to start `monitor-oscar.bat` from Task Scheduler or a service wrapper so the deployment does not depend on an open console. Use `launch-all` mainly when monitoring snapshots are not needed.
 >
 > 4\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
 >
@@ -120,7 +120,7 @@ Installation is intentionally simple: download a release archive, extract it, en
 <thead>
 <tr class="header">
 <th><p><strong>Operational note</strong></p>
-<p>If multiple extracted versions exist on the same machine, use the stop-all script to fully stop the application and Dockerized database for the version you were running. An older running container can accidentally populate data in the wrong directory and create confusion during configuration or tuning.</p></th>
+<p>If multiple extracted versions exist on the same machine, use the stop-all script to fully stop the application and Dockerized database for the version you were running. An older running container can accidentally populate data in the wrong directory and create confusion during configuration or tuning. If stale lanes still appear after a reset, stop the monitor, delete the entire extracted OSCAR folder, unzip a fresh copy, recreate <code>.env</code>, and start again. On Linux, <code>sudo rm -rf</code> may be required because some files may be left owned by <code>root</code>.</p></th>
 </tr>
 </thead>
 <tbody>
@@ -450,7 +450,7 @@ This section captures known gaps and enhancement ideas so they are not confused 
 
 > 1\. Install Docker and verify that the service is running on the host before launch.
 >
-> 2\. Extract the chosen OSCAR release and start it with the OS-specific launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`).
+> 2\. Extract the chosen OSCAR release and start it with the preferred sessionless monitoring flow for the operating system in use. For 3.5.1 packaged deployments, that means the monitoring launcher should be the default, while attached console launches should be reserved for troubleshooting.
 >
 > 3\. Change the initial admin password using the package-provided settings file and password-initialization script before production use.
 >
