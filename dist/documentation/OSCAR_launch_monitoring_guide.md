@@ -15,7 +15,7 @@ It explains:
 
 ## 1. Recommended operating model
 
-For **testing, burn-in, and side-by-side field deployment**, the preferred workflow is:
+For **testing, burn-in, side-by-side field deployment, and normal field use**, the preferred workflow is:
 
 1. unzip the prebuilt release into a fresh folder
 2. create `.env`
@@ -25,12 +25,19 @@ For **testing, burn-in, and side-by-side field deployment**, the preferred workf
 6. run the **status-check script**
 7. review JVM, thread, and PostgreSQL behavior before wider deployment
 
+Make **sessionless** operation the default on both Linux and Windows.
+
+- SSH sessions fail
+- terminals get closed
+- RDP windows get closed
+- field systems should not depend on a user keeping a console open
+
 Use the top-level **sessionless launchers** when possible:
 
 - `launch-all.sh` / `launch-all.bat`
 - `monitor-oscar.sh` / `monitor-oscar.bat`
 
-Avoid launching `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
+Treat attached launches as **troubleshooting-only**. Avoid launching `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
 
 ---
 
@@ -69,6 +76,43 @@ Remove-Item -Recurse -Force .\oscar-3.5.0
 If the Docker network does not exist, that is fine. The goal is to avoid carrying old container state or an old extracted release folder into the new test run.
 
 For a full local reset between side-by-side test installs, use `reset-all.sh` or `reset-all.bat`.
+
+### Important stale-state recovery when `reset-all` is not enough
+
+If a user runs `reset-all` and the next `monitor-oscar` run still shows **old lanes** or other stale state, do **not** keep reusing the same extracted OSCAR directory.
+
+Instead:
+
+1. run `stop-all` to stop the monitor and any remaining OSCAR processes
+2. delete the **entire extracted OSCAR folder**
+3. unzip `oscar-3.5.1.zip` again
+4. recreate `.env`
+5. start again with the preferred sessionless monitoring flow
+
+Linux recovery example:
+
+```bash
+./stop-all.sh
+cd ..
+sudo rm -rf oscar-3.5.1
+unzip oscar-3.5.1.zip
+cd oscar-3.5.1
+cp env.template .env
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+`sudo rm -rf` may be required on Linux because Dockerized PostgreSQL or earlier privileged operations can leave files in the extracted directory owned by `root`.
+
+Windows PowerShell recovery example:
+
+```powershell
+.\stop-all.bat
+Remove-Item -Recurse -Force .\oscar-3.5.1
+Expand-Archive .\oscar-3.5.1.zip -DestinationPath .
+Copy-Item .\oscar-3.5.1\env.template .\oscar-3.5.1\.env
+```
+
+After that, restart `monitor-oscar.bat` from your scheduled task or service wrapper.
 
 ---
 
@@ -309,7 +353,21 @@ For monitor wrappers, you have two supported choices:
 
 ### Recommended first-run start with monitoring
 
-#### Linux
+#### Linux sessionless default
+
+```bash
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+Useful Linux follow-up commands:
+
+```bash
+tail -f monitor.out
+./check-oscar-status.sh
+pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+```
+
+Linux attached troubleshooting start:
 
 ```bash
 ./monitor-oscar.sh
@@ -321,7 +379,11 @@ The packaged Linux build now marks all shipped `*.sh` files executable. If your 
 chmod +x *.sh osh-node-oscar/*.sh
 ```
 
-#### Windows
+#### Windows sessionless default
+
+For normal Windows deployment, run `monitor-oscar.bat` from a **Scheduled Task** or service wrapper instead of a visible console window.
+
+Interactive troubleshooting start:
 
 ```bat
 monitor-oscar.bat
@@ -347,7 +409,13 @@ and captures:
 
 ### Routine start without monitoring
 
-#### Linux
+#### Linux sessionless
+
+```bash
+nohup ./launch-all.sh > launch.out 2>&1 &
+```
+
+#### Linux attached troubleshooting
 
 ```bash
 ./launch-all.sh
@@ -357,6 +425,67 @@ and captures:
 
 ```bat
 launch-all.bat
+```
+
+For normal Windows deployment, only use `launch-all.bat` sessionless from a **Scheduled Task** or service wrapper when you intentionally do not want monitor snapshots.
+
+### Exact sessionless detect and stop commands
+
+#### Linux
+
+Run with monitoring:
+
+```bash
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+Detect a running OSCAR JVM:
+
+```bash
+pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+```
+
+Monitor the detached wrapper log:
+
+```bash
+tail -f monitor.out
+```
+
+Stop the sessionless deployment cleanly:
+
+```bash
+./stop-all.sh
+```
+
+#### Windows
+
+Built-in sessionless one-time detached start from PowerShell:
+
+```powershell
+Start-Process -WindowStyle Hidden -FilePath "cmd.exe" -ArgumentList '/c cd /d C:\path\to\oscar-3.5.1 && monitor-oscar.bat > monitor.out 2>&1'
+```
+
+Detect a running OSCAR JVM:
+
+```powershell
+Get-CimInstance Win32_Process |
+  Where-Object {
+    $_.Name -match '^java(\.exe)?$' -and
+    $_.CommandLine -like '*com.botts.impl.security.SensorHubWrapper*'
+  } |
+  Select-Object ProcessId, CommandLine
+```
+
+Watch the detached log if you launched it with `monitor.out` redirection:
+
+```powershell
+Get-Content .\monitor.out -Wait
+```
+
+Stop the sessionless deployment cleanly:
+
+```bat
+stop-all.bat
 ```
 
 ---
@@ -397,6 +526,97 @@ Windows:
 ```bat
 reset-all.bat
 ```
+
+### Boot-persistent daemon and service deployment
+
+For deployments that must survive logout and restart automatically after reboot, use the operating system service manager instead of a terminal window.
+
+#### Linux systemd example
+
+Make sure Docker itself is enabled first:
+
+```bash
+sudo systemctl enable --now docker
+```
+
+Create `/etc/systemd/system/oscar-monitor.service`:
+
+```ini
+[Unit]
+Description=OSCAR 3.5.1 monitor
+Wants=docker.service network-online.target
+After=docker.service network-online.target
+
+[Service]
+Type=simple
+User=oscar
+WorkingDirectory=/opt/oscar-3.5.1
+ExecStart=/bin/bash -lc './monitor-oscar.sh'
+ExecStop=/bin/bash -lc './stop-all.sh'
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start it:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now oscar-monitor
+```
+
+Useful Linux daemon commands:
+
+```bash
+sudo systemctl status oscar-monitor
+sudo journalctl -u oscar-monitor -f
+sudo systemctl stop oscar-monitor
+sudo systemctl restart oscar-monitor
+```
+
+Replace `User=` and `WorkingDirectory=` with values that match your install path.
+
+#### Windows built-in startup task
+
+Make sure Docker Desktop or Docker Engine is configured to start automatically at boot before the OSCAR task runs. Then create a startup task with a short delay so Docker is ready first:
+
+```powershell
+schtasks /Create /TN "OSCAR Monitor" /SC ONSTART /RU SYSTEM /RL HIGHEST /DELAY 0001:00 /TR "cmd.exe /c cd /d C:\path\to\oscar-3.5.1 && monitor-oscar.bat > monitor.out 2>&1" /F
+```
+
+Useful Windows scheduled-task commands:
+
+```powershell
+schtasks /Run /TN "OSCAR Monitor"
+schtasks /Query /TN "OSCAR Monitor" /V /FO LIST
+schtasks /End /TN "OSCAR Monitor"
+```
+
+After ending the task, run `stop-all.bat` if you also need to stop the OSCAR Java process and the PostGIS container cleanly.
+
+#### Windows service wrapper with Docker dependency
+
+If you want explicit service dependency handling on Windows, wrap `monitor-oscar.bat` with **NSSM** and depend on Docker Desktop's `com.docker.service` service:
+
+```powershell
+nssm install oscar-monitor "C:\Windows\System32\cmd.exe" "/c cd /d C:\path\to\oscar-3.5.1 && monitor-oscar.bat > monitor.out 2>&1"
+nssm set oscar-monitor AppDirectory "C:\path\to\oscar-3.5.1"
+nssm set oscar-monitor Start SERVICE_AUTO_START
+nssm set oscar-monitor DependOnService com.docker.service
+nssm start oscar-monitor
+```
+
+Useful NSSM service commands:
+
+```powershell
+sc query oscar-monitor
+nssm stop oscar-monitor
+nssm restart oscar-monitor
+```
+
+If you use Docker Engine instead of Docker Desktop, adjust the dependency service name to match your Docker service.
 
 ---
 

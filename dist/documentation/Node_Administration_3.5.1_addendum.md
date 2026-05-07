@@ -8,12 +8,12 @@ The existing **Node Administration** PDF remains useful for Admin UI tasks such 
 
 No major Admin UI workflow changes were required for the 3.5.1 launch, monitoring, and packaging updates.
 
-The operational changes for 3.5.1 are outside that PDF and are now covered in these updated deployment documents:
+The operational changes for 3.5.1 are outside that PDF and are now covered in these deployment documents:
 
-- `README.updated.md`
-- `OSCAR_launch_monitoring_guide.updated.md`
-- `MediaMTX_OSCAR_camera_proxy_guide.updated.md`
-- `OSCAR_System_Documentation_Manual_3.5.updated.md`
+- `README.md`
+- `dist/documentation/OSCAR_launch_monitoring_guide.md`
+- `dist/documentation/MediaMTX_OSCAR_camera_proxy_guide.md`
+- `dist/documentation/OSCAR_System_Documentation_Manual_3.5.md`
 
 Use the PDF for Admin Panel behavior, and use the updated deployment documents for:
 
@@ -22,4 +22,7 @@ Use the PDF for Admin Panel behavior, and use the updated deployment documents f
 - already-running OSCAR handling
 - monitoring and status scripts
 - fresh-install cleanup of older OSCAR releases
+- sessionless default launch guidance for Windows and Linux
+- recovery steps when `reset-all` leaves stale lanes behind
+- daemon and service-manager deployment guidance for reboot-persistent operation
 - MediaMTX-assisted camera deployment guidance

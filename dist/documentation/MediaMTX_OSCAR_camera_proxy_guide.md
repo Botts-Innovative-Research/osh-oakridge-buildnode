@@ -58,17 +58,19 @@ Make sure **Java 21+** and **Docker** are ready for OSCAR, and that MediaMTX is 
 
 ### 2. Start OSCAR with monitoring
 
-Linux:
+Use the same **sessionless monitoring default** recommended for the rest of the packaged deployment workflow.
+
+Linux preferred command:
 
 ```bash
-./monitor-oscar.sh
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
 ```
 
-Windows:
+Windows preferred pattern:
 
-```bat
-monitor-oscar.bat
-```
+- run `monitor-oscar.bat` from **Task Scheduler** or a service wrapper
+
+Attached launches should be used only for troubleshooting.
 
 ### 3. Start MediaMTX
 
