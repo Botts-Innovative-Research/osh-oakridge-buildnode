@@ -9,13 +9,25 @@ It explains:
 - how the updated `launch-all`, `launch`, `monitor-oscar`, `stop-all`, `reset-all`, and `check-oscar-status` scripts behave
 - how already-running OSCAR instances are handled
 - how to validate Java, Docker, memory, and database health
-- how to use MediaMTX and status reports during testing and side-by-side field deployment
+- how to use MediaMTX and status reports during testing, troubleshooting, side-by-side evaluation, and system profiling
 
 ---
 
 ## 1. Recommended operating model
 
-For **testing, burn-in, and side-by-side field deployment**, the preferred workflow is:
+Use two launch paths depending on the operational goal.
+
+For **efficient production operation**, use the top-level `launch-all` script:
+
+- `launch-all.sh` / `launch-all.bat`
+
+`launch-all` starts PostGIS and OSCAR with the selected `.env` system profile and avoids the additional monitor loop, snapshot files, JFR checks, thread dumps, database trend logging, and monitor directories that are only useful when an in-depth profile is needed.
+
+For **testing, burn-in, side-by-side evaluation, troubleshooting, and system profiling**, use the `monitor-oscar` wrapper:
+
+- `monitor-oscar.sh` / `monitor-oscar.bat`
+
+The preferred monitored workflow is:
 
 1. unzip the prebuilt release into a fresh folder
 2. create `.env`
@@ -23,12 +35,8 @@ For **testing, burn-in, and side-by-side field deployment**, the preferred workf
 4. start with the **monitoring script**
 5. let the system warm up
 6. run the **status-check script**
-7. review JVM, thread, and PostgreSQL behavior before wider deployment
-
-Use the top-level **sessionless launchers** when possible:
-
-- `launch-all.sh` / `launch-all.bat`
-- `monitor-oscar.sh` / `monitor-oscar.bat`
+7. review JVM, thread, and PostgreSQL behavior before production use
+8. switch routine production starts to `launch-all` once detailed profiling is no longer needed
 
 Avoid launching `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
 
@@ -235,7 +243,7 @@ The launchers also set:
 
 ### `launch-all.sh` / `launch-all.bat`
 
-These are the supported top-level launchers.
+These are the supported top-level launchers and the preferred path for efficient production operation when in-depth monitoring is not required.
 
 They:
 
@@ -269,7 +277,7 @@ Optional runtime extras are handled gracefully:
 - if `nativelibs` does not exist, the launcher warns and continues
 - if `trusted_certificates` does not exist, the trust-store helper uses the copied default Java `cacerts` store and continues
 
-Use these direct node launchers mainly for debugging.
+Use these direct node launchers mainly for debugging. For production, use `launch-all`; for monitored validation or profiling, use `monitor-oscar`.
 
 ---
 
@@ -307,7 +315,27 @@ For monitor wrappers, you have two supported choices:
 
 ## 8. Starting OSCAR
 
-### Recommended first-run start with monitoring
+### Efficient production start with `launch-all`
+
+Use this path for normal production operation after the deployment has already been validated.
+
+#### Linux
+
+```bash
+./launch-all.sh
+```
+
+#### Windows
+
+```bat
+launch-all.bat
+```
+
+This starts the database and OSCAR application without creating the extra monitoring artifacts used for diagnostic profiling. It is the ideal production mode when operators do not need detailed memory, thread, JFR, and PostgreSQL trend data for the run.
+
+### Testing, troubleshooting, and profiling start with monitoring
+
+Use this path for first-run validation, burn-in, side-by-side comparisons, troubleshooting, and system profiling.
 
 #### Linux
 
@@ -315,7 +343,7 @@ For monitor wrappers, you have two supported choices:
 ./monitor-oscar.sh
 ```
 
-Preferred Linux sessionless launch:
+Preferred Linux sessionless monitored launch:
 
 ```bash
 nohup ./monitor-oscar.sh > monitor.out 2>&1 &
@@ -333,7 +361,7 @@ chmod +x *.sh osh-node-oscar/*.sh
 monitor-oscar.bat
 ```
 
-Preferred Windows sessionless launch from PowerShell:
+Preferred Windows sessionless monitored launch from PowerShell:
 
 ```powershell
 Start-Process -WindowStyle Hidden -FilePath cmd.exe -ArgumentList '/c monitor-oscar.bat ^> monitor.out 2^>^&1' -WorkingDirectory (Get-Location)
@@ -357,19 +385,7 @@ and captures:
 - PostgreSQL session and activity data
 - trend CSV files for database sessions
 
-### Routine start without monitoring
-
-#### Linux
-
-```bash
-./launch-all.sh
-```
-
-#### Windows
-
-```bat
-launch-all.bat
-```
+Because these artifacts are intentionally verbose, use `monitor-oscar` only when the extra evidence is useful. For steady production where no in-depth system profile is needed, return to `launch-all`.
 
 ---
 
@@ -409,7 +425,7 @@ This avoids `stop-all` getting stuck on a monitor-closing attempt.
 
 ### `reset-all`
 
-Use `reset-all` when you want a clean local test surface before trying a different packaged installation on the same machine.
+Use `reset-all` when you want a clean local test surface before trying a different packaged installation on the same machine. It is mainly a testing and troubleshooting tool, not part of routine production startup.
 
 It:
 
@@ -446,7 +462,7 @@ reset-all.bat
 powershell -ExecutionPolicy Bypass -File .\check-oscar-status.ps1
 ```
 
-These scripts summarize the latest monitor run into a single text report that includes:
+These scripts are most useful after a monitored validation or profiling run. They summarize the latest monitor run into a single text report that includes:
 
 - process status
 - live JVM information
@@ -508,11 +524,12 @@ Use `db-connection-trend.csv` as the fastest way to spot connection growth, plat
 
 For larger camera configurations or side-by-side test deployments:
 
-1. start OSCAR with `monitor-oscar`
+1. start OSCAR with `monitor-oscar` for evaluation and profiling
 2. route camera streams through MediaMTX
 3. let the system run long enough to capture reconnect and thread behavior
 4. run `check-oscar-status`
 5. compare JVM threads, reconnect logs, and PostgreSQL sessions before and after enabling MediaMTX
+6. use `launch-all` for efficient production operation once the camera profile is accepted
 
 MediaMTX is especially helpful when many logical lane-camera assignments reuse a smaller number of real camera streams.
 

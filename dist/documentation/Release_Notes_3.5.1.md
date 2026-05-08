@@ -14,7 +14,7 @@ OSCAR **3.5.1** improves deployment stability, observability, and scalability fo
 
 These changes were validated against a high-load configuration monitoring **50 radiation portal monitors and 100 camera streams**.
 
-This is a **prebuilt release**. Users should **unzip OSCAR 3.5.1 into a fresh directory** and start it with the included **monitoring script**, preferably using the **sessionless launch** when possible.
+This is a **prebuilt release**. Users should **unzip OSCAR 3.5.1 into a fresh directory**. Use the included **monitoring script** for first-run validation, burn-in, troubleshooting, and system profiling. Use **`launch-all`** for efficient production operation after validation, because it avoids unnecessary detailed monitoring logs and snapshot artifacts when an in-depth system profile is not required.
 
 ---
 
@@ -31,15 +31,19 @@ The packaged release archive is expected to be named **`oscar-3.5.1.zip`**.
 
 ### Recommended deployment model
 
-For testing, side-by-side field deployment, and first-run validation:
+For production operation:
 
 * unzip the release into a **new clean folder**
 * rename `env.txt` to `.env` if needed
 * select the correct system profile in `.env`
-* use **MediaMTX** for camera-heavy deployments
+* use **MediaMTX** for camera-heavy deployments when appropriate
+* start OSCAR with **`launch-all`** after validation so the system runs without unnecessary monitoring log and snapshot generation
+
+For testing, side-by-side field evaluation, first-run validation, troubleshooting, and system profiling:
+
 * start OSCAR with the **sessionless monitoring launch** when possible
+* use the **check/status script** to review memory, thread, and PostgreSQL behavior
 * use the new reset scripts when you need to clear a previous local test install before switching releases
-* use the **check/status script** to review performance
 
 ---
 
@@ -152,7 +156,7 @@ The monitor wrappers now also include a singleton guard so a second `monitor-osc
 These scripts can now:
 
 * launch OSCAR under monitoring
-* support sessionless launch for normal deployment use
+* support sessionless launch for validation, troubleshooting, burn-in, and profiling runs
 * capture JVM memory status
 * capture native memory tracking summaries
 * capture JFR status
@@ -199,7 +203,7 @@ This supports a deployment model where:
 * multiple lanes can reuse proxied feeds
 * OSCAR connects to stable local endpoints instead of managing a large number of direct camera connections
 
-This architecture is recommended for larger systems and appears to reduce camera-related reconnect burden.
+This architecture is recommended for larger systems and appears to reduce camera-related reconnect burden. Validate camera-heavy profiles with `monitor-oscar`, then use `launch-all` for efficient production starts once the profile is accepted.
 
 ### Documentation updates
 
@@ -390,39 +394,47 @@ Then edit the file and select the correct hardware profile:
 
 The environment template also supports launch and monitoring behavior such as restart and attach settings.
 
-### Step 4: start with the monitoring script
+### Step 4: choose the launch path
 
-For OSCAR 3.5.1, users should launch with the monitoring script so diagnostics begin immediately.
+For efficient production operation after validation, start OSCAR with `launch-all`.
 
-Use the **sessionless launch** when possible so OSCAR keeps running without requiring an attached terminal session.
-
-#### Linux
-
-Preferred:
+#### Linux production
 
 ```bash
-./monitor-oscar.sh --daemon
+./launch-all.sh
 ```
 
-If your script version starts sessionless by default, use:
+#### Windows production
+
+```bat
+launch-all.bat
+```
+
+Use the monitoring script when diagnostics are needed for first-run validation, burn-in, troubleshooting, side-by-side comparison, or system profiling.
+
+#### Linux monitored validation or profiling
+
+Preferred sessionless pattern:
+
+```bash
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```
+
+Attached interactive pattern:
 
 ```bash
 ./monitor-oscar.sh
 ```
 
-Use an attached launch only for interactive troubleshooting.
-
-#### Windows
-
-Preferred:
+#### Windows monitored validation or profiling
 
 ```bat
 monitor-oscar.bat
 ```
 
-Use the sessionless option if your Windows wrapper provides both attached and detached modes.
+For detached Windows operation, run `monitor-oscar.bat` from Task Scheduler, a service wrapper, or a hidden PowerShell `Start-Process` invocation.
 
-Use an attached launch only for interactive troubleshooting.
+The monitoring path intentionally produces additional logs, monitor directories, snapshots, JFR checks, thread dumps, and database trend files. Use it when that evidence is valuable; otherwise use `launch-all` for routine production.
 
 ### Step 5: check performance with the included status script
 
@@ -457,7 +469,7 @@ For testing and side-by-side field deployment, users should:
 7. rename `env.txt` to `.env` if needed
 8. select the correct profile in `.env`
 9. configure and use **MediaMTX** for camera-heavy systems
-10. start OSCAR with the **sessionless monitoring launch** when possible
+10. start OSCAR with the **sessionless monitoring launch** when collecting validation or profile evidence
 11. use the check or status script to compare system behavior and performance
 12. use the reset script when you need to remove the local OSCAR runtime state before testing another package on the same machine
 
@@ -497,8 +509,9 @@ This is the preferred workflow for:
 
 * select the correct hardware profile in `.env`
 * use the updated launch scripts
-* use the **sessionless monitoring launch** for initial validation and normal field deployment when possible
-* use the attached launch only for interactive troubleshooting
+* use **`launch-all`** for efficient production operation after validation
+* use the **sessionless monitoring launch** for initial validation, burn-in, side-by-side evaluation, troubleshooting, and profiling
+* use the attached monitoring launch only for interactive troubleshooting
 * let the scripts manage already-running instances instead of manually launching duplicates
 * use MediaMTX where many camera streams are involved
 * review generated status reports during early burn-in testing
@@ -539,8 +552,9 @@ These do not appear to be the primary cause of the major stability issue address
 7. Rename `env.txt` to `.env` if needed.
 8. Edit `.env` and select the correct hardware profile.
 9. For camera-heavy deployments, configure MediaMTX.
-10. Start the system with the **sessionless monitoring launch** when possible.
-11. Use the check or status script after startup and again after runtime burn-in.
+10. Start the system with **`monitor-oscar`** when collecting validation, troubleshooting, or profile evidence.
+11. Start the system with **`launch-all`** for efficient production operation after validation.
+12. Use the check or status script after monitored startup and again after runtime burn-in.
 
 ---
 

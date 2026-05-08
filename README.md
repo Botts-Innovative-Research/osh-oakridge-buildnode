@@ -108,9 +108,29 @@ Useful optional settings include:
 - `RETRY_INTERVAL=2`
 - `POSTGIS_READY_DELAY=5`
 
-### 5. Preferred first start: use the monitoring script
+### 5. Production start: use `launch-all`
 
-For testing, burn-in, and side-by-side field deployment, start OSCAR with the monitoring wrapper instead of launching the node directly.
+For efficient production operation after validation is complete, use the top-level launch script instead of the monitoring wrapper.
+
+Windows:
+
+```bat
+launch-all.bat
+```
+
+Linux:
+
+```bash
+./launch-all.sh
+```
+
+`launch-all` is the preferred production path because it starts PostGIS and OSCAR with the selected `.env` profile without the extra monitor loop, recurring snapshots, JFR checks, thread dumps, database trend files, and monitor-directory logging. This keeps routine startup simpler and avoids collecting detailed profile data when operators do not need an in-depth system profile.
+
+Prefer these **top-level launchers** over calling `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
+
+### 6. Validation, troubleshooting, and profiling start: use `monitor-oscar`
+
+For testing, burn-in, side-by-side field evaluation, troubleshooting, and system profiling, start OSCAR with the monitoring wrapper.
 
 Windows:
 
@@ -137,29 +157,14 @@ Linux sessionless launch:
 nohup ./monitor-oscar.sh > monitor.out 2>&1 &
 ```
 
-This is the recommended first-run path because it:
+This is the preferred validation and troubleshooting path because it:
 
 - starts PostGIS and OSCAR using the current launch scripts
 - captures memory, thread, JFR, and database snapshots over time
 - produces a monitor directory and status report inputs automatically
+- gives operators the evidence needed to compare profiles, diagnose startup failures, and confirm that PostgreSQL sessions and JVM threads stabilize
 
-### 6. Routine start without monitoring
-
-When monitoring is not needed, use the top-level launch script:
-
-Windows:
-
-```bat
-launch-all.bat
-```
-
-Linux:
-
-```bash
-./launch-all.sh
-```
-
-Prefer these **sessionless top-level launchers** over calling `osh-node-oscar/launch.(sh|bat)` directly unless you are debugging the node itself.
+Once the system is validated and no in-depth profile is needed, switch routine production starts back to `launch-all`.
 
 ### 7. Running-instance handling
 
@@ -251,12 +256,13 @@ If you are testing from a source checkout instead of a packaged release:
 
 1. create `.env` from `env.template`
 2. verify Java 21 and Docker
-3. launch with `monitor-oscar` for first-run validation
-4. use `check-oscar-status` after the system reaches steady state
+3. launch with `monitor-oscar` for first-run validation, troubleshooting, or profiling
+4. use `check-oscar-status` after the monitored system reaches steady state
+5. use `launch-all` for efficient routine production starts after validation
 
 ## MediaMTX for larger camera deployments
 
-For test systems and larger multi-lane deployments, consider placing **MediaMTX** in front of camera streams so OSCAR connects to stable local RTSP proxy paths instead of directly to every camera. See the updated MediaMTX guide in `dist/documentation/MediaMTX_OSCAR_camera_proxy_guide.md`.
+For test systems and larger multi-lane deployments, consider placing **MediaMTX** in front of camera streams so OSCAR connects to stable local RTSP proxy paths instead of directly to every camera. Use `monitor-oscar` while evaluating the camera profile, then use `launch-all` for efficient production operation once the profile is accepted. See the updated MediaMTX guide in `dist/documentation/MediaMTX_OSCAR_camera_proxy_guide.md`.
 
 ## PostgreSQL tuning
 

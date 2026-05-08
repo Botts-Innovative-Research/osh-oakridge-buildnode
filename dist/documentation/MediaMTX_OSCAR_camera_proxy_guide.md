@@ -2,14 +2,15 @@
 
 This guide explains how to use **MediaMTX** as a local RTSP proxy so OSCAR does not have to open large numbers of direct camera connections.
 
-For **testing and side-by-side field deployment**, the recommended operational flow is:
+For **testing, troubleshooting, side-by-side evaluation, and system profiling**, the recommended operational flow is:
 
 1. prepare a fresh OSCAR 3.5.1 deployment
 2. create `.env`
-3. launch OSCAR with the monitoring script
+3. launch OSCAR with the monitoring script to collect profile evidence
 4. proxy camera streams through MediaMTX
 5. run the status-check script after warm-up
 6. compare reconnect, thread, and database behavior with and without the proxy
+7. use `launch-all` for efficient production operation once the camera profile is accepted
 
 ---
 
@@ -56,21 +57,33 @@ In this setup, OSCAR talks to:
 
 Make sure **Java 21+** and **Docker** are ready for OSCAR, and that MediaMTX is installed separately on the host where you plan to run the proxy.
 
-### 2. Start OSCAR with monitoring
+### 2. Start OSCAR with the right launch path
 
-Use the same **sessionless monitoring default** recommended for the rest of the packaged deployment workflow.
+For MediaMTX evaluation, troubleshooting, and system profiling, use the monitoring wrapper so reconnect behavior, thread growth, and PostgreSQL sessions are captured.
 
-Linux preferred command:
+Linux monitored command:
 
 ```bash
 nohup ./monitor-oscar.sh > monitor.out 2>&1 &
 ```
 
-Windows preferred pattern:
+Windows monitored pattern:
 
-- run `monitor-oscar.bat` from **Task Scheduler** or a service wrapper
+- run `monitor-oscar.bat` from **Task Scheduler**, a service wrapper, or an interactive terminal when troubleshooting
 
-Attached launches should be used only for troubleshooting.
+After the MediaMTX profile is accepted and no in-depth system profile is needed, use `launch-all` for production operation:
+
+```bash
+./launch-all.sh
+```
+
+or on Windows:
+
+```bat
+launch-all.bat
+```
+
+`launch-all` avoids the extra monitor directories, periodic snapshots, JFR checks, thread dumps, database trend files, and diagnostic logs produced by `monitor-oscar`.
 
 ### 3. Start MediaMTX
 
@@ -330,7 +343,7 @@ If you only need RTSP, keep HLS, WebRTC, RTMP, and SRT disabled.
 
 ### Use monitoring during evaluation
 
-When comparing direct-camera versus proxied-camera behavior, always launch OSCAR with the monitoring script and collect a status report after warm-up.
+When comparing direct-camera versus proxied-camera behavior, launch OSCAR with the monitoring script and collect a status report after warm-up. When the comparison is complete and the profile is accepted, use `launch-all` for efficient production starts.
 
 ---
 
@@ -388,4 +401,4 @@ In practice, that means:
 - easier testing with emulator lanes
 - simpler troubleshooting and stream replacement
 
-For field evaluation, pair MediaMTX with the OSCAR monitoring and status-check scripts so you can compare reconnect behavior, thread growth, and system steadiness under realistic load.
+For field evaluation, pair MediaMTX with the OSCAR monitoring and status-check scripts so you can compare reconnect behavior, thread growth, and system steadiness under realistic load. For steady production where that detailed profile is unnecessary, run OSCAR with `launch-all` to avoid extra monitoring logs and snapshot artifacts.
