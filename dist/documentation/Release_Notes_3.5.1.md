@@ -37,11 +37,8 @@ For testing, side-by-side field deployment, and first-run validation:
 * rename `env.txt` to `.env` if needed
 * select the correct system profile in `.env`
 * use **MediaMTX** for camera-heavy deployments
-* start OSCAR with the **sessionless monitoring launch** by default
-* treat attached launches as troubleshooting-only
+* start OSCAR with the **sessionless monitoring launch** when possible
 * use the new reset scripts when you need to clear a previous local test install before switching releases
-* know the full recovery workflow when `reset-all` is not enough and old lanes still appear
-* use `systemd` on Linux or Task Scheduler/NSSM on Windows for reboot-persistent operation
 * use the **check/status script** to review performance
 
 ---
@@ -85,6 +82,7 @@ Improvements include:
 * support for stopping and relaunching cleanly when configured to do so
 * monitor behavior aligned with launch behavior end to end
 * reduced risk of duplicate Java processes and conflicting monitor sessions
+* explicit single-instance protection for the Linux and Windows monitor wrappers
 
 This makes startup behavior safer during testing, upgrades, and repeated field launches.
 
@@ -148,6 +146,8 @@ This is the most important backend stability improvement in this release.
 ### Monitoring and status scripts
 
 New monitoring and status-check scripts were added for both Linux and Windows.
+
+The monitor wrappers now also include a singleton guard so a second `monitor-oscar` launch is refused while another monitor is already active. This prevents duplicate snapshot loops, duplicate JFR starts, and confusing status output during sessionless operation. The wrappers now also update `monitor.last-status` and `monitor.last-error`, which makes it much easier to understand why a sessionless launch exited without staying attached to a terminal window.
 
 These scripts can now:
 
@@ -216,9 +216,6 @@ Documentation was added or expanded for:
 * MediaMTX camera proxy setup
 * already-running instance handling
 * environment template settings for restart and attach behavior
-* preferred sessionless `nohup` launch examples on Linux
-* full-folder recovery steps when stale lanes remain after `reset-all`
-* reboot-persistent daemon and service deployment examples for Linux and Windows
 
 ---
 
@@ -238,9 +235,9 @@ Large deployments were exhausting PostgreSQL connection capacity because multipl
 
 ### Duplicate launch and monitoring confusion
 
-Repeated test starts could leave users uncertain whether OSCAR was already running, whether a second Java process had been created, or whether the monitor had attached to the correct instance.
+Repeated test starts could leave users uncertain whether OSCAR was already running, whether a second Java process had been created, or whether the monitor had attached to the correct instance. A related gap was that the backend launchers had duplicate-start protection, but the monitor wrapper itself could still be started twice.
 
-The updated scripts address this by making existing-instance behavior more explicit and consistent.
+The updated scripts address this by making existing-instance behavior more explicit and consistent, and by refusing a second live monitor session.
 
 ### Limited visibility into failure mode
 
@@ -307,8 +304,6 @@ Remove the previous OSCAR folder:
 ```bash
 rm -rf ~/oscar-3.5.0
 ```
-
-If you are clearing a reused `oscar-3.5.1` test folder and normal removal fails, use `sudo rm -rf` because Dockerized PostgreSQL or earlier privileged operations can leave files owned by `root` inside the extracted tree.
 
 ### Windows cleanup example
 
@@ -399,33 +394,35 @@ The environment template also supports launch and monitoring behavior such as re
 
 For OSCAR 3.5.1, users should launch with the monitoring script so diagnostics begin immediately.
 
-Use **sessionless launch by default** so OSCAR keeps running without requiring an attached terminal session.
+Use the **sessionless launch** when possible so OSCAR keeps running without requiring an attached terminal session.
 
 #### Linux
 
-Preferred sessionless command:
+Preferred:
 
 ```bash
-nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+./monitor-oscar.sh --daemon
 ```
 
-Attached launch for troubleshooting only:
+If your script version starts sessionless by default, use:
 
 ```bash
 ./monitor-oscar.sh
 ```
 
+Use an attached launch only for interactive troubleshooting.
+
 #### Windows
 
-Preferred sessionless pattern:
-
-- run `monitor-oscar.bat` from **Task Scheduler** or an **NSSM** service wrapper
-
-Attached launch for troubleshooting only:
+Preferred:
 
 ```bat
 monitor-oscar.bat
 ```
+
+Use the sessionless option if your Windows wrapper provides both attached and detached modes.
+
+Use an attached launch only for interactive troubleshooting.
 
 ### Step 5: check performance with the included status script
 
@@ -463,7 +460,6 @@ For testing and side-by-side field deployment, users should:
 10. start OSCAR with the **sessionless monitoring launch** when possible
 11. use the check or status script to compare system behavior and performance
 12. use the reset script when you need to remove the local OSCAR runtime state before testing another package on the same machine
-13. if old lanes still appear after `reset-all`, run `stop-all`, delete the entire extracted folder, unzip a fresh copy, recreate `.env`, and start again
 
 This is the preferred workflow for:
 
@@ -501,12 +497,11 @@ This is the preferred workflow for:
 
 * select the correct hardware profile in `.env`
 * use the updated launch scripts
-* use the **sessionless monitoring launch** for initial validation and normal field deployment by default
+* use the **sessionless monitoring launch** for initial validation and normal field deployment when possible
 * use the attached launch only for interactive troubleshooting
 * let the scripts manage already-running instances instead of manually launching duplicates
 * use MediaMTX where many camera streams are involved
 * review generated status reports during early burn-in testing
-* move long-lived field systems to `systemd` on Linux or Task Scheduler/NSSM on Windows so they survive reboot and logout
 
 ### Validation after upgrade
 
