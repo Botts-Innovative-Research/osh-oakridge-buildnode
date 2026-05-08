@@ -29,7 +29,7 @@ java -version
 docker version
 ```
 
-Use **Java 21 or newer**. The launch scripts validate dependencies and stop early if Java or Docker is missing or too old.
+Use **Java 21 or newer**. The launch scripts validate dependencies and will stop early if Java or Docker is missing or too old.
 
 ### 2. If you were previously running OSCAR, start fresh
 
@@ -71,12 +71,6 @@ Then delete the old extracted release folder, such as **oscar-3.5.0**, before ex
 
 Extract the downloaded ZIP to a fresh working directory.
 
-The packaged release archive is expected to be named:
-
-```text
-oscar-3.5.1.zip
-```
-
 ### 4. Create the runtime environment file
 
 For packaged releases, use the environment file that ships with the archive:
@@ -114,11 +108,9 @@ Useful optional settings include:
 - `RETRY_INTERVAL=2`
 - `POSTGIS_READY_DELAY=5`
 
-### 5. Preferred first start: use the monitoring script sessionless
+### 5. Preferred first start: use the monitoring script
 
-For testing, burn-in, side-by-side field deployment, and normal field operation, start OSCAR with the monitoring wrapper instead of launching the node directly.
-
-Make **sessionless** operation the default on both Linux and Windows. SSH sessions fail, RDP windows get closed, and terminals get closed during normal operations. Treat attached launches as troubleshooting-only.
+For testing, burn-in, and side-by-side field deployment, start OSCAR with the monitoring wrapper instead of launching the node directly.
 
 Windows:
 
@@ -126,32 +118,23 @@ Windows:
 monitor-oscar.bat
 ```
 
-For normal deployment on Windows, run `monitor-oscar.bat` from a **Scheduled Task** or service wrapper instead of a visible console window.
+Windows sessionless PowerShell launch:
 
-Linux preferred sessionless start:
-
-```bash
-nohup ./monitor-oscar.sh > monitor.out 2>&1 &
+```powershell
+Start-Process -WindowStyle Hidden -FilePath cmd.exe -ArgumentList '/c monitor-oscar.bat ^> monitor.out 2^>^&1' -WorkingDirectory (Get-Location)
 ```
 
-Linux attached troubleshooting start:
+Linux:
 
 ```bash
+chmod +x launch-all.sh osh-node-oscar/launch.sh monitor-oscar.sh check-oscar-status.sh
 ./monitor-oscar.sh
 ```
 
-The packaged Linux release is built so the shipped `*.sh` files are already executable. If your unzip tool strips execute bits, restore them with:
+Linux sessionless launch:
 
 ```bash
-chmod +x *.sh osh-node-oscar/*.sh
-```
-
-Useful Linux follow-up commands:
-
-```bash
-tail -f monitor.out
-./check-oscar-status.sh
-pgrep -af 'com.botts.impl.security.SensorHubWrapper'
+nohup ./monitor-oscar.sh > monitor.out 2>&1 &
 ```
 
 This is the recommended first-run path because it:
@@ -162,7 +145,7 @@ This is the recommended first-run path because it:
 
 ### 6. Routine start without monitoring
 
-When monitoring is intentionally not needed, use the top-level launch script.
+When monitoring is not needed, use the top-level launch script:
 
 Windows:
 
@@ -170,15 +153,7 @@ Windows:
 launch-all.bat
 ```
 
-For sessionless Windows operation, run `launch-all.bat` from a **Scheduled Task** or service wrapper instead of a console window.
-
-Linux sessionless start:
-
-```bash
-nohup ./launch-all.sh > launch.out 2>&1 &
-```
-
-Linux attached troubleshooting start:
+Linux:
 
 ```bash
 ./launch-all.sh
@@ -188,17 +163,26 @@ Prefer these **sessionless top-level launchers** over calling `osh-node-oscar/la
 
 ### 7. Running-instance handling
 
-The launch and monitor scripts detect already-running OSCAR JVMs.
+The launch and monitor scripts now detect already-running OSCAR JVMs.
 
 Default behavior:
 
 - `launch-all` refuses to start if OSCAR is already running
 - `monitor-oscar` refuses to start if OSCAR is already running
+- `monitor-oscar` also refuses to start if another `monitor-oscar` wrapper is already active
 
 Optional behaviors:
 
 - set `FORCE_RESTART=1` to stop the running OSCAR instance and start fresh
 - set `ATTACH_TO_EXISTING=1` when using `monitor-oscar` to monitor the running instance instead of replacing it
+
+When using `nohup`, a hidden `cmd.exe`, Task Scheduler, or another sessionless strategy, check these files after launch:
+
+- `monitor.last-status`
+- `monitor.last-error`
+- `monitor.out` when you redirected stdout and stderr
+
+If a second monitor start is refused, `monitor.last-status` records a clear failure such as `FAILED duplicate_monitor ...` so the operator can tell why the wrapper exited without staying attached to the terminal.
 
 ### 8. Generate a status report after startup
 
@@ -216,71 +200,7 @@ Linux:
 ./check-oscar-status.sh
 ```
 
-### 9. Clean reset between side-by-side test installs
-
-When you need to clear the local OSCAR runtime state before standing up a different installation on the same machine, use the reset script for your platform.
-
-Windows:
-
-```bat
-reset-all.bat
-```
-
-Linux:
-
-```bash
-./reset-all.sh
-```
-
-These scripts stop monitor and OSCAR processes, remove the PostGIS container and volumes, and clear local runtime data used by the packaged deployment.
-
-#### Important recovery note when old lanes still appear after reset
-
-If a user runs `reset-all` and the next monitor run still shows **old lanes** or other stale state, do **not** keep reusing the same extracted OSCAR folder.
-
-Instead:
-
-1. run `stop-all` to stop the monitor and any remaining OSCAR processes
-2. delete the **entire extracted OSCAR folder**
-3. unzip `oscar-3.5.1.zip` again into a fresh folder
-4. recreate `.env`
-5. start again with the sessionless monitoring command
-
-Linux recovery example:
-
-```bash
-./stop-all.sh
-cd ..
-sudo rm -rf oscar-3.5.1
-unzip oscar-3.5.1.zip
-cd oscar-3.5.1
-cp env.template .env
-nohup ./monitor-oscar.sh > monitor.out 2>&1 &
-```
-
-`sudo rm -rf` may be required on Linux because Dockerized PostgreSQL or earlier privileged operations can leave some files in the extracted tree owned by `root`.
-
-Windows recovery example:
-
-```powershell
-.\stop-all.bat
-Remove-Item -Recurse -Force .\oscar-3.5.1
-Expand-Archive .\oscar-3.5.1.zip -DestinationPath .
-Copy-Item .\oscar-3.5.1\env.template .\oscar-3.5.1\.env
-```
-
-Then restart `monitor-oscar.bat` from your scheduled task or service wrapper.
-
-### 10. Long-lived sessionless deployments
-
-For systems that must survive logout, SSH disconnects, terminal closure, and host reboot, use the operating system service manager instead of a terminal window.
-
-- Linux: use `systemd`
-- Windows: use **Task Scheduler** for built-in startup behavior, or **NSSM** if you want a true Windows service with explicit Docker dependency handling
-
-The detailed examples live in `dist/documentation/OSCAR_launch_monitoring_guide.md`.
-
-### 11. Admin access
+### 9. Admin access
 
 The admin username is typically **admin**. Do **not** assume the packaged password is always `admin`.
 
@@ -323,17 +243,7 @@ Windows:
 build-all.bat
 ```
 
-After the build completes, the packaged release is written under `build/distributions/` and should be named:
-
-```text
-oscar-3.5.1.zip
-```
-
-The build now also:
-
-- makes all packaged `*.sh` files executable
-- preserves Linux shell-script execute bits in the release archive
-- standardizes the release ZIP name for the 3.5.1 package
+After the build completes, the output is written under `build/distributions/`.
 
 ## Source-tree deployment
 
@@ -350,7 +260,7 @@ For test systems and larger multi-lane deployments, consider placing **MediaMTX*
 
 ## PostgreSQL tuning
 
-The packaged launch scripts size PostgreSQL by `SYSTEM_PROFILE`.
+The packaged launch scripts now size PostgreSQL by `SYSTEM_PROFILE`.
 
 Representative values:
 
@@ -386,8 +296,7 @@ Before releasing from `dev`:
 3. ensure `dist/release/postgis/pgdata` is not packaged
 4. verify the release ZIP name matches the intended version, such as `oscar-3.5.1.zip`
 5. verify the release root directory name also matches the intended version
-6. verify packaged Linux `*.sh` files are executable in the built archive
-7. verify `env.template`, release notes, README, and launch documentation all reflect the same version
+6. verify `env.template`, release notes, README, and launch documentation all reflect the same version
 
 ### Release steps
 

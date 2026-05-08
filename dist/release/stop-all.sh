@@ -1,64 +1,56 @@
 #!/bin/bash
-set -u
+set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-CONTAINER_NAME="${CONTAINER_NAME:-oscar-postgis-container}"
-SENSORHUB_NAME='com.botts.impl.security.SensorHubWrapper'
+ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/.env}"
 MONITOR_SCRIPT="$SCRIPT_DIR/monitor-oscar.sh"
-MONITOR_PID_FILE="$SCRIPT_DIR/monitor.pid"
+STATE_DIR="$SCRIPT_DIR/.monitor-state"
+LOCK_DIR="$STATE_DIR/lock"
+CONTAINER_NAME="oscar-postgis-container"
+SENSORHUB_NAME="com.botts.impl.security.SensorHubWrapper"
 
-request_monitor_stop() {
-    echo "Requesting monitor shutdown..."
-    if [ -f "$MONITOR_SCRIPT" ]; then
-        (bash "$MONITOR_SCRIPT" stop >/dev/null 2>&1 || true) &
-    elif [ -f "$MONITOR_PID_FILE" ]; then
-        monitor_pid="$(tr -d '[:space:]' < "$MONITOR_PID_FILE")"
-        if [ -n "$monitor_pid" ] && kill -0 "$monitor_pid" 2>/dev/null; then
-            kill "$monitor_pid" 2>/dev/null || true
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE"
+    set +a
+    CONTAINER_NAME="${CONTAINER_NAME:-oscar-postgis-container}"
+fi
+
+echo "Requesting monitor stop if active..."
+if [ -x "$MONITOR_SCRIPT" ]; then
+    "$MONITOR_SCRIPT" stop || true
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        if [ ! -d "$LOCK_DIR" ]; then
+            break
         fi
+        sleep 1
+    done
+fi
+
+echo
+printf 'Stopping container: %s...\n' "$CONTAINER_NAME"
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    echo "Container stop requested."
+else
+    echo "Container not found."
+fi
+
+echo
+echo "Stopping SensorHubWrapper Java process..."
+PIDS="$(pgrep -f "$SENSORHUB_NAME" || true)"
+if [ -n "$PIDS" ]; then
+    echo "Stopping SensorHubWrapper with PID(s): $PIDS"
+    kill $PIDS 2>/dev/null || true
+    sleep 3
+    REMAINING="$(pgrep -f "$SENSORHUB_NAME" || true)"
+    if [ -n "$REMAINING" ]; then
+        echo "Force killing remaining PID(s): $REMAINING"
+        kill -9 $REMAINING 2>/dev/null || true
     fi
-}
-
-stop_sensorhub() {
-    local pids=""
-
-    if command -v jps >/dev/null 2>&1; then
-        pids="$(jps -l | awk -v name="$SENSORHUB_NAME" '$2==name {print $1}')"
-    fi
-
-    if [ -z "$pids" ] && command -v pgrep >/dev/null 2>&1; then
-        pids="$(pgrep -f "$SENSORHUB_NAME" || true)"
-    fi
-
-    if [ -n "$pids" ]; then
-        echo "Stopping SensorHubWrapper with PID(s): $pids"
-        kill $pids 2>/dev/null || true
-        sleep 2
-        if command -v pgrep >/dev/null 2>&1 && pgrep -f "$SENSORHUB_NAME" >/dev/null 2>&1; then
-            echo "Force stopping SensorHubWrapper..."
-            pkill -9 -f "$SENSORHUB_NAME" 2>/dev/null || true
-        fi
-        echo "SensorHubWrapper stopped."
-    else
-        echo "SensorHubWrapper process not found."
-    fi
-}
-
-stop_container() {
-    echo "Stopping container: $CONTAINER_NAME..."
-    if command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-        docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-        echo "Container stop requested."
-    else
-        echo "Container not found. Nothing to stop."
-    fi
-}
-
-request_monitor_stop
-sleep 2
-stop_sensorhub
-stop_container
-rm -f "$MONITOR_PID_FILE"
+else
+    echo "SensorHubWrapper process not found."
+fi
 
 echo
 echo "Done."
