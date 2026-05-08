@@ -86,7 +86,7 @@ The diagram below condenses the system relationships. It is not a source-code cl
 
 # 3. Installation and initial startup
 
-Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific launch-all script (`launch-all.bat` for Windows, `launch-all.sh` for Linux/macOS, or `launch-all-arm.sh` for ARM systems). The database and application come up together in the default deployment path.
+Installation is intentionally simple: download a release archive, extract it, ensure Docker is installed and running, and launch the platform with the OS-specific `launch-all` script (`launch-all.bat` for Windows, `launch-all.sh` for Linux/macOS, or `launch-all-arm.sh` for ARM systems). `launch-all` is the preferred efficient production startup path because the database and application come up together without the extra monitoring logs and profile artifacts produced by the monitor wrapper. Use `monitor-oscar` instead for first-run validation, burn-in, troubleshooting, side-by-side evaluation, or system profiling.
 
 ## Prerequisites
 
@@ -105,7 +105,9 @@ Installation is intentionally simple: download a release archive, extract it, en
 >
 > 2\. Install Docker and verify that the Docker service is running before starting OSCAR.
 >
-> 3\. Run the launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
+> 3\. For efficient production operation, run the `launch-all` script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
+>
+>    For first-run validation, troubleshooting, burn-in, side-by-side evaluation, or system profiling, run `monitor-oscar` instead. The monitor path intentionally creates additional logs, snapshots, JFR checks, thread dumps, and database trend files so operators can evaluate system behavior before or during investigation.
 >
 > 4\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
 >
@@ -396,6 +398,12 @@ Default deployment begins to strain as lane counts, event volume, and camera cou
 
 A practical target profile for scaled deployments is 640x480 at about 5 frames per second, while 1080p may be acceptable on smaller systems. Camera settings should be chosen with total system scale in mind. For a 50-lane or 100-camera target, the aggregate cost of 1080p video is likely excessive.
 
+## Launch mode selection for operations
+
+Use `monitor-oscar` when deployment teams need evidence: first-run validation, burn-in testing, troubleshooting, camera-profile comparisons, memory and thread profiling, or PostgreSQL session analysis. The monitor wrapper is intentionally verbose and creates monitor directories, periodic snapshots, thread dumps, JFR status checks, and database trend files.
+
+Use `launch-all` for efficient production operation once the system profile has been validated. This keeps routine startup simple and avoids collecting detailed monitoring artifacts when no in-depth system profile is required.
+
 ## What stays where in a split deployment
 
 When PostgreSQL is moved off the application host, videos and the other stored files remain on the application server. In practice, that means the application tier continues to own the file system while the database tier handles relational persistence. This is important for storage planning, backups, and role-based file retrieval.
@@ -450,7 +458,7 @@ This section captures known gaps and enhancement ideas so they are not confused 
 
 > 1\. Install Docker and verify that the service is running on the host before launch.
 >
-> 2\. Extract the chosen OSCAR release and start it with the OS-specific launch-all script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`).
+> 2\. Extract the chosen OSCAR release and start production operation with the OS-specific `launch-all` script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`). Use `monitor-oscar` instead when the goal is validation, troubleshooting, burn-in, side-by-side comparison, or system profiling.
 >
 > 3\. Change the initial admin password using the package-provided settings file and password-initialization script before production use.
 >
