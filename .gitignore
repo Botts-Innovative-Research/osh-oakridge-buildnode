@@ -22,4 +22,5 @@ hivemq-data/
 oscar/
 files/
 
-dist/release/postgis/pgdata
+dist/release/postgis/pgdataelectron/node_modules/
+electron/dist/
