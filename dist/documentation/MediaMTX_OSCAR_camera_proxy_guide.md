@@ -20,7 +20,7 @@ Without a proxy, OSCAR may open many direct RTSP sessions to cameras. If you hav
 
 MediaMTX sits between OSCAR and the cameras:
 
-- cameras stream to MediaMTX only when needed
+- cameras stream to MediaMTX 
 - OSCAR connects to MediaMTX on the local machine instead of directly to every camera
 - multiple lane definitions can reuse the same proxied path
 - reconnects are handled against the local proxy instead of repeatedly hammering the physical cameras
