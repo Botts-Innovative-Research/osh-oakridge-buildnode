@@ -151,12 +151,15 @@ This is the most important backend stability improvement in this release.
 
 New monitoring and status-check scripts were added for both Linux and Windows.
 
+Windows now also includes `monitor-oscar.ps1` as the preferred PowerShell wrapper for sessionless monitored launches. It works cleanly with `Start-Process` redirection, keeps the window hidden, and pairs well with the existing `monitor.last-status` and `monitor.last-error` files for headless troubleshooting.
+
 The monitor wrappers now also include a singleton guard so a second `monitor-oscar` launch is refused while another monitor is already active. This prevents duplicate snapshot loops, duplicate JFR starts, and confusing status output during sessionless operation. The wrappers now also update `monitor.last-status` and `monitor.last-error`, which makes it much easier to understand why a sessionless launch exited without staying attached to a terminal window.
 
 These scripts can now:
 
 * launch OSCAR under monitoring
 * support sessionless launch for validation, troubleshooting, burn-in, and profiling runs
+* expose a PowerShell-first monitored entry point on Windows through `monitor-oscar.ps1`
 * capture JVM memory status
 * capture native memory tracking summaries
 * capture JFR status
@@ -202,8 +205,9 @@ This supports a deployment model where:
 * a smaller number of upstream camera streams are proxied locally
 * multiple lanes can reuse proxied feeds
 * OSCAR connects to stable local endpoints instead of managing a large number of direct camera connections
+* the Java backend spends less effort on direct RTSP session setup, reconnect churn, and repeated camera-side socket activity
 
-This architecture is recommended for larger systems and appears to reduce camera-related reconnect burden. Validate camera-heavy profiles with `monitor-oscar`, then use `launch-all` for efficient production starts once the profile is accepted.
+This architecture is recommended for larger systems because it reduces camera-related reconnect burden and lowers Java-side camera handling overhead. Validate camera-heavy profiles with `monitor-oscar`, then use `launch-all` for efficient production starts once the profile is accepted.
 
 ### Documentation updates
 
@@ -400,15 +404,39 @@ For efficient production operation after validation, start OSCAR with `launch-al
 
 #### Linux production
 
+Interactive:
+
 ```bash
 ./launch-all.sh
 ```
 
+Preferred sessionless production start:
+
+```bash
+nohup ./launch-all.sh > launch.out 2>&1 &
+```
+
 #### Windows production
+
+Interactive:
 
 ```bat
 launch-all.bat
 ```
+
+Preferred sessionless production start from PowerShell:
+
+```powershell
+Start-Process powershell.exe `
+  -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command',"Set-Location -LiteralPath '$PWD'; .\launch-all.bat" `
+  -WindowStyle Hidden `
+  -RedirectStandardOutput "$PWD\launch.out" `
+  -RedirectStandardError "$PWD\launch.err"
+```
+
+#### Automated production start after restart
+
+Linux operators should normally use a `systemd` unit that runs `launch-all.sh` after Docker is available. Windows operators should normally use **Task Scheduler** with an **At startup** trigger that runs `launch-all.bat` from the OSCAR directory with highest privileges. This keeps the default production path on `launch-all` while avoiding reliance on an open terminal or SSH session.
 
 Use the monitoring script when diagnostics are needed for first-run validation, burn-in, troubleshooting, side-by-side comparison, or system profiling.
 
@@ -428,11 +456,23 @@ Attached interactive pattern:
 
 #### Windows monitored validation or profiling
 
-```bat
-monitor-oscar.bat
+Interactive:
+
+```powershell
+.\monitor-oscar.ps1
 ```
 
-For detached Windows operation, run `monitor-oscar.bat` from Task Scheduler, a service wrapper, or a hidden PowerShell `Start-Process` invocation.
+Preferred sessionless PowerShell pattern:
+
+```powershell
+Start-Process powershell.exe `
+  -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',"$PWD\monitor-oscar.ps1" `
+  -WindowStyle Hidden `
+  -RedirectStandardOutput "$PWD\monitor.out" `
+  -RedirectStandardError "$PWD\monitor.err"
+```
+
+`monitor-oscar.bat` remains available for interactive `cmd.exe` use, but `monitor-oscar.ps1` is the preferred Windows wrapper for headless monitored runs.
 
 The monitoring path intentionally produces additional logs, monitor directories, snapshots, JFR checks, thread dumps, and database trend files. Use it when that evidence is valuable; otherwise use `launch-all` for routine production.
 
@@ -499,6 +539,7 @@ This is the preferred workflow for:
 * `launch-all.bat`
 * `launch.bat`
 * `monitor-oscar.bat`
+* `monitor-oscar.ps1`
 * `check-oscar-status.ps1`
 
 ---
@@ -510,6 +551,8 @@ This is the preferred workflow for:
 * select the correct hardware profile in `.env`
 * use the updated launch scripts
 * use **`launch-all`** for efficient production operation after validation
+* use a sessionless `launch-all` start for routine production when you do not need deep diagnostics
+* use `systemd` on Linux or Task Scheduler on Windows for automatic production startup after reboot
 * use the **sessionless monitoring launch** for initial validation, burn-in, side-by-side evaluation, troubleshooting, and profiling
 * use the attached monitoring launch only for interactive troubleshooting
 * let the scripts manage already-running instances instead of manually launching duplicates

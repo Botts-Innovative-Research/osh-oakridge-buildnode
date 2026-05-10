@@ -43,3 +43,6 @@ for /f "tokens=1,* delims==" %%A in ("%LINE%") do (
   if /I "%%A"=="CONTAINER_NAME" set "CONTAINER_NAME=%%B"
 )
 exit /b 0
+
+if exist "%~dp0.monitor-lock" rmdir /s /q "%~dp0.monitor-lock" >nul 2>nul
+del /q "%~dp0monitor.heartbeat" "%~dp0oscar.pid" "%~dp0current-monitor-dir.txt" >nul 2>nul
