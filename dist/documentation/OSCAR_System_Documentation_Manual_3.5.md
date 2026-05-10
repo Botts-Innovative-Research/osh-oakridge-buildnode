@@ -107,7 +107,9 @@ Installation is intentionally simple: download a release archive, extract it, en
 >
 > 3\. For efficient production operation, run the `launch-all` script (`launch-all.bat`, `launch-all.sh`, or `launch-all-arm.sh`) for the operating system in use. In the default path, the script starts PostgreSQL locally in Docker and then starts the Java application.
 >
->    For first-run validation, troubleshooting, burn-in, side-by-side evaluation, or system profiling, run `monitor-oscar` instead. The monitor path intentionally creates additional logs, snapshots, JFR checks, thread dumps, and database trend files so operators can evaluate system behavior before or during investigation.
+>    Sessionless production is the preferred operating mode once the deployment has been validated. On Linux, a common pattern is `nohup ./launch-all.sh > launch.out 2>&1 &`. On Windows, the recommended hidden start pattern is a PowerShell `Start-Process` call that runs `launch-all.bat` with stdout and stderr redirected to log files.
+>
+>    For first-run validation, troubleshooting, burn-in, side-by-side evaluation, or system profiling, run `monitor-oscar` instead. The monitor path intentionally creates additional logs, snapshots, JFR checks, thread dumps, and database trend files so operators can evaluate system behavior before or during investigation. Windows monitored runs now also have a PowerShell-first wrapper, `monitor-oscar.ps1`, which is the preferred hidden or redirected entry point for sessionless monitored launches.
 >
 > 4\. Open the application on the configured port. Port 8282 is the baseline HTTP application port, and 8443 is a representative HTTPS configuration.
 >
@@ -128,6 +130,60 @@ Installation is intentionally simple: download a release archive, extract it, en
 <tbody>
 </tbody>
 </table>
+
+## Sessionless and restart-safe launch patterns
+
+For normal production use, `launch-all` should be treated as the default startup path, whether the system is started interactively or headlessly.
+
+### Linux production
+
+Interactive:
+
+```bash
+./launch-all.sh
+```
+
+Sessionless:
+
+```bash
+nohup ./launch-all.sh > launch.out 2>&1 &
+```
+
+For automatic restart after reboot, the recommended pattern is a small `systemd` unit that runs `launch-all.sh` after `docker.service` is available.
+
+### Windows production
+
+Interactive:
+
+```bat
+launch-all.bat
+```
+
+Sessionless from PowerShell:
+
+```powershell
+Start-Process powershell.exe `
+  -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command',"Set-Location -LiteralPath '$PWD'; .\launch-all.bat" `
+  -WindowStyle Hidden `
+  -RedirectStandardOutput "$PWD\launch.out" `
+  -RedirectStandardError "$PWD\launch.err"
+```
+
+For automatic restart after reboot, the recommended pattern is a **Task Scheduler** task with an **At startup** trigger that runs `launch-all.bat` from the extracted OSCAR directory after Docker is available.
+
+### Windows monitored diagnostics
+
+For monitored validation or troubleshooting, the preferred Windows wrapper is `monitor-oscar.ps1`.
+
+```powershell
+Start-Process powershell.exe `
+  -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',"$PWD\monitor-oscar.ps1" `
+  -WindowStyle Hidden `
+  -RedirectStandardOutput "$PWD\monitor.out" `
+  -RedirectStandardError "$PWD\monitor.err"
+```
+
+This keeps the monitoring window hidden while preserving redirected output for later review.
 
 ## Ports and first-run behaviors
 
@@ -398,11 +454,15 @@ Default deployment begins to strain as lane counts, event volume, and camera cou
 
 A practical target profile for scaled deployments is 640x480 at about 5 frames per second, while 1080p may be acceptable on smaller systems. Camera settings should be chosen with total system scale in mind. For a 50-lane or 100-camera target, the aggregate cost of 1080p video is likely excessive.
 
+## MediaMTX as a scale helper
+
+When many logical lanes reuse a smaller number of physical camera feeds, MediaMTX can reduce the burden on the OSCAR Java backend by replacing many direct RTSP sessions with a smaller set of stable local proxy paths. In practice, that lowers Java-side reconnect churn, reduces repeated camera-side socket activity, and simplifies lane CSV reuse in larger systems.
+
 ## Launch mode selection for operations
 
 Use `monitor-oscar` when deployment teams need evidence: first-run validation, burn-in testing, troubleshooting, camera-profile comparisons, memory and thread profiling, or PostgreSQL session analysis. The monitor wrapper is intentionally verbose and creates monitor directories, periodic snapshots, thread dumps, JFR status checks, and database trend files.
 
-Use `launch-all` for efficient production operation once the system profile has been validated. This keeps routine startup simple and avoids collecting detailed monitoring artifacts when no in-depth system profile is required.
+Use `launch-all` for efficient production operation once the system profile has been validated. This keeps routine startup simple and avoids collecting detailed monitoring artifacts when no in-depth system profile is required. In production, prefer a sessionless `launch-all` start or an automated restart-safe wrapper such as `systemd` on Linux or Task Scheduler on Windows.
 
 ## What stays where in a split deployment
 

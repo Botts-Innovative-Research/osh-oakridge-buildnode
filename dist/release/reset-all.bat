@@ -94,3 +94,6 @@ if "%ENV_NAME:~0,1%"=="#" exit /b 0
 if /I "%ENV_NAME:~0,7%"=="export " set "ENV_NAME=%ENV_NAME:~7%"
 set "%ENV_NAME%=%ENV_VALUE%"
 exit /b 0
+
+if exist "%~dp0.monitor-lock" rmdir /s /q "%~dp0.monitor-lock" >nul 2>nul
+del /q "%~dp0monitor.heartbeat" "%~dp0oscar.pid" "%~dp0current-monitor-dir.txt" >nul 2>nul
