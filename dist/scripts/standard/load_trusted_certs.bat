@@ -1,64 +1,99 @@
 @echo off
-setlocal
+setlocal EnableExtensions EnableDelayedExpansion
 
 echo Building Java trust store...
 
-REM Default password for the sytem trust store is "changeit". Edit this next
-REM line if it's something different in your Java installation.
 set "STOREPASS=changeit"
-
-REM Get the path of this script.
 set "SCRIPTDIR=%~dp0"
+set "NEWTRUSTSTORE=%SCRIPTDIR%truststore.jks"
+set "CERTDIR=%SCRIPTDIR%trusted_certificates"
+set "CACERTS="
+set "JAVA_HOME_DETECTED="
 
-REM Get the path where we'll build the new trust store.
-set "NEWTRUSTSTORE=%SCRIPTDIR%trustStore.jks"
-
-REM To find the location of the system trust store, we start by finding the
-REM path to "java.exe".
-for /f "tokens=* usebackq" %%j in (`where java`) do (set "JAVA=%%~dpj" & goto :next )
-:next
-REM Then we back up a directory and look in lib\security.
-set "CACERTS=%JAVA%..\lib\security\cacerts"
-
-REM Now make a copy of that default system trust store into this directory,
-REM where we'll add our stuff to it.
-copy /y "%CACERTS%" "%NEWTRUSTSTORE%" >NUL
-
-REM Get the full path to where our certs are.
-set CERTDIR=%SCRIPTDIR%trusted_certificates
-
-REM Now for each .cer, .pem, and .crt file in our cert dir, check to see if we
-REM need to add it to the system trust store.
-for %%c in ( %CERTDIR%\*.cer %CERTDIR%\*.pem %CERTDIR%\*.crt ) do (
-    call :check_certificate %%c
+rem First try JAVA_HOME if already set
+if defined JAVA_HOME (
+    if exist "%JAVA_HOME%\conf\security\cacerts" set "CACERTS=%JAVA_HOME%\conf\security\cacerts"
+    if not defined CACERTS if exist "%JAVA_HOME%\lib\security\cacerts" set "CACERTS=%JAVA_HOME%\lib\security\cacerts"
 )
 
-goto :end_of_script
+rem If that did not work, ask Java itself for java.home
+if not defined CACERTS (
+    for /f "tokens=1,* delims==" %%A in ('java -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.home ="') do (
+        set "JAVA_HOME_DETECTED=%%B"
+    )
+)
 
-REM The next few lines define a function that checks whether a certificate 
-REM is already loaded in the system store. If so, it does nothing. If not, it
-REM attempts to load it in. Note that the alias of the certificate is
-REM calculated as the base file name (without path or extension).
-REM NOTE: As currently written, this is performing an unnecessary check, since
-REM we're guaranteed that none of the certificates will ever be present in the
-REM original file.
+rem Trim leading spaces
+if defined JAVA_HOME_DETECTED (
+    for /f "tokens=* delims= " %%H in ("!JAVA_HOME_DETECTED!") do set "JAVA_HOME_DETECTED=%%H"
+)
+
+rem Try common cacerts locations under detected java.home
+if not defined CACERTS if defined JAVA_HOME_DETECTED (
+    if exist "!JAVA_HOME_DETECTED!\conf\security\cacerts" set "CACERTS=!JAVA_HOME_DETECTED!\conf\security\cacerts"
+    if not defined CACERTS if exist "!JAVA_HOME_DETECTED!\lib\security\cacerts" set "CACERTS=!JAVA_HOME_DETECTED!\lib\security\cacerts"
+)
+
+if not defined CACERTS (
+    echo Error: could not locate Java cacerts.
+    if defined JAVA_HOME echo JAVA_HOME="%JAVA_HOME%"
+    if defined JAVA_HOME_DETECTED echo java.home="!JAVA_HOME_DETECTED!"
+    endlocal & exit /b 1
+)
+
+if not exist "%CACERTS%" (
+    echo Error: Java cacerts path does not exist: "%CACERTS%"
+    endlocal & exit /b 1
+)
+
+echo Using Java cacerts: "%CACERTS%"
+
+copy /y "%CACERTS%" "%NEWTRUSTSTORE%" >nul
+if errorlevel 1 (
+    echo Error: failed to create "%NEWTRUSTSTORE%"
+    endlocal & exit /b 1
+)
+
+if not exist "%CERTDIR%" (
+    echo Trusted certificates directory not found: "%CERTDIR%"
+    echo Using copied default trust store only.
+    echo Done.
+    endlocal & exit /b 0
+)
+
+set "FOUND_CERT=0"
+for %%c in ("%CERTDIR%\*.cer" "%CERTDIR%\*.pem" "%CERTDIR%\*.crt") do (
+    if exist "%%~fc" (
+        set "FOUND_CERT=1"
+        call :check_certificate "%%~fc"
+        if errorlevel 1 (
+            endlocal & exit /b 1
+        )
+    )
+)
+
+if "%FOUND_CERT%"=="0" (
+    echo No certificate files found in "%CERTDIR%".
+)
+
+echo Done.
+endlocal & exit /b 0
 
 :check_certificate
-set ALIAS=%~n1
-REM Check for existence. ERRORLEVEL is set to 0 if it's found, and something
-REM else otherwise.
-keytool -list -keystore "%NEWTRUSTSTORE%" -storepass "%STOREPASS%" -alias "%ALIAS%" >NUL 2>NUL
-if not "%ERRORLEVEL%" == "0" (
-    echo Importing "%ALIAS%" from "%1"
-    keytool -importcert -keystore "%NEWTRUSTSTORE%" -noprompt -storepass "%STOREPASS%" -alias "%ALIAS%" -file "%1"
+setlocal
+set "CERTFILE=%~1"
+set "ALIAS=%~n1"
+
+keytool -list -keystore "%NEWTRUSTSTORE%" -storepass "%STOREPASS%" -alias "%ALIAS%" >nul 2>nul
+if not "%ERRORLEVEL%"=="0" (
+    echo Importing "%ALIAS%" from "%CERTFILE%"
+    keytool -importcert -keystore "%NEWTRUSTSTORE%" -noprompt -storepass "%STOREPASS%" -alias "%ALIAS%" -file "%CERTFILE%" >nul
+    if errorlevel 1 (
+        echo Error: failed to import "%ALIAS%" from "%CERTFILE%"
+        endlocal & exit /b 1
+    )
 ) else (
     echo Certificate with alias "%ALIAS%" already exists. Skipping.
 )
-REM Return to caller.
-exit /b 0
 
-:end_of_script
-
-echo Done.
-
-endlocal
+endlocal & exit /b 0
