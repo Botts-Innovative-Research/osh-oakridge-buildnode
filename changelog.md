@@ -1,5 +1,21 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+
+## 3.5.1 2026-05-07
+### Added
+- Added `monitor-oscar.ps1` as the preferred Windows monitoring entrypoint for sessionless launches.
+- Added documented sessionless launch patterns for Windows and Linux production operation.
+- Added documented auto-start guidance for Windows Task Scheduler and Linux `systemd`.
+
+### Changes
+- Updated packaged-release documentation to make sessionless `launch-all` the default production launch path.
+- Updated monitoring documentation to explain duplicate-monitor protection and where operators should check `monitor.last-status`, `monitor.last-error`, `monitor.out`, and `monitor.err`.
+- Updated reset/redeploy guidance to explain that operators may need to stop the monitor wrapper, remove the extracted release directory, re-extract the ZIP, recreate `.env`, and relaunch sessionlessly when old runtime artifacts or stale lanes persist.
+- Updated MediaMTX guidance to be more succinct and to explain that MediaMTX reduces load on the Java backend by proxying and stabilizing camera connections before OSCAR consumes them.
+
+### Fixes
+- Improved operational guidance around already-running OSCAR backends versus already-running monitor wrappers so sessionless launches fail more clearly.
+
 ## 3.5.0 2026-04-24
 ### Changes
 - Updated LaneSystem README
