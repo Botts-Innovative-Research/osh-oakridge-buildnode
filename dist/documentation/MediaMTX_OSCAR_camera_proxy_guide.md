@@ -21,9 +21,23 @@ MediaMTX reduces that burden by presenting OSCAR with a smaller set of stable lo
 - Use `launch-all` for routine production after the camera profile is accepted.
 - Keep MediaMTX on the OSCAR host or a nearby LAN host whenever possible.
 
+## Sony camera settings to use
+
+For Sony cameras, use the following secondary-stream settings:
+
+- `H.264`
+- `640x480`
+- `15 fps`
+- `1 s` keyframe interval when possible
+- `high` H.264 profile
+- `CBR`
+- about `4000 kbps`
+
+These settings are a good match for lightweight proxying and testing because they keep the stream modest while still providing stable H.264 output.
+
 ## Minimal MediaMTX configuration
 
-Use a lightweight RTSP-only profile unless you explicitly need other protocols.
+Use a lightweight RTSP-only profile unless you explicitly need other protocols. In the yaml file below lane01_cam and lane02_cam configure Sony cameras with video codec number one and lane03_cam and lane04_cam configure Axis cameras. Edit the username, password, and IP address information and configure the Sony codec before using this file. 
 
 ```yaml
 api: yes
@@ -33,6 +47,15 @@ hls: no
 webrtc: no
 srt: no
 paths:
+  lane01_cam:
+    source: "rtsp://<user>:<password>@192.168.8.2/554/media/video1"
+    sourceOnDemand: yes
+    sourceProtocol: tcp
+
+  lane02_cam:
+    source: "rtsp://<user>:<password>@192.168.8.5/554/media/video1"
+    sourceOnDemand: yes
+    sourceProtocol: tcp
   lane03_cam:
     source: "rtsp://<user>:<password>@192.168.8.73/axis-media/media.amp?adjustablelivestream=1&resolution=640x480&videocodec=h264&videokeyframeinterval=15"
     sourceOnDemand: yes
