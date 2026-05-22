@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64"
+    "build:web": "npm --prefix ../web/oscar-viewer run build",
+    "dist": "npm run build:web && electron-builder --win --x64"
   },
   "dependencies": {
     "express": "^4.18.2"
