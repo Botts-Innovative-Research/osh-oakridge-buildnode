@@ -1,6 +1,6 @@
 {
   "name": "oscar-desktop",
-  "version": "3.0.0",
+  "version": "3.5.0",
   "description": "OSCAR Radiation Detection Desktop Application",
   "main": "main.js",
   "scripts": {
