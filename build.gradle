@@ -41,6 +41,7 @@ dependencies {
     implementation project(':sensorhub-driver-kromek-d5')
 
     // Processes
+    implementation project(':sensorhub-process-ocr')
     implementation project(':sensorhub-process-d5-occupancy')
 
     // Additional Modules
@@ -87,6 +88,9 @@ distributions{
             }
             into("osh-node-oscar/web") {
                 from 'web/oscar-viewer/web'
+            }
+            into("osh-node-oscar/models/ocr") {
+                from 'dist/models/ocr'
             }
             into("osh-node-oscar/") {
                 from 'README.md'
