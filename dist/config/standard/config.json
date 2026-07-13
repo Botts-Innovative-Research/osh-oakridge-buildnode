@@ -80,6 +80,11 @@
       },
       {
         "objClass": "org.sensorhub.ui.CustomUIConfig",
+        "configClass": "com.botts.impl.system.lane.mobile.config.MobileDetectorConfig",
+        "uiClass": "com.botts.ui.oscar.forms.MobileDetectorConfigForm"
+      },
+      {
+        "objClass": "org.sensorhub.ui.CustomUIConfig",
         "configClass": "org.sensorhub.api.sensor.PositionConfig.LLALocation",
         "uiClass": "com.botts.ui.oscar.forms.SiteDiagramForm"
       },
