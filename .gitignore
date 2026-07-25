@@ -9,6 +9,7 @@
 **/.classpath
 **/.idea
 **/*.iml
+.vscode/
 /storage/
 *.db
 *.dat
@@ -23,3 +24,6 @@ oscar/
 files/
 
 dist/release/postgis/pgdata
+electron/dist/
+.claude/
+electron/node_modules/
