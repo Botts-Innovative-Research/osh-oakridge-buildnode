@@ -31,17 +31,6 @@
           "fileserver[af72442c-1ce6-4baa-a126-ed41dda26910]"
         ],
         "deny": []
-      },
-      {
-        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$UserConfig",
-        "id": "anonymous",
-        "name": "Anonymous User",
-        "password": "",
-        "roles": [
-          "anon"
-        ],
-        "allow": [],
-        "deny": []
       }
     ],
     "roles": [
@@ -50,14 +39,6 @@
         "id": "admin",
         "allow": [
           "*"
-        ],
-        "deny": []
-      },
-      {
-        "objClass": "org.sensorhub.impl.security.BasicSecurityRealmConfig$RoleConfig",
-        "id": "anon",
-        "allow": [
-          "sos[*]/get/*"
         ],
         "deny": []
       }
@@ -111,7 +92,7 @@
     "customFormats": [],
     "security": {
       "objClass": "org.sensorhub.api.security.SecurityConfig",
-      "enableAccessControl": false,
+      "enableAccessControl": true,
       "requireAuth": true
     },
     "enableTransactional": true,
