@@ -1,5 +1,10 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.5.1 2026-08-01
+### Changes
+- Removed anonymous user/role.
+- Enabled role-based access control for Connected Systems API by default.
+
 ## 3.5.0 2026-04-24
 ### Changes
 - Updated LaneSystem README
