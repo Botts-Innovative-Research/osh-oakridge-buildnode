@@ -1,5 +1,12 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.5.2 2026-08-17
+### Changes
+- Decrease PostGIS connection pool size and idle time for connections
+- Modify PostGIS datastore queries to prevent SQL injection
+- Enforce file upload size limits and read-only permissions for files
+- Add file upload policy to block common executable files
+
 ## 3.5.1 2026-08-01
 ### Changes
 - Removed anonymous user/role.
