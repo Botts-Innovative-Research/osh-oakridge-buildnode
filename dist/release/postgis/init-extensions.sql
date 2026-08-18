@@ -1,4 +1,3 @@
-ALTER SYSTEM SET max_connections = 1024;
 \connect gis;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE EXTENSION IF NOT EXISTS btree_gist;

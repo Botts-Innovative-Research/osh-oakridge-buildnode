@@ -23,3 +23,6 @@ oscar/
 files/
 
 dist/release/postgis/pgdata
+dist/release/secrets/
+dist/release/tls/
+dist/release/.env

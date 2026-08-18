@@ -2,24 +2,26 @@
 
 This repository combines all the OSH modules and dependencies to deploy the OSH server and client for ORNL.
 
-## Requirements
-- [Java 21.0.10+](https://www.oracle.com/java/technologies/downloads/#java21)
-- [Docker engine](https://www.docker.com)
-- [Oakridge Build Node Repository](https://github.com/Botts-Innovative-Research/osh-oakridge-buildnode) 
-- Node v22
+## Runtime Requirements
+- Docker Desktop on Windows 11 or macOS, or Docker Engine with the Compose plugin on Ubuntu Server 24.04
+- An administrator-provided TLS certificate and private key
+- Initial OSCAR administrator credentials supplied during setup
+
+Java 21.0.10 is included in the OSCAR container image. Java and Node.js are required only when building from source.
 
 ## Quick Start
 1. **Download the latest release**
    - Go to the Releases section of the repository and download the latest compiled release archive (for example, `oscar-3.3.5.zip`).
 2. **Extract the archive**
    - Extract the downloaded ZIP file to a directory of your choice.
-3. **Verify Docker Engine**
-   - Ensure that [Docker engine](https://www.docker.com) is installed and actively running on your host machine.
-4. **Launch the system**
+3. **Complete secure setup**
+   - Follow [`DEPLOYMENT.md`](dist/release/DEPLOYMENT.md) to create the required secret files and install or generate a TLS certificate.
+4. **Launch the system with Docker Compose**
    - Open a terminal or command prompt in the extracted directory and run the OS-specific launch script:
      - **Windows:** Run `launch-all.bat`
      - **Linux/macOS:** Run `./launch-all.sh`
-     - **ARM systems:** Run `./launch-all-arm.sh`
+
+The deployment publishes HTTPS on port 443 by default. OSCAR and PostgreSQL are reachable only through private Compose networks; PostgreSQL does not publish a host port.
 
 For a complete guide covering architecture, deployment, configuration, operations, and troubleshooting, please refer to the [OSCAR System Documentation Manual](dist/documentation/OSCAR_System_Documentation_Manual_3.5.md).
 
@@ -55,7 +57,7 @@ Run the build script (Windows):
 
 After the build completes, it can be located in `build/distributions/` 
 
-## Deploy and Start OSH Node
+## Deploy and Start OSCAR
 1. Unzip the distribution using the command line or File Explorer:
 
     Option 1: Command Line
@@ -72,20 +74,18 @@ After the build completes, it can be located in `build/distributions/`
     2. Right-click `osh-node-oscar-1.0.zip`.
     3. Select **Extract All..**
     4. Choose your destination, (or leave the default) and extract.
-1. Launch the OSH node:
-   Run the launch script, "launch.sh" for linux/mac and "launch.bat" for windows.
-2. Access the OSH Node
-- Remote: **[ip-address]:8282/sensorhub/admin**
-- Locally:  **http://localhost:8282/sensorhub/admin**
+1. Complete the secret and TLS preparation in [`DEPLOYMENT.md`](dist/release/DEPLOYMENT.md).
+2. Run `launch-all.sh` on Linux/macOS or `launch-all.bat` on Windows.
+3. Open `https://<configured-host>/sensorhub/admin`.
 
-The default credentials to access the OSH Node are admin:admin. This can be changed in the Security section of the admin page.
+There is no default administrator password. The first startup fails closed if the administrator or database secret is missing.
 
 For documentation on configuring a Lane System on the OSH Admin panel, please refer to the OSCAR Documentation provided in the Google Drive documentation folder.
 
 ## Deploy the Client
 After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clients endpoint:
-- Remote: **[ip-address]:8282**
-- Local: **http://localhost:8282/**
+- Remote: **https://[configured-host]**
+- Local: **https://localhost/** when the certificate includes `localhost`
 
 For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
 

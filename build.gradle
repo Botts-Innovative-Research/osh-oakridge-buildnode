@@ -71,6 +71,7 @@ distributions{
             into("osh-node-oscar/") {
                 from 'dist/scripts/standard'
                 from 'dist/config/standard'
+                exclude 'osh-keystore.p12'
             }
             into ("osh-node-oscar/config") {
                 from 'dist/config/eml'
@@ -98,6 +99,9 @@ distributions{
             // POSTGIS / DOCKER / SCRIPTS
             into('.') {
                 from('dist/release')
+                exclude 'secrets/**'
+                exclude 'tls/**'
+                exclude '.env'
             }
 
         }
