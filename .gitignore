@@ -26,3 +26,9 @@ dist/release/postgis/pgdata
 dist/release/secrets/
 dist/release/tls/
 dist/release/.env
+dist/release/offline-images.tar
+dist/release/SHA256SUMS
+dist/release/installers/**/*.exe
+dist/release/installers/**/*.msi
+dist/release/installers/**/*.dmg
+dist/release/installers/**/*.deb

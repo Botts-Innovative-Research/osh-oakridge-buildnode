@@ -1,180 +1,75 @@
-# OSH OAKRIDGE BUILDNODE
+# OSCAR
 
-This repository combines all the OSH modules and dependencies to deploy the OSH server and client for ORNL.
+OSCAR combines OpenSensorHub modules, the OSCAR viewer, PostgreSQL/PostGIS, and a TLS gateway into a hardened Docker Compose deployment.
 
-## Runtime Requirements
-- Docker Desktop on Windows 11 or macOS, or Docker Engine with the Compose plugin on Ubuntu Server 24.04
-- An administrator-provided TLS certificate and private key
-- Initial OSCAR administrator credentials supplied during setup
-
-Java 21.0.10 is included in the OSCAR container image. Java and Node.js are required only when building from source.
-
-## Quick Start
-1. **Download the latest release**
-   - Go to the Releases section of the repository and download the latest compiled release archive (for example, `oscar-3.3.5.zip`).
-2. **Extract the archive**
-   - Extract the downloaded ZIP file to a directory of your choice.
-3. **Complete secure setup**
-   - Follow [`DEPLOYMENT.md`](dist/release/DEPLOYMENT.md) to create the required secret files and install or generate a TLS certificate.
-4. **Launch the system with Docker Compose**
-   - Open a terminal or command prompt in the extracted directory and run the OS-specific launch script:
-     - **Windows:** Run `launch-all.bat`
-     - **Linux/macOS:** Run `./launch-all.sh`
-
-The deployment publishes HTTPS on port 443 by default. OSCAR and PostgreSQL are reachable only through private Compose networks; PostgreSQL does not publish a host port.
-
-For a complete guide covering architecture, deployment, configuration, operations, and troubleshooting, please refer to the [OSCAR System Documentation Manual](dist/documentation/OSCAR_System_Documentation_Manual_3.5.md).
+Only the configured HTTPS port is published. PostgreSQL and the OSCAR application port remain on private Compose networks. Java 21.0.10 is included in the OSCAR container image and is not required on deployment hosts.
 
 ## Installation
-Clone the repository and update all submodules recursively
 
-```bash
-git clone git@github.com:Botts-Innovative-Research/osh-oakridge-buildnode.git --recursive
+See the release [Quick Start](dist/release/QUICKSTART.md) for the shortest supported installation path. The [Administrator Guide](dist/release/DEPLOYMENT.md) covers certificates, offline Windows installation, lifecycle commands, security verification, and upgrades.
+
+Supported initial deployment hosts:
+
+- Windows 11 x86-64 with Docker Desktop and WSL 2
+- Ubuntu Server 24.04 x86-64 with Docker Engine and the Compose plugin
+- Apple Silicon macOS with Docker Desktop; PostGIS runs under AMD64 emulation
+
+There is no default administrator password. The administrator supplies it during `oscar init`, and deployment-specific database credentials are generated automatically.
+
+## Build from source
+
+Clone all submodules:
+
+```sh
+git clone --recursive <repository-url>
+cd osh-oakridge-buildnode
 ```
-If you've already cloned without `--recursive`, run:
-```bash
-cd path/to/osh-oakridge-buildnode
-git submodule update --init --recursive
-```
-## Build 
-Navigate to the project directory:
 
-```bash
-cd path/to/osh-oakridge-buildnode
+The canonical connected-release builds are:
+
+```bat
+build-all.bat
 ```
 
-Run the build script (macOS/Linux):
-
-```bash
+```sh
 ./build-all.sh
 ```
 
-Run the build script (Windows):
+Both scripts use the locked Node.js dependency set, build the OSCAR viewer, compile the Java modules, and create:
 
-```bash
-./build-all.bat
+```text
+build/distributions/oscar-<version>.zip
 ```
 
-After the build completes, it can be located in `build/distributions/` 
+Hardware-dependent tests remain outside these packaging scripts and must be run in an appropriately equipped test environment.
 
-## Deploy and Start OSCAR
-1. Unzip the distribution using the command line or File Explorer:
+## Build Windows offline media
 
-    Option 1: Command Line
-    ```bash
-    unzip build/distributions/osh-node-oscar-1.0.zip
-    cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
-   ```bash
-    tar -xf build/distributions/osh-node-oscar-1.0.zip
-    cd osh-node-oscar-1.0/osh-node-oscar-1.0
-    ```
-   Option 2: Use File Explorer
-    1. Navigate to `path/to/osh-oakridge-buildnode/build/distributions/`
-    2. Right-click `osh-node-oscar-1.0.zip`.
-    3. Select **Extract All..**
-    4. Choose your destination, (or leave the default) and extract.
-1. Complete the secret and TLS preparation in [`DEPLOYMENT.md`](dist/release/DEPLOYMENT.md).
-2. Run `launch-all.sh` on Linux/macOS or `launch-all.bat` on Windows.
-3. Open `https://<configured-host>/sensorhub/admin`.
+On a connected Windows x86-64 build workstation with Docker available:
 
-There is no default administrator password. The first startup fails closed if the administrator or database secret is missing.
-
-For documentation on configuring a Lane System on the OSH Admin panel, please refer to the OSCAR Documentation provided in the Google Drive documentation folder.
-
-## Deploy the Client
-After configuring the Lanes on the OSH Admin Panel, you can navigate to the Clients endpoint:
-- Remote: **https://[configured-host]**
-- Local: **https://localhost/** when the certificate includes `localhost`
-
-For documentation on configuring a server on the OSCAR Client refer to the OSCAR Documentation provided in the Google Drive documentation folder. 
-
-# Releasing a New Version
-
-## Release Checklist
-Before releasing, ensure the following on the `dev` branch:
-1. Update `version` in `build.gradle` to match the release version (e.g. `"3.2.0"`)
-2. Update `deploymentName` in `dist/config/standard/config.json` to `"OSCAR <version>"` (e.g. `"OSCAR 3.2.0"`)
-3. Ensure there is no `pgdata` directory in `dist/release/postgis`
-4. Verify the build succeeds locally with `./build-all.sh` or `./build-all.bat`
-
-## Release Steps
-1. **Merge `dev` into `main`:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git merge dev
-   git push origin main
-   ```
-   Alternatively, create a pull request from `dev` → `main` on GitHub and merge it.
-
-2. **Tag the release on `main`:**
-   ```bash
-   git checkout main
-   git pull origin main
-   git tag v<version>    # e.g. git tag v3.2.0
-   git push origin v<version>
-   ```
-
-3. **The release workflow runs automatically.** It will:
-   - Validate that the tag is on the `main` branch
-   - Verify version numbers match the tag in `build.gradle` and `config.json`
-   - Check that `pgdata` does not exist in the release directory
-   - Build the project (Gradle + oscar-viewer)
-   - Package the source code with all submodules included
-   - Create a GitHub Release with the build artifact and source archive
-
-# PostgreSQL Configuration
-There are some tweaks that can be made to the PostgreSQL configuration to make it perform better.
-Below is a list of suggested configuration parameters at varying levels of maximum system RAM.
-
-`shared_buffers` - Should be around 25% of maximum RAM
-`effective_cache_size` - Should be around 70-75% of maximum RAM
-`work_mem` - 16MB to 64MB. Depends on maximum system memory and size of the load
-`maintenance_work_mem` - 512MB to 2GB. Depends on the load, but it's OK to try high numbers
-
-# Secure Node Over TLS (HTTPS)
-In order to secure the OSH node over TLS, you must generate a Java keystore with an SSL certificate.
-
-Below is the command to generate a keystore with a self-signed certificate.
-
-`keytool -genkeypair -alias <alias_name> -keyalg RSA -keysize 2048 -validity <days> -keystore <keystore_filename>.jks -storepass <keystore_password> -keypass <key_password> -dname "CN=<Common Name>, OU=<Organizational Unit>, O=<Organization>, L=<Locality>, ST=<State>, C=<Country>" -ext "SAN=<Subject Alternative Name>"`
-
-Then, in your OSH config (`config.json`), or in the Admin Panel under `Network` -> `HTTP Server`, you must specify the key store path, password, key alias, and HTTPS port.
-
-An example of the `config.json`'s HTTP Server config is shown below:
-
-```json
-{
-    "objClass": "org.sensorhub.impl.service.HttpServerConfig",
-    "httpPort": 8282,
-    "httpsPort": 8443,
-    "servletsRootUrl": "/sensorhub",
-    "authMethod": "BASIC",
-    "keyStorePath": "osh-keystore.jks",
-    "keyStorePassword": "changeit",
-    "keyAlias": "oscar-key",
-    "trustStorePath": ".keystore/ssl_trust",
-    "enableCORS": true,
-    "id": "5cb05c9c-9e08-4fa1-8731-ffaa5846bdc1",
-    "autoStart": true,
-    "moduleClass": "org.sensorhub.impl.service.HttpServer",
-    "name": "HTTP Server"
-}
+```powershell
+powershell -File tools/offline/build-offline-bundle.ps1 -CreateArchive
 ```
 
-You can also edit this information in the OSH launch scripts at `osh-node-oscar/launch.(sh|bat)`
+The offline builder invokes `build-all.bat`, downloads checksum-pinned official Windows prerequisites, exports the required images, creates `SHA256SUMS`, and produces:
 
-```shell
-java -Xms6g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError \
-	-Dlogback.configurationFile=./logback.xml \
-	-cp "lib/*" \
-	-Djava.system.class.loader="org.sensorhub.utils.NativeClassLoader" \
-	-Djavax.net.ssl.keyStore="./osh-keystore.jks" \
-	-Djavax.net.ssl.keyStorePassword="changeit" \
-	-Djavax.net.ssl.trustStore="$SCRIPT_DIR/trustStore.jks" \
-	-Djavax.net.ssl.trustStorePassword="changeit" \
-	-Djava.library.path="./nativelibs" \
-	com.botts.impl.security.SensorHubWrapper ./config.json ./db
-
+```text
+build/offline/oscar-<version>-windows-x86_64-offline.zip
 ```
+
+The offline deployment CLI performs no downloads.
+
+## Release checklist
+
+Before tagging a release:
+
+1. Update the version in `build.gradle`.
+2. Set `deploymentName` in `dist/config/standard/config.json` to `OSCAR <version>`.
+3. Set `OSCAR_VERSION` in `dist/release/.env.example` to the same version.
+4. Confirm `dist/release/postgis/pgdata` does not exist.
+5. Run the appropriate canonical build script.
+6. Run hardware and platform validation in their designated environments.
+
+Tags matching `v*` trigger the release workflow. The workflow validates the tag and version metadata, invokes `build-all.sh`, and publishes the connected release ZIP and source archive.
+
+Offline Windows media is built and validated separately because it contains platform-specific installers and container images.

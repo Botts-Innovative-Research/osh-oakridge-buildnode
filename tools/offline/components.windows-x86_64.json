@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "platform": "windows-11-x86_64",
+  "components": [
+    {
+      "name": "Docker Desktop",
+      "version": "4.87.0",
+      "file": "installers/windows-x86_64/Docker Desktop Installer.exe",
+      "url": "https://desktop.docker.com/win/main/amd64/236836/Docker%20Desktop%20Installer.exe",
+      "sha256": "9ac03d4e900c0fdee981d4bde083a55fdfb28ffba2cae77726eff2a437254822",
+      "source": "https://docs.docker.com/desktop/release-notes/#4870"
+    },
+    {
+      "name": "Windows Subsystem for Linux",
+      "version": "2.7.3",
+      "file": "installers/windows-x86_64/wsl.2.7.3.0.x64.msi",
+      "url": "https://github.com/microsoft/WSL/releases/download/2.7.3/wsl.2.7.3.0.x64.msi",
+      "sha256": "64d8c096738ab72e74e11c4d4afb1ae425627f71cc651734db1f887c82c07dfe",
+      "source": "https://github.com/microsoft/WSL/releases/tag/2.7.3"
+    }
+  ]
+}
