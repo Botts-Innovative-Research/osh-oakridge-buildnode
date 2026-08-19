@@ -19,7 +19,7 @@ hivemq-data/
 *.log
 
 # test bucket store
-oscar/
+/oscar/
 files/
 
 dist/release/postgis/pgdata

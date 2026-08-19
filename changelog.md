@@ -1,12 +1,16 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
-## 3.5.2 2026-08-17
+## 3.6.0 2026-08-19
 ### Changes
 - Decrease PostGIS connection pool size and idle time for connections
 - Modify PostGIS datastore queries to prevent SQL injection
 - Enforce file upload size limits and read-only permissions for files
 - Add file upload policy to block common executable files
 - Disable CSAPI HTML responses by default and add additional headers for security.
+- Containerize all app components (OSH, postgres, reverse proxy)
+- Remove default credentials from postgres and OSH
+- Harden postgres permissions in deployment
+- Added CLI for OSCAR initialization and app management
 
 ## 3.5.1 2026-08-01
 ### Changes

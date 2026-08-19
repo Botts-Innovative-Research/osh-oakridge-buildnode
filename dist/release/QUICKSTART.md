@@ -12,7 +12,7 @@
 ```
 
 5. Enter the deployment hostname and an OSCAR administrator password of at least 14 characters.
-6. Open the URL printed by setup, normally `https://oscar.local/sensorhub/admin`.
+6. Open the URL printed by setup, normally `https://localhost/sensorhub/admin`.
 
 Setup creates deployment-specific database credentials, configures TLS, and starts OSCAR automatically. Do not run a separate launch script after initialization.
 
