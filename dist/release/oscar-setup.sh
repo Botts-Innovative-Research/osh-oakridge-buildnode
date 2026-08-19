@@ -175,6 +175,12 @@ protect_deployment_files() {
     chmod 600 "$script_dir/.env"
 }
 
+allow_docker_desktop_bind_mount_access() {
+    [[ $(uname -s) == Darwin ]] || return 0
+    [[ -n ${SUDO_UID:-} && -n ${SUDO_GID:-} ]] || return 0
+    chown "$SUDO_UID:$SUDO_GID" "$script_dir/secrets" "$script_dir/tls"
+}
+
 oscar_image() {
     local version=local
     if [[ -f $script_dir/.env ]]; then
@@ -291,6 +297,7 @@ case "$command_name" in
         valid_hostname "$hostname_value" || fail "Invalid hostname or IP address: $hostname_value"
         [[ $port_value =~ ^[0-9]+$ ]] && ((port_value >= 1 && port_value <= 65535)) || fail 'Port must be between 1 and 65535.'
         mkdir -p "$script_dir/secrets" "$script_dir/tls"
+        allow_docker_desktop_bind_mount_access
         set_env_value OSCAR_HTTPS_PORT "$port_value"
         set_env_value OSCAR_HOSTNAME "$hostname_value"
         [[ -e $script_dir/secrets/oscar-admin-password.txt ]] || write_secret "$script_dir/secrets/oscar-admin-password.txt" "$(read_admin_password)"
