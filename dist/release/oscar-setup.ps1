@@ -10,6 +10,7 @@ param(
     [string]$CertificatePath,
     [string]$PrivateKeyPath,
     [switch]$AddHostsEntry,
+    [switch]$SkipHostsEntry,
     [switch]$NonInteractive,
     [switch]$SkipStart,
     [ValidateSet('all', 'oscar', 'postgres', 'gateway')]
@@ -331,7 +332,7 @@ OSCAR deployment administration
 
   .\oscar.bat init [-Hostname oscar.local] [-Port 443]
       [-TlsMode self-signed|import] [-CertificatePath FILE -PrivateKeyPath FILE]
-      [-AddHostsEntry] [-SkipStart]
+      [-AddHostsEntry] [-SkipHostsEntry] [-SkipStart]
   .\oscar.bat check|start|stop|restart|status|upgrade
   .\oscar.bat logs [-Service all|oscar|postgres|gateway] [-Tail 200] [-Follow]
 
@@ -375,7 +376,7 @@ try {
             Prepare-DeploymentImages
             Initialize-Tls $Hostname
             Protect-DeploymentFiles
-            if ($AddHostsEntry) { Add-LocalHostsMapping $Hostname }
+            if (-not $SkipHostsEntry) { Add-LocalHostsMapping $Hostname }
             Assert-Configured
             if (-not $SkipStart) { Invoke-Compose @('up', '--detach', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '240') }
             Write-Host "`nOSCAR setup complete: https://${Hostname}:$Port/sensorhub/admin" -ForegroundColor Green

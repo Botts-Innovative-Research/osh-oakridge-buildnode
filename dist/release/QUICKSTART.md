@@ -12,7 +12,7 @@
 ```
 
 5. Enter the deployment hostname and an OSCAR administrator password of at least 14 characters.
-6. Open the URL printed by setup, normally `https://localhost/sensorhub/admin`.
+6. Open the URL printed by setup, normally `https://oscar.local/sensorhub/admin`.
 
 Setup creates deployment-specific database credentials, configures TLS, and starts OSCAR automatically. Do not run a separate launch script after initialization.
 
@@ -65,4 +65,4 @@ sudo bash oscar.sh restart
 sudo bash oscar.sh logs --service oscar
 ```
 
-The default deployment uses HTTPS port `443`. `oscar.local` must resolve on every connecting workstation, and workstations must trust the selected certificate. See [DEPLOYMENT.md](DEPLOYMENT.md) for certificate import, DNS, log filtering, security verification, and upgrades.
+The default deployment uses HTTPS port `443`. Setup maps `oscar.local` on the OSCAR host. Other connecting workstations must resolve the selected hostname through DNS or their own hosts entry, and workstations must trust the selected certificate. See [DEPLOYMENT.md](DEPLOYMENT.md) for certificate import, DNS, log filtering, security verification, and upgrades.

@@ -49,7 +49,7 @@ sudo bash oscar.sh init --hostname oscar.example.org --port 443 \
     --private-key /secure/server.key
 ```
 
-`-AddHostsEntry` or `--add-hosts-entry` maps the hostname only on the OSCAR host. Site DNS or a hosts entry is still required on every workstation that connects to OSCAR.
+By default, setup maps the hostname only on the OSCAR host. Use `-SkipHostsEntry` or `--skip-hosts-entry` to leave local host resolution unchanged. Site DNS or a hosts entry is still required on every workstation that connects to OSCAR.
 
 `server.crt` must be a PEM certificate or chain. `server.key` must be its matching unencrypted PEM private key. The certificate subject alternative names must contain every DNS name or IP address used to reach OSCAR.
 

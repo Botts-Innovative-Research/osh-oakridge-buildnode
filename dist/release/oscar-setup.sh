@@ -12,7 +12,7 @@ port_value=443
 tls_mode='self-signed'
 certificate_path=''
 private_key_path=''
-add_hosts=false
+add_hosts=true
 non_interactive=false
 skip_start=false
 log_service=all
@@ -25,7 +25,7 @@ OSCAR deployment administration
 
   sudo ./oscar.sh init [--hostname oscar.local] [--port 443]
       [--tls-mode self-signed|import] [--certificate FILE --private-key FILE]
-      [--add-hosts-entry] [--skip-start]
+      [--add-hosts-entry] [--skip-hosts-entry] [--skip-start]
   sudo ./oscar.sh check|start|stop|restart|status|upgrade
   sudo ./oscar.sh logs [--service all|oscar|postgres|gateway] [--tail 200] [--follow]
 
@@ -45,6 +45,7 @@ while (($#)); do
         --certificate) certificate_path=${2:?missing certificate path}; shift 2 ;;
         --private-key) private_key_path=${2:?missing private-key path}; shift 2 ;;
         --add-hosts-entry) add_hosts=true; shift ;;
+        --skip-hosts-entry) add_hosts=false; shift ;;
         --non-interactive) non_interactive=true; shift ;;
         --skip-start) skip_start=true; shift ;;
         --service) log_service=${2:?missing service}; shift 2 ;;
