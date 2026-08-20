@@ -168,6 +168,11 @@ write_secret() {
     [[ -e $path ]] || printf '%s' "$value" >"$path"
 }
 
+ensure_federation_key() {
+    mkdir -p "$script_dir/secrets"
+    [[ -e $script_dir/secrets/oscar-federation-key.txt ]] || write_secret "$script_dir/secrets/oscar-federation-key.txt" "$(random_password)"
+}
+
 protect_deployment_files() {
     chmod 700 "$script_dir/secrets" "$script_dir/tls"
     # Compose file-backed secrets retain host file modes. The protected parent
@@ -268,7 +273,7 @@ add_local_hosts_mapping() {
 
 configured() {
     local required
-    for required in secrets/oscar-admin-password.txt secrets/oscar-db-password.txt secrets/postgres-bootstrap-password.txt tls/server.crt tls/server.key .env; do
+    for required in secrets/oscar-admin-password.txt secrets/oscar-db-password.txt secrets/postgres-bootstrap-password.txt secrets/oscar-federation-key.txt tls/server.crt tls/server.key .env; do
         [[ -s $script_dir/$required ]] || return 1
     done
 }
@@ -304,6 +309,7 @@ case "$command_name" in
         [[ -e $script_dir/secrets/oscar-admin-password.txt ]] || write_secret "$script_dir/secrets/oscar-admin-password.txt" "$(read_admin_password)"
         [[ -e $script_dir/secrets/oscar-db-password.txt ]] || write_secret "$script_dir/secrets/oscar-db-password.txt" "$(random_password)"
         [[ -e $script_dir/secrets/postgres-bootstrap-password.txt ]] || write_secret "$script_dir/secrets/postgres-bootstrap-password.txt" "$(random_password)"
+        [[ -e $script_dir/secrets/oscar-federation-key.txt ]] || write_secret "$script_dir/secrets/oscar-federation-key.txt" "$(random_password)"
         prepare_deployment_images
         initialize_tls "$hostname_value"
         protect_deployment_files
@@ -313,17 +319,17 @@ case "$command_name" in
         printf '\nOSCAR setup complete: https://%s:%s/sensorhub/admin\n' "$hostname_value" "$port_value"
         ;;
     start)
-        require_admin; require_docker; configured || fail 'Run init before starting OSCAR.'
+        require_admin; require_docker; ensure_federation_key; protect_deployment_files; configured || fail 'Run init before starting OSCAR.'
         assert_deployment_images_available
         compose up --detach --no-build --pull never --wait --wait-timeout 240
         ;;
     stop)
-        require_admin; require_docker; configured || fail 'Run init before stopping OSCAR.'
+        require_admin; require_docker; ensure_federation_key; protect_deployment_files; configured || fail 'Run init before stopping OSCAR.'
         compose stop
         printf 'OSCAR stopped. Persistent application and database data were retained.\n'
         ;;
     restart)
-        require_admin; require_docker; configured || fail 'Run init before restarting OSCAR.'
+        require_admin; require_docker; ensure_federation_key; protect_deployment_files; configured || fail 'Run init before restarting OSCAR.'
         assert_deployment_images_available
         compose restart
         compose up --detach --no-build --pull never --wait --wait-timeout 240
@@ -346,7 +352,7 @@ case "$command_name" in
         compose "${log_args[@]}"
         ;;
     upgrade)
-        require_admin; require_docker; configured || fail 'This release directory has not been initialized.'
+        require_admin; require_docker; ensure_federation_key; protect_deployment_files; configured || fail 'This release directory has not been initialized.'
         heading 'Upgrade preflight'
         compose config --quiet
         prepare_deployment_images

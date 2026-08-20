@@ -46,6 +46,7 @@ dependencies {
     implementation project(':sensorhub-system-lane')
     implementation project(':sensorhub-webui-oscar')
     implementation project(':sensorhub-service-oscar')
+    implementation project(':sensorhub-service-oscar-federation')
     implementation project(':sensorhub-service-bucket')
 
     implementation project(':security-utils')

@@ -50,6 +50,8 @@ services:
         target: oscar_admin_password
       - source: oscar_db_password
         target: oscar_db_password
+      - source: oscar_federation_key
+        target: oscar_federation_key
     environment:
       INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/oscar_admin_password
       OSCAR_DB_PASSWORD_FILE: /run/secrets/oscar_db_password
@@ -131,6 +133,8 @@ secrets:
     file: ${OSCAR_SECRETS_DIR:-./secrets}/oscar-db-password.txt
   postgres_bootstrap_password:
     file: ${OSCAR_SECRETS_DIR:-./secrets}/postgres-bootstrap-password.txt
+  oscar_federation_key:
+    file: ${OSCAR_SECRETS_DIR:-./secrets}/oscar-federation-key.txt
   tls_certificate:
     file: ${OSCAR_TLS_DIR:-./tls}/server.crt
   tls_private_key:

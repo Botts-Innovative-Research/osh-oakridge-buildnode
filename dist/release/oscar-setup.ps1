@@ -197,6 +197,13 @@ function Write-SecretFile([string]$Path, [string]$Value) {
     [IO.File]::WriteAllText($Path, $Value, $Utf8NoBom)
 }
 
+function Ensure-FederationKey {
+    $secretsDirectory = Join-Path $ScriptRoot 'secrets'
+    New-Item -ItemType Directory -Force -Path $secretsDirectory | Out-Null
+    $keyPath = Join-Path $secretsDirectory 'oscar-federation-key.txt'
+    if (-not (Test-Path -LiteralPath $keyPath)) { Write-SecretFile $keyPath (New-RandomPassword) }
+}
+
 function Protect-DeploymentFiles {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent().Name
     foreach ($directory in @((Join-Path $ScriptRoot 'secrets'), (Join-Path $ScriptRoot 'tls'))) {
@@ -302,7 +309,7 @@ function Add-LocalHostsMapping([string]$Name) {
 }
 
 function Assert-Configured {
-    foreach ($relativePath in @('secrets\oscar-admin-password.txt', 'secrets\oscar-db-password.txt', 'secrets\postgres-bootstrap-password.txt', 'tls\server.crt', 'tls\server.key', '.env')) {
+    foreach ($relativePath in @('secrets\oscar-admin-password.txt', 'secrets\oscar-db-password.txt', 'secrets\postgres-bootstrap-password.txt', 'secrets\oscar-federation-key.txt', 'tls\server.crt', 'tls\server.key', '.env')) {
         $path = Join-Path $ScriptRoot $relativePath
         if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) { throw "Missing required setup file: $relativePath" }
     }
@@ -370,9 +377,11 @@ try {
             $adminSecretPath = Join-Path $ScriptRoot 'secrets\oscar-admin-password.txt'
             $databaseSecretPath = Join-Path $ScriptRoot 'secrets\oscar-db-password.txt'
             $bootstrapSecretPath = Join-Path $ScriptRoot 'secrets\postgres-bootstrap-password.txt'
+            $federationKeyPath = Join-Path $ScriptRoot 'secrets\oscar-federation-key.txt'
             if (-not (Test-Path -LiteralPath $adminSecretPath)) { Write-SecretFile $adminSecretPath (Read-AdminPassword) }
             if (-not (Test-Path -LiteralPath $databaseSecretPath)) { Write-SecretFile $databaseSecretPath (New-RandomPassword) }
             if (-not (Test-Path -LiteralPath $bootstrapSecretPath)) { Write-SecretFile $bootstrapSecretPath (New-RandomPassword) }
+            if (-not (Test-Path -LiteralPath $federationKeyPath)) { Write-SecretFile $federationKeyPath (New-RandomPassword) }
             Prepare-DeploymentImages
             Initialize-Tls $Hostname
             Protect-DeploymentFiles
@@ -382,17 +391,17 @@ try {
             Write-Host "`nOSCAR setup complete: https://${Hostname}:$Port/sensorhub/admin" -ForegroundColor Green
         }
         'start' {
-            Assert-Administrator; Assert-Docker; Assert-Configured
+            Assert-Administrator; Assert-Docker; Ensure-FederationKey; Protect-DeploymentFiles; Assert-Configured
             Assert-DeploymentImagesAvailable
             Invoke-Compose @('up', '--detach', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '240')
         }
         'stop' {
-            Assert-Administrator; Assert-Docker; Assert-Configured
+            Assert-Administrator; Assert-Docker; Ensure-FederationKey; Protect-DeploymentFiles; Assert-Configured
             Invoke-Compose @('stop')
             Write-Host 'OSCAR stopped. Persistent application and database data were retained.' -ForegroundColor Green
         }
         'restart' {
-            Assert-Administrator; Assert-Docker; Assert-Configured; Assert-DeploymentImagesAvailable
+            Assert-Administrator; Assert-Docker; Ensure-FederationKey; Protect-DeploymentFiles; Assert-Configured; Assert-DeploymentImagesAvailable
             Invoke-Compose @('restart')
             Invoke-Compose @('up', '--detach', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '240')
         }
@@ -411,7 +420,7 @@ try {
             Invoke-Compose $logArguments
         }
         'upgrade' {
-            Assert-Administrator; Assert-Docker; Assert-Configured
+            Assert-Administrator; Assert-Docker; Ensure-FederationKey; Protect-DeploymentFiles; Assert-Configured
             Write-Heading 'Upgrade preflight'
             Invoke-Compose @('config', '--quiet')
             Prepare-DeploymentImages
