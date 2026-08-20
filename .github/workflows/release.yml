@@ -98,19 +98,41 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ env.OSCAR_DIR }}/package-lock.json
 
-      - name: Build connected release
-        run: ./build-all.sh
-
       - name: Package source with submodules
+        id: source
         run: |
           REPO_NAME="${GITHUB_REPOSITORY##*/}"
           TAG="${GITHUB_REF_NAME}"
           SOURCE_DIR="${REPO_NAME}-${TAG}"
+          SOURCE_ROOT="/tmp/source-archive/${SOURCE_DIR}"
+          SOURCE_ZIP="/tmp/${SOURCE_DIR}-source.zip"
+          TRACKED_FILES="$(mktemp)"
           mkdir -p /tmp/source-archive
-          # Copy entire repo including submodules (already checked out recursively)
-          rsync -a --exclude='.git' --exclude='build' . "/tmp/source-archive/${SOURCE_DIR}"
+
+          # Package only content tracked by the tagged repository and its
+          # checked-out submodules. The build mutates the runner workspace, so
+          # copying the whole directory would include node_modules and other
+          # generated or ignored files.
+          git ls-files --recurse-submodules > "$TRACKED_FILES"
+          rsync -a --files-from="$TRACKED_FILES" ./ "$SOURCE_ROOT/"
+
           cd /tmp/source-archive
-          zip -r "${GITHUB_WORKSPACE}/${DIST_DIR}/${SOURCE_DIR}-source.zip" "${SOURCE_DIR}"
+          zip -q -r "$SOURCE_ZIP" "$SOURCE_DIR"
+
+          if unzip -Z1 "$SOURCE_ZIP" | grep -q '/node_modules/'; then
+            echo "::error::Source archive unexpectedly contains node_modules"
+            exit 1
+          fi
+
+          echo "Source archive contains only tracked repository and submodule files:"
+          du -h "$SOURCE_ZIP"
+          echo "archive=$SOURCE_ZIP" >> "$GITHUB_OUTPUT"
+
+      - name: Build connected release
+        run: ./build-all.sh
+
+      - name: Stage source archive
+        run: cp "${{ steps.source.outputs.archive }}" "${DIST_DIR}/"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

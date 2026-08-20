@@ -1,5 +1,9 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.6.2 2026-08-20
+## Changes
+- Fixed minor issue where GitHub actions workflow releases source containing node_modules, making source unnecessarily large
+
 ## 3.6.1 2026-08-20
 ## Changes
 - Fixed bug where OSCAR CLI would show `oscar.local` as local hostname but not auto-map. 
