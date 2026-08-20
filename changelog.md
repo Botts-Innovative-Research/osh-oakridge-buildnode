@@ -1,5 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.6.1 2026-08-20
+## Changes
+- Fixed bug where OSCAR CLI would show `oscar.local` as local hostname but not auto-map. 
+  - Now this is automatically mapped on local machine to work.
+- Fixed bug where gamma charts display "Gamma 0" at the start of an occupancy
+
 ## 3.6.0 2026-08-19
 ### Changes
 - Decrease PostGIS connection pool size and idle time for connections
