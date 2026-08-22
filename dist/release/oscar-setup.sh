@@ -297,6 +297,7 @@ case "$command_name" in
         fi
         valid_hostname "$hostname_value" || fail "Invalid hostname or IP address: $hostname_value"
         [[ $port_value =~ ^[0-9]+$ ]] && ((port_value >= 1 && port_value <= 65535)) || fail 'Port must be between 1 and 65535.'
+        ((port_value != 80)) || fail 'Port 80 is reserved for the HTTP-to-HTTPS redirect.'
         mkdir -p "$script_dir/secrets" "$script_dir/tls"
         allow_docker_desktop_bind_mount_access
         set_env_value OSCAR_HTTPS_PORT "$port_value"

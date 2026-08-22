@@ -9,6 +9,7 @@ services:
         condition: service_healthy
     ports:
       - "${OSCAR_HTTPS_PORT:-443}:8443"
+      - "80:8080"
     networks:
       - frontend
     secrets:

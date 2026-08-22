@@ -41,4 +41,6 @@ dependencies {
     implementation project(':sensorhub-webui-oscar')
     implementation project(':sensorhub-service-oscar')
     implementation project(':sensorhub-service-bucket')
+
+    implementation project(':sensorhub-security-basic-session')
 }

@@ -141,6 +141,14 @@
       "enableFrameRetention": true,
       "frameRetentionCount": 5
     },
+    "storagePressureRetentionConfig": {
+      "objClass": "com.botts.impl.service.oscar.retention.StoragePressureRetentionConfig",
+      "triggerUsagePercent": 85,
+      "targetUsagePercent": 80,
+      "checkPeriodMinutes": 1,
+      "minimumObjectAgeMinutes": 10,
+      "storagePath": "files"
+    },
     "nodeId": "default",
     "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",
     "statsFrequencyMinutes": 60,

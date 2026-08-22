@@ -364,6 +364,7 @@ try {
                 if (-not $Hostname) { $Hostname = 'oscar.local' }
             }
             if (-not (Test-ValidHostname $Hostname)) { throw "Invalid hostname or IP address: $Hostname" }
+            if ($Port -eq 80) { throw 'Port 80 is reserved for the HTTP-to-HTTPS redirect.' }
             New-Item -ItemType Directory -Force -Path (Join-Path $ScriptRoot 'secrets'), (Join-Path $ScriptRoot 'tls') | Out-Null
             Set-EnvValue 'OSCAR_HTTPS_PORT' $Port
             Set-EnvValue 'OSCAR_HOSTNAME' $Hostname
