@@ -1,12 +1,24 @@
 [
   {
+    "objClass": "org.sensorhub.impl.security.session.BasicSessionConfig",
+    "cookieName": "OSCAR_SESSION",
+    "idleTimeoutSeconds": 1800,
+    "absoluteTimeoutSeconds": 28800,
+    "secureCookie": true,
+    "sameSite": "Strict",
+    "id": "5bb44b9e-e2d7-4a43-9a39-60abdf28e2f8",
+    "autoStart": true,
+    "moduleClass": "org.sensorhub.impl.security.session.BasicSessionAuthModule",
+    "name": "Session Authentication"
+  },
+  {
     "objClass": "org.sensorhub.impl.service.HttpServerConfig",
     "httpPort": 8282,
     "httpsPort": 0,
     "staticDocsRootUrl": "null",
     "staticDocsRootDir": "null",
     "servletsRootUrl": "/sensorhub",
-    "authMethod": "BASIC",
+    "authMethod": "EXTERNAL",
     "keyStorePath": ".keystore/ssl_keys",
     "keyAlias": "jetty",
     "trustStorePath": ".keystore/ssl_trust",
@@ -128,6 +140,14 @@
       "videoQueryPeriod": 1,
       "enableFrameRetention": true,
       "frameRetentionCount": 5
+    },
+    "storagePressureRetentionConfig": {
+      "objClass": "com.botts.impl.service.oscar.retention.StoragePressureRetentionConfig",
+      "triggerUsagePercent": 85,
+      "targetUsagePercent": 80,
+      "checkPeriodMinutes": 1,
+      "minimumObjectAgeMinutes": 10,
+      "storagePath": "files"
     },
     "nodeId": "default",
     "databaseID": "a445cf15-c2ab-4d92-beab-3241667a8976",

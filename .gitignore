@@ -15,7 +15,7 @@
 hivemq-config/
 hivemq-data/
 *.env
-
+tools/postgis-test/pgdata
 *.log
 
 # test bucket store

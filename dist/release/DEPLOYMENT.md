@@ -1,6 +1,6 @@
 # OSCAR Administrator Guide
 
-OSCAR runs as three Docker Compose services: an HTTPS gateway, the non-root OSCAR application, and PostgreSQL/PostGIS. Only the selected HTTPS port is published to the host. PostgreSQL has no host port.
+OSCAR runs as three Docker Compose services: an HTTPS gateway, the non-root OSCAR application, and PostgreSQL/PostGIS. The selected HTTPS port is published to the host, and port 80 redirects requests to HTTPS. PostgreSQL has no host port.
 
 Start with [QUICKSTART.md](QUICKSTART.md) for installation. This guide documents deployment choices and routine administration.
 
@@ -32,6 +32,8 @@ Mutating commands require an elevated Administrator PowerShell window on Windows
 ## Initial setup options
 
 The defaults are hostname `oscar.local`, HTTPS port `443`, and a self-signed certificate. Setup asks for an administrator password of at least 14 characters, generates unique database credentials, validates TLS, and starts the deployment.
+
+With the default HTTPS port, entering the configured hostname without a scheme is supported: the gateway redirects the browser from HTTP to HTTPS while preserving the requested path. Deployments using a nonstandard HTTPS port must include that port in the URL printed by setup.
 
 Windows example with an imported certificate:
 
@@ -116,7 +118,7 @@ docker compose ps
 docker compose exec postgres psql --username oscar_bootstrap --dbname gis --command "SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls FROM pg_roles WHERE rolname = 'oscar_app';"
 ```
 
-Every reported privilege flag for `oscar_app` must be false. A host scan must show the configured HTTPS port and must not show ports `8282` or `5432`.
+Every reported privilege flag for `oscar_app` must be false. A host scan must show port `80` and the configured HTTPS port, and must not show ports `8282` or `5432`. Port `80` must return only an HTTPS redirect.
 
 ## Upgrade
 
