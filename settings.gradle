@@ -110,6 +110,16 @@ service_submodules.files.each { File f ->
     }
 }
 
+FileTree security_submodules = fileTree("$gradle.oshOakridgeModules/security").include('**/build.gradle')
+security_submodules.files.each { File f ->
+    File projectFolder = f.parentFile
+    if (projectFolder != rootDir) {
+        String projectName = ':' + projectFolder.name
+        include projectName
+        project(projectName).projectDir = projectFolder
+    }
+}
+
 FileTree tools_submodules = fileTree("$gradle.oshOakridgeModules/tools").include('**/build.gradle')
 tools_submodules.files.each { File f ->
     File projectFolder = f.parentFile
