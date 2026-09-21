@@ -45,6 +45,22 @@ Initialization defaults to `-Prerequisites auto`, which uses a working existing 
 
 The defaults are hostname `oscar.local`, HTTPS port `443`, and a self-signed certificate. Setup asks for an administrator password of at least 14 characters, generates unique database credentials, validates TLS, and starts the deployment.
 
+### Container time zone
+
+OSCAR daily files record both the computer's local time and UTC. Docker containers commonly default to UTC and do not necessarily inherit the host computer's time zone. After initialization, set the JVM time zone in the generated `.env` file by adding `-Duser.timezone=<time-zone>` to `OSCAR_JAVA_OPTS`. For example, an OSCAR computer in U.S. Central time should use the daylight-saving-aware IANA identifier `America/Chicago`:
+
+```dotenv
+OSCAR_JAVA_OPTS=-Duser.timezone=America/Chicago -Xms1g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError
+```
+
+Use an IANA time zone identifier, not a fixed abbreviation such as `CST`, so daylight-saving transitions are handled correctly. Valid identifiers are listed in the [IANA Time Zone Database](https://www.iana.org/time-zones); on Linux, `timedatectl list-timezones` also prints the installed identifiers.
+
+After changing `.env` on an existing deployment, recreate the OSCAR container so the new JVM setting is loaded:
+
+```sh
+docker compose up -d --force-recreate oscar
+```
+
 With the default HTTPS port, entering the configured hostname without a scheme is supported: the gateway redirects the browser from HTTP to HTTPS while preserving the requested path. Deployments using a nonstandard HTTPS port must include that port in the URL printed by setup.
 
 Windows example with an imported certificate:
