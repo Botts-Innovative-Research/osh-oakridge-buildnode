@@ -1,5 +1,11 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## Unreleased
+## Changes
+- Add URL-scoped operational views so one OSCAR deployment can present different lane groups to different workstations
+- Scope viewer subscriptions, statistics, reports, navigation, and alarm notifications to the active operational view
+- Add backward-compatible lane CSV import/export for operational-view assignments
+
 ## 3.9.0 2026-09-23
 ## Changes
 - Add nested AND/OR alarm filtering on the dashboard and Events page
