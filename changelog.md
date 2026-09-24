@@ -1,5 +1,12 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 3.9.1 2026-09-24
+## Changes
+- Export alarms from the dashboard or Event Details as compact QR codes, PNG images, or portable alarm files for air-gapped transfer
+- Preserve chart endpoints, extrema, and gamma threshold crossings while adaptively downsampling gamma, neutron, and threshold data to fit reliable single-code QR capacity
+- Scan alarms with a camera or saved image, import portable files, verify transfer integrity, redraw charts, and download or share the received package
+- Add complete English, Spanish, French, and Greek interface and operator-manual coverage for alarm transfer
+
 ## 3.9.0 2026-09-23
 ## Changes
 - Add nested AND/OR alarm filtering on the dashboard and Events page

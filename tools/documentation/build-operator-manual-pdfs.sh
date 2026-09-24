@@ -2,6 +2,25 @@
 
 set -euo pipefail
 
+# Pandoc reads command-line metadata using the active process locale. A plain
+# C locale corrupts accented Latin and Greek characters passed in localized
+# titles even though the UTF-8 Markdown body remains intact. Select an
+# available UTF-8 locale so the generated title page and PDF text layer match.
+current_locale=${LC_ALL:-${LC_CTYPE:-${LANG:-}}}
+if [[ ! "$current_locale" =~ [Uu][Tt][Ff]-?8 ]]; then
+    for utf8_locale in C.UTF-8 C.utf8 en_US.UTF-8; do
+        if locale -a 2>/dev/null | grep -Fqix "$utf8_locale"; then
+            export LC_ALL=$utf8_locale
+            break
+        fi
+    done
+fi
+
+[[ ${LC_ALL:-${LC_CTYPE:-${LANG:-}}} =~ [Uu][Tt][Ff]-?8 ]] || {
+    echo "A UTF-8 locale is required to build the localized operator manuals." >&2
+    exit 1
+}
+
 usage() {
     echo "Usage: $0 <release-version> [output-directory]" >&2
     exit 2
