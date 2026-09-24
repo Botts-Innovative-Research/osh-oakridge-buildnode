@@ -9,6 +9,8 @@ cd "$repository_root"
 command -v node >/dev/null 2>&1 || { printf 'ERROR: Node.js is required to build OSCAR.\n' >&2; exit 1; }
 command -v npm >/dev/null 2>&1 || { printf 'ERROR: npm is required to build OSCAR.\n' >&2; exit 1; }
 
+node tools/validate-release-metadata.js
+
 (
     cd web/oscar-viewer
     npm ci

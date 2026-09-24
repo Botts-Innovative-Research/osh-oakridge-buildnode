@@ -65,6 +65,9 @@ jobs:
           fi
           echo "Release environment version check passed: $env_version"
 
+      - name: Check changelog and documentation versions match tag
+        run: node tools/validate-release-metadata.js "${{ steps.tag.outputs.version }}"
+
       - name: Check no pgdata in dist/release/postgis
         run: |
           if [ -d "dist/release/postgis/pgdata" ]; then
@@ -171,6 +174,38 @@ jobs:
       - name: Build connected release
         run: ./build-all.sh
 
+      - name: Validate packaged release documentation
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="${DIST_DIR}/oscar-${version}.zip"
+          listing="$RUNNER_TEMP/connected-release-files.txt"
+          unzip -Z1 "$archive" > "$listing"
+
+          for expected in \
+            documentation/QUICKSTART.md \
+            documentation/DEPLOYMENT.md \
+            documentation/OPERATIONAL_VIEWS.md \
+            documentation/STATUS_OF_HEALTH.md \
+            documentation/operator-manual/README.md \
+            documentation/operator-manual/README_es.md \
+            documentation/operator-manual/README_fr.md \
+            documentation/operator-manual/README_el.md \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-en.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-es.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-fr.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-el.pdf"
+          do
+            grep -Fq "/$expected" "$listing" || {
+              echo "::error::Connected release is missing $expected"
+              exit 1
+            }
+          done
+
+          if grep -Eq 'OSCAR_System_Documentation_Manual_3\.5\.md|Node Administration\.pdf' "$listing"; then
+            echo "::error::Connected release contains legacy pre-4.0 documentation"
+            exit 1
+          fi
+
       - name: Build Windows offline release artifacts
         shell: pwsh
         run: |
@@ -186,6 +221,7 @@ jobs:
           for profile in full images; do
             archive="build/offline/oscar-${version}-windows-x86_64-offline-${profile}.zip"
             checksum="${archive}.sha256"
+            listing="$RUNNER_TEMP/offline-${profile}-release-files.txt"
             test -s "$archive"
             test -s "$checksum"
             if [ "$(stat -c '%s' "$archive")" -ge 2147483648 ]; then
@@ -193,6 +229,32 @@ jobs:
               exit 1
             fi
             (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$checksum")")
+            unzip -Z1 "$archive" > "$listing"
+
+            for expected in \
+              documentation/QUICKSTART.md \
+              documentation/DEPLOYMENT.md \
+              documentation/OPERATIONAL_VIEWS.md \
+              documentation/STATUS_OF_HEALTH.md \
+              documentation/operator-manual/README.md \
+              documentation/operator-manual/README_es.md \
+              documentation/operator-manual/README_fr.md \
+              documentation/operator-manual/README_el.md \
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-en.pdf" \
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-es.pdf" \
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-fr.pdf" \
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-el.pdf"
+            do
+              grep -Fq "/$expected" "$listing" || {
+                echo "::error::Offline $profile bundle is missing $expected"
+                exit 1
+              }
+            done
+
+            if grep -Eq 'OSCAR_System_Documentation_Manual_3\.5\.md|Node Administration\.pdf' "$listing"; then
+              echo "::error::Offline $profile bundle contains legacy pre-4.0 documentation"
+              exit 1
+            fi
           done
 
       - name: Stage source archive

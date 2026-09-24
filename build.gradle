@@ -2,7 +2,7 @@ apply from: gradle.oshCoreDir + '/common.gradle'
 description = ''
 
 allprojects {
-    version = "3.9.0"
+    version = "4.0.0"
 }
 
 subprojects {
@@ -82,7 +82,53 @@ distributions{
                 from 'dist/rules'
             }
             into("osh-node-oscar/documentation") {
-                from 'dist/documentation'
+                // The files formerly copied from dist/documentation describe a
+                // pre-4.0 Admin UI and launch workflow. Package the maintained
+                // release and feature guides instead of relabeling legacy docs.
+                from('dist/release') {
+                    include 'QUICKSTART.md'
+                    include 'DEPLOYMENT.md'
+                }
+                from('docs') {
+                    include 'OPERATIONAL_VIEWS.md'
+                    include 'STATUS_OF_HEALTH.md'
+                    include 'TRANSLATION_SYSTEM.md'
+                }
+            }
+            into("osh-node-oscar/documentation/operator-manual") {
+                from('include/osh-oakridge-modules/services/sensorhub-service-oscar/src/main/resources/com/botts/impl/service/oscar/i18n') {
+                    include 'README.md'
+                    include 'README_es.md'
+                    include 'README_fr.md'
+                    include 'README_el.md'
+                }
+            }
+            // Keep operator documentation outside the application build
+            // context as well, so it remains available in offline bundles
+            // that intentionally remove osh-node-oscar after exporting images.
+            into("documentation") {
+                from('dist/release') {
+                    include 'QUICKSTART.md'
+                    include 'DEPLOYMENT.md'
+                }
+                from('docs') {
+                    include 'OPERATIONAL_VIEWS.md'
+                    include 'STATUS_OF_HEALTH.md'
+                    include 'TRANSLATION_SYSTEM.md'
+                }
+            }
+            into("documentation/operator-manual") {
+                from('include/osh-oakridge-modules/services/sensorhub-service-oscar/src/main/resources/com/botts/impl/service/oscar/i18n') {
+                    include 'README.md'
+                    include 'README_es.md'
+                    include 'README_fr.md'
+                    include 'README_el.md'
+                }
+                // The release workflow generates these before build-all.sh.
+                // Local builds without PDF tooling still receive Markdown.
+                from('build/documentation') {
+                    include "OSCAR-${project.version}-Administrator-Operator-Manual-*.pdf"
+                }
             }
             into("osh-node-oscar/web") {
                 from 'web/oscar-viewer/web'

@@ -142,7 +142,7 @@ Every reported privilege flag for `oscar_app` must be false. A host scan must sh
 
 ## Upgrade
 
-Back up the deployment first. Extract the new release over the existing deployment directory while preserving `.env`, `secrets/`, and `tls/`. Release archives do not contain those runtime files. Then run:
+Back up the deployment first. Extract the new release into a clean sibling directory; do not overlay it on the previous release because files removed by the new version would otherwise remain in the image build context. Copy only `.env`, `secrets/`, and `tls/` from the existing deployment into the clean release directory. Release archives do not contain those runtime files. Compose uses the fixed `oscar` project name, so running the upgrade from this clean directory still addresses the existing containers and named data volumes. Then run:
 
 ```powershell
 .\oscar.bat upgrade
@@ -153,6 +153,12 @@ sudo bash oscar.sh upgrade
 ```
 
 The command reads the target version from the new release, updates only `OSCAR_VERSION` in the preserved `.env`, validates Compose, prepares the versioned images, recreates changed services, waits for health checks, and retains the fixed `oscar_state` and `postgres_data` volumes. It never removes volumes. Confirm the result with `oscar.bat status` (Windows) or `sudo bash oscar.sh status` (Ubuntu).
+
+The OSCAR application libraries and exported Viewer are part of the `oscar:<version>` image. A restart does not rebuild that image. To test OSCAR 4.0.0 from a connected release artifact, prepare the clean release directory as described above and run `upgrade`; a fresh disposable environment can use `init`. Confirm that `docker compose images` reports `oscar:4.0.0` before accepting the test result.
+
+Release image tags are immutable once published. If developers rebuild 4.0.0 repeatedly before the release is published, explicitly build the intended tag before `upgrade`. On Ubuntu or macOS, use `OSCAR_VERSION=4.0.0 docker compose build oscar`; in PowerShell, set `$env:OSCAR_VERSION = '4.0.0'` before running `docker compose build oscar`. Building without the explicit override before `upgrade` can reuse the previous version from `.env` and produce the wrong tag. To force a connected rebuild or same-tag offline import instead, run `docker compose down` without `--volumes`, remove only the cached test image with `docker image rm oscar:4.0.0`, and then run `upgrade`. Never replace a published `oscar:4.0.0` image with different contents.
+
+The default configuration for a new installation is labeled `OSCAR 4.0.0`. An upgrade preserves `/var/lib/oscar/config.json`, including a customized deployment name, so the Admin UI may continue to display the prior or site-specific label. Do not overwrite that value merely to display a version number. Use `OSCAR_VERSION` in `.env` and `docker compose images` to verify the running release.
 
 On Windows, OSCAR grants the local `docker-users` group read-only access to the protected `secrets` and `tls` directories so Docker Desktop can mount them. This is required when setup is elevated with a different administrator account than the signed-in account running Docker Desktop. The group receives temporary write access only while `init` generates or imports the certificate.
 

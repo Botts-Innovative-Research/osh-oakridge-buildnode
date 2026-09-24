@@ -1,5 +1,25 @@
 # OSCAR Build Node Change Log
 All notable changes to this project will be documented in this file. 
+## 4.0.0 2026-09-24
+## Upgrade notes
+- This major release changes operator-facing navigation and adds operational-view URL scoping; train operators and validate workstation URLs before production rollout
+- Build or import the versioned `oscar:4.0.0` image and run `oscar upgrade`; `oscar restart` alone continues to use the previously installed image
+- The upgrade retains the existing `oscar_state` and `postgres_data` volumes and does not require a database reset
+## Changes
+- Add a localized Status of Health page showing every visible lane, RPM and camera connectivity, gamma high/low, neutron high, tamper, and configurable extended-occupancy faults
+- Publish a canonical lane occupancy-status stream so extended occupancy works consistently with Rapiscan, Aspect, and RS350 RPMs
+- Publish FFmpeg camera connection-state telemetry for live health monitoring
+- Apply event filters across the full database result set and add PostgreSQL indexes for OSCAR event-filter queries
+- Add URL-scoped operational views so one OSCAR deployment can present different lane groups to different workstations
+- Scope viewer subscriptions, statistics, reports, navigation, health monitoring, and alarm notifications to the active operational view
+- Add backward-compatible lane CSV import/export for operational-view assignments
+- Export alarms from the dashboard or Event Details as compact QR codes, PNG images, or portable alarm files for air-gapped transfer
+- Preserve chart endpoints, extrema, and gamma threshold crossings while adaptively downsampling gamma, neutron, and threshold data to fit reliable single-code QR capacity
+- Scan alarms with a camera or saved image, import portable files, verify transfer integrity, redraw charts, and download or share the received package
+- Add complete English, Spanish, French, and Greek interface and operator-manual coverage for alarm transfer
+- Package the maintained release guides and all four localized operator manuals in the connected ZIP while excluding legacy pre-4.0 manuals
+- Validate changelog, deployment, and localized manual version labels against the release tag
+
 ## 3.9.0 2026-09-23
 ## Changes
 - Add nested AND/OR alarm filtering on the dashboard and Events page
