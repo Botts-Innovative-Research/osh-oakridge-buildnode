@@ -44,6 +44,15 @@ if [ ! -f "${CONFIG_FILE}" ]; then
     sed -i "s|__INITIAL_ADMIN_PASSWORD__|${escaped_password}|" "${CONFIG_FILE}"
 fi
 
+# The image copy is deliberately read-only. Combined with the restrictive
+# umask, a plain cp seeds the state volume as 0400 even though this runtime
+# configuration is expected to be writable by its owner. Normalize new files
+# and repair existing affected volumes without granting group/world access.
+if ! chmod 0600 "${CONFIG_FILE}"; then
+    echo "ERROR: OSCAR configuration is not writable by the runtime user" >&2
+    exit 1
+fi
+
 if grep -q '__INITIAL_ADMIN_PASSWORD__' "${CONFIG_FILE}"; then
     echo "ERROR: OSCAR configuration still contains an unset administrator password" >&2
     exit 1

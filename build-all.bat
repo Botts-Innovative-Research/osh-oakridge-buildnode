@@ -11,6 +11,8 @@ where npm.cmd >nul 2>&1 || (
     exit /b 1
 )
 
+node tools\validate-release-metadata.js || exit /b 1
+
 pushd "web\oscar-viewer" || exit /b 1
 call npm ci || goto viewer_build_failed
 call npm run build || goto viewer_build_failed
