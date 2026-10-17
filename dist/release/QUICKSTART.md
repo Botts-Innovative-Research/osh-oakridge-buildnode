@@ -75,3 +75,5 @@ sudo bash oscar.sh logs --service oscar
 
 The default deployment uses HTTPS port `443`. Setup maps `oscar.local` on the OSCAR host. Other connecting workstations must resolve the selected hostname through DNS or their own hosts entry, and workstations must trust the selected certificate. See [DEPLOYMENT.md](DEPLOYMENT.md) for certificate import, DNS, log filtering, security verification, and upgrades.
 Entering the hostname without `https://` is supported on the default port; the gateway redirects port 80 to HTTPS.
+
+The release's `documentation` directory contains the current deployment guide, operational-view and Status of Health guides, and all four localized operator manuals. Official GitHub release artifacts also include the generated, version-labeled PDF manuals.

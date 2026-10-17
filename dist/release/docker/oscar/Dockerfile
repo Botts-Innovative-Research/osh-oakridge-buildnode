@@ -1,7 +1,11 @@
 FROM eclipse-temurin:21.0.10_7-jre-noble@sha256:420374e45e8e9dce3057e768c87a3e8ba58e815049511d8df95ca88a041ec82b
 
+ARG OSCAR_VERSION=local
 ARG OSCAR_UID=10001
 ARG OSCAR_GID=10001
+
+LABEL org.opencontainers.image.title="OSCAR" \
+      org.opencontainers.image.version="${OSCAR_VERSION}"
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl ca-certificates \
