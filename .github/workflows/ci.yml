@@ -1,0 +1,156 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+  NODE_VERSION: '22'
+
+jobs:
+  windows-storage-powershell:
+    name: Windows PowerShell 5.1 storage safety
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run PowerShell 5.1 parser, verifier, ACL, and durable-move tests
+        shell: powershell
+        run: .\tools\test-storage-powershell.ps1
+
+  postgres-restore-timeline:
+    name: PostgreSQL restore timeline and WAL proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run destructive disposable restore drill
+        run: ./tools/test-postgres-restore.sh
+
+  connected-release:
+    name: Connected release build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: zulu
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/oscar-viewer/package-lock.json
+
+      - name: Prove adopted Compose volumes are preserved
+        run: ./tools/test-compose-volume-preservation.sh
+
+      - name: Build and test the connected release
+        run: ./build-all.sh
+
+      - name: Prove DuckDB JNI loading with noexec general temporary storage
+        run: |
+          ./gradlew --no-parallel installRelDist
+          ./tools/test-duckdb-native-temp.sh
+
+      - name: Validate the packaged release
+        run: |
+          version=$(sed -n 's/^[[:space:]]*version = "\([^"]*\)"/\1/p' build.gradle | head -n1)
+          test -n "$version"
+          node tools/validate-packaged-release.js --expected-version="$version"
+
+  tiered-storage-postgres:
+    name: Complete tiered-storage PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgis:
+        image: postgis/postgis:16-3.5@sha256:19b6ffa248d2f864d29d6c338459f02d63c0d7ce341fa86b3bcba8484a130bff
+        env:
+          POSTGRES_DB: gis
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username=postgres --dbname=gis"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: zulu
+
+      - name: Run every direct disposable-storage integration test
+        env:
+          OSCAR_IT_ARCHIVE_DIR: ${{ runner.temp }}/oscar-tiered-storage-archive
+          OSCAR_IT_EXPECTED_ZONE: UTC
+          TZ: UTC
+        run: |
+          ./gradlew --no-parallel \
+            :sensorhub-datastore-postgis:test \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.completeHotColdLifecycleAgainstRealPostgres \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.tieredRemoveRevalidatesHalfOpenPredicateAgainstRealPostgres \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.tieredRemoveTombstonesArchivedRowsExactlyOnce \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.activationSerializesDirectPutIntoAnOverlay \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.activationSerializesDirectRemoveIntoATombstone \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.filteredColdRemoveSerializesAnOverlappingOverlayPut \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.coldFilteredRemoveCompletesWithOneObservationConnection \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.restartAllocatesAboveFullyColdCatalogMaximum \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.coldOpenBoundsPreserveLimitCountAndRemoval \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.lateRowsCreateANewRevisionOfTheAnchoredUtcHour \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.failedActivationRemovesPublishedAttemptObjects \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.rejectedNaturalKeyDoesNotPoisonTheBatchQueue \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.naturalKeyCorrectionOfArchivedRowUsesOverlayThroughHotDeletion \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.concurrentResultCorrectionRejectsStaleExportAndRetriesExactly \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.concurrentDeleteAndInsertCannotSubstituteForExportedIdentity \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.existingObservationTableReceivesNullSafeNaturalKeyIndex \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.naturalKeyLookupGenericPlanUsesNullSafeUniqueIndex \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.closeSurfacesFinalFlushFailureAndRetainsPendingObservation \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archivePayloadByteCapFailsBeforePublication \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.byteHeavyArchiveWindowSplitsAndActivatesBothPrefixes \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.denseHourUsesBoundedSameWindowRevisionsAndRecoversFailedJob \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.legacyFailedSubHourJobIsRetriedBeforeFullHourWork \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.emptyLegacyRetryIsSupersededWithoutStarvingLaterWork \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.productionMemoryBudgetArchivesObservedDenseHourAcrossRestart \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.sparseByteHeavyHourDoesNotSelectAnEmptyPrefix \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.staleJobRetryReplacesItsDeterministicCrashObjects \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archivePublicationRejectsSymlinkedPartitionPath \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archiveCatalogNamespacesIndependentObservationStores

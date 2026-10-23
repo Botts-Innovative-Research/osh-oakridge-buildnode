@@ -6,6 +6,7 @@ on:
       - 'v*'
 
 env:
+  RELEASE_VERSION: '3.9.2'
   JAVA_VERSION: '21'
   NODE_VERSION: '22'
   OSCAR_DIR: 'web/oscar-viewer'
@@ -38,6 +39,10 @@ jobs:
         run: |
           gradle_version=$(grep -oP 'version\s*=\s*"\K[^"]+' build.gradle)
           tag_version="${{ steps.tag.outputs.version }}"
+          if [ "$tag_version" != "$RELEASE_VERSION" ]; then
+            echo "::error::Release workflow is pinned to $RELEASE_VERSION, but received tag $tag_version"
+            exit 1
+          fi
           if [ "$gradle_version" != "$tag_version" ]; then
             echo "::error::build.gradle version ($gradle_version) does not match tag version ($tag_version)"
             exit 1
@@ -65,6 +70,9 @@ jobs:
           fi
           echo "Release environment version check passed: $env_version"
 
+      - name: Check changelog and documentation versions match tag
+        run: node tools/validate-release-metadata.js "${{ steps.tag.outputs.version }}"
+
       - name: Check no pgdata in dist/release/postgis
         run: |
           if [ -d "dist/release/postgis/pgdata" ]; then
@@ -73,9 +81,127 @@ jobs:
           fi
           echo "No pgdata directory found — check passed"
 
+      - name: Prove adopted Compose volumes are preserved
+        run: ./tools/test-compose-volume-preservation.sh
+
+  tiered-storage-postgres:
+    name: Tiered Storage / PostgreSQL
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgis:
+        # Keep the release gate on the exact base image shipped by the release.
+        image: postgis/postgis:16-3.5@sha256:19b6ffa248d2f864d29d6c338459f02d63c0d7ce341fa86b3bcba8484a130bff
+        env:
+          POSTGRES_DB: gis
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username=postgres --dbname=gis"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'zulu'
+
+      - name: Gate tiered storage against disposable PostgreSQL
+        env:
+          OSCAR_IT_ARCHIVE_DIR: ${{ runner.temp }}/oscar-tiered-storage-archive
+          OSCAR_IT_EXPECTED_ZONE: UTC
+          TZ: UTC
+        run: |
+          ./gradlew --no-parallel \
+            :sensorhub-datastore-postgis:test \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.completeHotColdLifecycleAgainstRealPostgres \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.tieredRemoveRevalidatesHalfOpenPredicateAgainstRealPostgres \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.tieredRemoveTombstonesArchivedRowsExactlyOnce \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.activationSerializesDirectPutIntoAnOverlay \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.activationSerializesDirectRemoveIntoATombstone \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.filteredColdRemoveSerializesAnOverlappingOverlayPut \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.coldFilteredRemoveCompletesWithOneObservationConnection \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.restartAllocatesAboveFullyColdCatalogMaximum \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.coldOpenBoundsPreserveLimitCountAndRemoval \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.lateRowsCreateANewRevisionOfTheAnchoredUtcHour \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.failedActivationRemovesPublishedAttemptObjects \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.rejectedNaturalKeyDoesNotPoisonTheBatchQueue \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.naturalKeyCorrectionOfArchivedRowUsesOverlayThroughHotDeletion \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.concurrentResultCorrectionRejectsStaleExportAndRetriesExactly \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.concurrentDeleteAndInsertCannotSubstituteForExportedIdentity \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.existingObservationTableReceivesNullSafeNaturalKeyIndex \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.naturalKeyLookupGenericPlanUsesNullSafeUniqueIndex \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.closeSurfacesFinalFlushFailureAndRetainsPendingObservation \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archiveCatalogNamespacesIndependentObservationStores \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.byteHeavyArchiveWindowSplitsAndActivatesBothPrefixes \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.denseHourUsesBoundedSameWindowRevisionsAndRecoversFailedJob \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.legacyFailedSubHourJobIsRetriedBeforeFullHourWork \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.emptyLegacyRetryIsSupersededWithoutStarvingLaterWork \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.productionMemoryBudgetArchivesObservedDenseHourAcrossRestart \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.sparseByteHeavyHourDoesNotSelectAnEmptyPrefix \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archivePayloadByteCapFailsBeforePublication \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.staleJobRetryReplacesItsDeterministicCrashObjects \
+            --tests org.sensorhub.impl.datastore.postgis.TestDisposableTieredPostgresIntegration.archivePublicationRejectsSymlinkedPartitionPath
+
+  windows-powershell-5-1:
+    name: Windows PowerShell 5.1
+    needs: validate
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Gate release scripts on Windows PowerShell 5.1
+        shell: powershell
+        run: .\tools\test-storage-powershell.ps1
+
+  postgres-restore-timeline:
+    name: PostgreSQL restore timeline and WAL proof
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Run destructive disposable restore drill
+        run: ./tools/test-postgres-restore.sh
+
+  platform-acceptance:
+    name: Manual Platform Acceptance
+    needs:
+      - tiered-storage-postgres
+      - windows-powershell-5-1
+      - postgres-restore-timeline
+    runs-on: ubuntu-latest
+    environment: oscar-release-acceptance
+    steps:
+      - name: Record protected-environment approval
+        run: |
+          echo "The release-acceptance reviewer confirms that the OSCAR ${RELEASE_VERSION} checklist in README.md is recorded."
+          echo "Required automated release gates have completed in this workflow."
+          echo "It includes Windows 11 Docker Desktop/WSL 2, Ubuntu 24.04, backup/restore, archive export/purge, retained-media, offline-full/offline-images, and macOS fail-closed results."
+
   build:
     name: Build Release
-    needs: validate
+    needs: platform-acceptance
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -171,6 +297,63 @@ jobs:
       - name: Build connected release
         run: ./build-all.sh
 
+      - name: Validate packaged release documentation
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="${DIST_DIR}/oscar-${version}.zip"
+          listing="$RUNNER_TEMP/connected-release-files.txt"
+          unzip -Z1 "$archive" > "$listing"
+
+          for expected in \
+            documentation/QUICKSTART.md \
+            documentation/DEPLOYMENT.md \
+            documentation/LIVE_VIDEO.md \
+            documentation/OPERATIONAL_VIEWS.md \
+            documentation/STATUS_OF_HEALTH.md \
+            documentation/TRANSLATION_SYSTEM.md \
+            documentation/STORAGE_ARCHITECTURE.md \
+            documentation/DATA_LIFECYCLE.md \
+            documentation/ARCHIVE_FORMAT.md \
+            documentation/BACKUP_RESTORE.md \
+            documentation/STORAGE_OPERATIONS.md \
+            documentation/daily-file-journal-v1.md \
+            documentation/retained-media-v1.md \
+            oscar-storage.sh \
+            oscar-storage.ps1 \
+            validate-storage-archive.sh \
+            docker/oscar/archive-object-helper.sh \
+            docker/oscar/atomic-publish.c \
+            postgis/archive-wal.sh \
+            postgis/merge-wal-restore.sh \
+            postgis/prepare-restore.sh \
+            documentation/operator-manual/README.md \
+            documentation/operator-manual/README_es.md \
+            documentation/operator-manual/README_fr.md \
+            documentation/operator-manual/README_el.md \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-en.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-es.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-fr.pdf" \
+            "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-el.pdf"
+          do
+            grep -Fq "/$expected" "$listing" || {
+              echo "::error::Connected release is missing $expected"
+              exit 1
+            }
+          done
+
+          if grep -Eq 'OSCAR_System_Documentation_Manual_3\.5\.md|Node Administration\.pdf' "$listing"; then
+            echo "::error::Connected release contains obsolete legacy documentation"
+            exit 1
+          fi
+
+          expanded="$RUNNER_TEMP/connected-release-expanded"
+          rm -rf "$expanded"
+          mkdir -p "$expanded"
+          unzip -q "$archive" -d "$expanded"
+          package_root="$(dirname "$(find "$expanded" -type f -name compose.yaml -print -quit)")"
+          test -n "$package_root"
+          node tools/validate-packaged-release.js --expected-version="$RELEASE_VERSION" "$package_root"
+
       - name: Build Windows offline release artifacts
         shell: pwsh
         run: |
@@ -182,17 +365,232 @@ jobs:
       - name: Validate offline release artifacts
         shell: bash
         run: |
+          set -Eeuo pipefail
+
           version="${GITHUB_REF_NAME#v}"
+          component_manifest="tools/offline/components.windows-x86_64.json"
+
+          fail() {
+            echo "::error::$*"
+            exit 1
+          }
+
+          [ "$version" = "$RELEASE_VERSION" ] || fail "Offline artifacts must be OSCAR $RELEASE_VERSION, received $version"
+
           for profile in full images; do
-            archive="build/offline/oscar-${version}-windows-x86_64-offline-${profile}.zip"
+            archive_root="oscar-${version}-windows-x86_64-offline-${profile}"
+            archive="build/offline/${archive_root}.zip"
             checksum="${archive}.sha256"
-            test -s "$archive"
-            test -s "$checksum"
+            listing="$RUNNER_TEMP/offline-${profile}-release-files.txt"
+            expanded="$RUNNER_TEMP/offline-${profile}-release-expanded"
+            package_root="${expanded}/${archive_root}"
+            actual_manifest_entries="$RUNNER_TEMP/offline-${profile}-actual-manifest-entries.txt"
+            declared_manifest_entries="$RUNNER_TEMP/offline-${profile}-declared-manifest-entries.txt"
+
+            test -s "$archive" || fail "Offline $profile archive is missing or empty: $archive"
+            test -s "$checksum" || fail "Offline $profile archive checksum is missing or empty: $checksum"
             if [ "$(stat -c '%s' "$archive")" -ge 2147483648 ]; then
-              echo "::error::Release asset exceeds GitHub's 2 GiB per-file limit: $archive"
-              exit 1
+              fail "Release asset exceeds GitHub's 2 GiB per-file limit: $archive"
             fi
-            (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$checksum")")
+
+            mapfile -t checksum_lines < "$checksum"
+            [ "${#checksum_lines[@]}" -eq 1 ] || fail "Offline $profile archive checksum must contain exactly one entry"
+            recorded_hash="${checksum_lines[0]%% *}"
+            recorded_name="${checksum_lines[0]#* }"
+            if [[ ! "$recorded_hash" =~ ^[0-9a-f]{64}$ ]] || [ "$recorded_name" != "*$(basename "$archive")" ]; then
+              fail "Offline $profile archive checksum has an invalid digest or filename"
+            fi
+            (cd "$(dirname "$archive")" && sha256sum --check --strict "$(basename "$checksum")")
+
+            unzip -Z1 "$archive" > "$listing"
+            test -s "$listing" || fail "Offline $profile archive has no entries"
+            grep -Fxq "${archive_root}/" "$listing" || fail "Offline $profile archive is missing its expected root directory"
+            while IFS= read -r entry; do
+              case "$entry" in
+                "${archive_root}/"*) ;;
+                *) fail "Offline $profile archive has an entry outside ${archive_root}/: $entry" ;;
+              esac
+              relative="${entry#"${archive_root}/"}"
+              [ -z "$relative" ] && continue
+              if [[ "$relative" == /* || "$relative" == *\\* || "$relative" == *//* || "/${relative%/}/" == *"/../"* || "/${relative%/}/" == *"/./"* ]]; then
+                fail "Offline $profile archive has an unsafe entry: $entry"
+              fi
+            done < "$listing"
+
+            required_files=(
+              .dockerignore
+              .env.example
+              BUNDLE-INFO.txt
+              DEPLOYMENT.md
+              QUICKSTART.md
+              SHA256SUMS
+              compose.yaml
+              offline-images.tar
+              oscar-setup.ps1
+              oscar-setup.sh
+              oscar-storage.ps1
+              oscar-storage.sh
+              oscar.bat
+              oscar.sh
+              validate-storage-archive.sh
+              verify-bundle.ps1
+              verify-bundle.sh
+              documentation/QUICKSTART.md
+              documentation/DEPLOYMENT.md
+              documentation/LIVE_VIDEO.md
+              documentation/OPERATIONAL_VIEWS.md
+              documentation/STATUS_OF_HEALTH.md
+              documentation/TRANSLATION_SYSTEM.md
+              documentation/STORAGE_ARCHITECTURE.md
+              documentation/DATA_LIFECYCLE.md
+              documentation/ARCHIVE_FORMAT.md
+              documentation/BACKUP_RESTORE.md
+              documentation/STORAGE_OPERATIONS.md
+              documentation/daily-file-journal-v1.md
+              documentation/retained-media-v1.md
+              documentation/operator-manual/README.md
+              documentation/operator-manual/README_es.md
+              documentation/operator-manual/README_fr.md
+              documentation/operator-manual/README_el.md
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-en.pdf"
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-es.pdf"
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-fr.pdf"
+              "documentation/operator-manual/OSCAR-${version}-Administrator-Operator-Manual-el.pdf"
+              docker/gateway/default.conf
+              docker/oscar/archive-object-helper.sh
+              docker/oscar/atomic-publish.c
+              docker/oscar/Dockerfile
+              docker/oscar/entrypoint.sh
+              postgis/Dockerfile
+              postgis/archive-wal.sh
+              postgis/merge-wal-restore.sh
+              postgis/prepare-restore.sh
+              postgis/init-app-role.sh
+              postgis/init-extensions.sql
+            )
+            for expected in "${required_files[@]}"; do
+              [ "$(grep -Fxc "${archive_root}/${expected}" "$listing")" -eq 1 ] || fail "Offline $profile bundle must contain exactly one $expected at its package root"
+            done
+
+            if grep -Eq 'OSCAR_System_Documentation_Manual_3\.5\.md|Node Administration\.pdf' "$listing"; then
+              fail "Offline $profile bundle contains obsolete legacy documentation"
+            fi
+
+            rm -rf "$expanded"
+            mkdir -p "$expanded"
+            unzip -q "$archive" -d "$expanded"
+            [ "$(find "$expanded" -mindepth 1 -maxdepth 1 -print | wc -l)" -eq 1 ] || fail "Offline $profile archive must expand to exactly one top-level entry"
+            [ -d "$package_root" ] || fail "Offline $profile package root is not a directory: $package_root"
+            if find "$expanded" -type l -print -quit | grep -q .; then
+              fail "Offline $profile archive contains a symbolic link"
+            fi
+
+            expected_top_level="$RUNNER_TEMP/offline-${profile}-expected-top-level.txt"
+            actual_top_level="$RUNNER_TEMP/offline-${profile}-actual-top-level.txt"
+            {
+              printf '%s\n' \
+                .dockerignore \
+                .env.example \
+                BUNDLE-INFO.txt \
+                DEPLOYMENT.md \
+                QUICKSTART.md \
+                SHA256SUMS \
+                compose.yaml \
+                docker \
+                documentation \
+                offline-images.tar \
+                oscar-setup.ps1 \
+                oscar-setup.sh \
+                oscar-storage.ps1 \
+                oscar-storage.sh \
+                oscar.bat \
+                oscar.sh \
+                postgis \
+                validate-storage-archive.sh \
+                verify-bundle.ps1 \
+                verify-bundle.sh
+              if [ "$profile" = full ]; then
+                printf '%s\n' installers
+              fi
+            } | LC_ALL=C sort > "$expected_top_level"
+            find "$package_root" -mindepth 1 -maxdepth 1 -printf '%f\n' | LC_ALL=C sort > "$actual_top_level"
+            diff -u "$expected_top_level" "$actual_top_level" || fail "Offline $profile bundle has an unexpected top-level package structure"
+
+            for expected in "${required_files[@]}"; do
+              [ -s "$package_root/$expected" ] || fail "Offline $profile bundle has a missing or empty core file: $expected"
+            done
+            for expected_directory in docker documentation postgis; do
+              [ -d "$package_root/$expected_directory" ] || fail "Offline $profile bundle is missing directory: $expected_directory"
+            done
+            [ ! -e "$package_root/osh-node-oscar" ] || fail "Offline $profile bundle unexpectedly retained osh-node-oscar"
+
+            expected_bundle_profile="ImagesOnly"
+            if [ "$profile" = full ]; then
+              expected_bundle_profile="Full"
+            fi
+            grep -Fxq "Version: $version" "$package_root/BUNDLE-INFO.txt" || fail "Offline $profile bundle metadata has the wrong version"
+            grep -Fxq "Profile: $expected_bundle_profile" "$package_root/BUNDLE-INFO.txt" || fail "Offline $profile bundle metadata has the wrong profile"
+
+            image_manifest="$RUNNER_TEMP/offline-${profile}-docker-manifest.json"
+            tar -xOf "$package_root/offline-images.tar" manifest.json > "$image_manifest" || fail "Offline $profile image payload is not a readable Docker archive"
+            test -s "$image_manifest" || fail "Offline $profile Docker archive has an empty manifest"
+            node -e '
+              const fs = require("node:fs");
+              const [file, version] = process.argv.slice(1);
+              const entries = JSON.parse(fs.readFileSync(file, "utf8"));
+              const actual = [...new Set(entries.flatMap(entry => entry.RepoTags ?? []))].sort();
+              const expected = [
+                `oscar:${version}`,
+                `oscar-postgis:${version}`,
+                "nginxinc/nginx-unprivileged:1.28.1-alpine",
+              ].sort();
+              if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                throw new Error(`expected image tags ${expected.join(", ")}; received ${actual.join(", ")}`);
+              }
+            ' "$image_manifest" "$version" || fail "Offline $profile Docker archive contains the wrong image tags"
+
+            if [ "$profile" = full ]; then
+              bundled_manifest="$package_root/installers/components.windows-x86_64.json"
+              [ -s "$package_root/installers/README.md" ] || fail "Offline full bundle is missing the installer README"
+              [ -s "$bundled_manifest" ] || fail "Offline full bundle is missing the installer component manifest"
+              cmp -s "$component_manifest" "$bundled_manifest" || fail "Offline full bundle installer manifest differs from the pinned source manifest"
+
+              expected_installer_files="$RUNNER_TEMP/offline-full-expected-installer-files.txt"
+              actual_installer_files="$RUNNER_TEMP/offline-full-actual-installer-files.txt"
+              {
+                printf '%s\n' \
+                  installers/README.md \
+                  installers/components.windows-x86_64.json
+                node -e 'const manifest = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); for (const component of manifest.components) console.log(component.file);' "$component_manifest"
+              } | LC_ALL=C sort > "$expected_installer_files"
+              find "$package_root/installers" -type f -printf 'installers/%P\n' | LC_ALL=C sort > "$actual_installer_files"
+              diff -u "$expected_installer_files" "$actual_installer_files" || fail "Offline full bundle installer payload set differs from its manifest"
+
+              while IFS=$'\t' read -r component_file component_hash; do
+                [ -n "$component_file" ] || fail "Offline installer manifest contains an empty component path"
+                component_path="$package_root/$component_file"
+                [ -s "$component_path" ] || fail "Offline full bundle is missing installer payload: $component_file"
+                [ "$(sha256sum "$component_path" | awk '{print $1}')" = "$component_hash" ] || fail "Offline full bundle installer checksum failed: $component_file"
+              done < <(node -e 'const manifest = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); for (const component of manifest.components) console.log(`${component.file}\t${component.sha256}`);' "$component_manifest")
+            else
+              [ ! -e "$package_root/installers" ] || fail "Offline images-only bundle must not contain installers"
+              if grep -Fq "${archive_root}/installers/" "$listing"; then
+                fail "Offline images-only archive contains an installer entry"
+              fi
+            fi
+
+            node tools/validate-packaged-release.js --offline --expected-version="$RELEASE_VERSION" "$package_root"
+
+            (
+              cd "$package_root"
+              find . -type f ! -path './SHA256SUMS' -printf '%P\n' | LC_ALL=C sort > "$actual_manifest_entries"
+              sed -nE 's/^[0-9a-f]{64} \*(.+)$/\1/p' SHA256SUMS | LC_ALL=C sort > "$declared_manifest_entries"
+            )
+            diff -u "$actual_manifest_entries" "$declared_manifest_entries" || fail "Offline $profile SHA256SUMS does not cover the package exactly"
+            bash "$package_root/verify-bundle.sh"
+            [ -s "$package_root/.bundle-verified" ] || fail "Offline $profile bundled verifier did not create its verification receipt"
+
+            rm -rf "$expanded"
           done
 
       - name: Stage source archive

@@ -78,7 +78,7 @@ function New-ZipArchive([string]$SourceDirectory, [string]$ArchivePath) {
 
 function Write-BundleChecksums([string]$StagingPath) {
     $checksumPath = Join-Path $StagingPath 'SHA256SUMS'
-    $checksumLines = Get-ChildItem -LiteralPath $StagingPath -Recurse -File |
+    $checksumLines = Get-ChildItem -LiteralPath $StagingPath -Recurse -File -Force |
         Where-Object { $_.FullName -ne $checksumPath -and $_.Name -ne '.bundle-verified' } |
         Sort-Object FullName |
         ForEach-Object {
@@ -121,21 +121,18 @@ New-Item -ItemType Directory -Force -Path $imageCacheDirectory | Out-Null
 if (-not $SkipImageExport) {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw 'Docker is required to build the offline image archive.' }
     $previousVersion = $env:OSCAR_VERSION
-    $previousPostgisVersion = $env:OSCAR_POSTGIS_VERSION
     $previousPostgisPlatform = $env:OSCAR_POSTGIS_PLATFORM
     try {
         $env:OSCAR_VERSION = $version
-        $env:OSCAR_POSTGIS_VERSION = '16-3.5'
         $env:OSCAR_POSTGIS_PLATFORM = 'linux/amd64'
         Write-Host 'Building release application and PostGIS images...' -ForegroundColor Cyan
         Invoke-Checked 'docker' @('compose', '-f', (Join-Path $expandedRelease 'compose.yaml'), 'build', 'oscar', 'postgres') $expandedRelease
         Write-Host 'Fetching the pinned gateway image...' -ForegroundColor Cyan
         Invoke-Checked 'docker' @('pull', '--platform', 'linux/amd64', 'nginxinc/nginx-unprivileged:1.28.1-alpine')
         Write-Host 'Exporting container images for registry-free installation...' -ForegroundColor Cyan
-        Invoke-Checked 'docker' @('save', '--output', $archivePath, "oscar:$version", 'oscar-postgis:16-3.5', 'nginxinc/nginx-unprivileged:1.28.1-alpine')
+        Invoke-Checked 'docker' @('save', '--output', $archivePath, "oscar:$version", "oscar-postgis:$version", 'nginxinc/nginx-unprivileged:1.28.1-alpine')
     } finally {
         $env:OSCAR_VERSION = $previousVersion
-        $env:OSCAR_POSTGIS_VERSION = $previousPostgisVersion
         $env:OSCAR_POSTGIS_PLATFORM = $previousPostgisPlatform
     }
 } elseif (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) {
@@ -214,7 +211,7 @@ Platform: Windows 11 x86-64
 Profile: $profile
 Contents: $bundleDescription
 Generated UTC: $([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))
-Images: oscar:$version, oscar-postgis:16-3.5, nginxinc/nginx-unprivileged:1.28.1-alpine
+Images: oscar:$version, oscar-postgis:$version, nginxinc/nginx-unprivileged:1.28.1-alpine
 
 Copy this entire directory to a local NTFS folder on the target Windows host.
 Run .\verify-bundle.ps1, then run .\oscar.bat init. The images-only profile
