@@ -35,7 +35,7 @@ build-all.bat
 ./build-all.sh
 ```
 
-Both scripts use the locked Node.js dependency set, build the OSCAR viewer, compile the Java modules, and create:
+Both scripts use the locked Node.js dependency set, reject any npm advisory before building the OSCAR Viewer, compile the Java modules, and create:
 
 ```text
 build/distributions/oscar-<version>.zip
@@ -43,9 +43,25 @@ build/distributions/oscar-<version>.zip
 
 Hardware-dependent tests remain outside these packaging scripts and must be run in an appropriately equipped test environment.
 
+### Test a source-built release
+
+The Viewer bundle and Java modules are copied into the versioned `oscar` container image. Building the ZIP does not update a running deployment, and `oscar restart` deliberately reuses the existing image.
+
+For a full-system test, extract the newly built release into a clean directory and use `oscar init` for a disposable new deployment. To upgrade an existing test deployment, back it up and restore only its `.env`, `secrets/`, and `tls/` into the clean release directory before running `oscar upgrade`; do not overlay the ZIP on the old release-managed files. Compose uses the fixed `oscar` project name, so the upgrade retains the existing `oscar_state` and `postgres_data` volumes while preparing the image named by `OSCAR_VERSION` and recreating the changed services. OSCAR 3.9.1 therefore runs as `oscar:3.9.1`.
+
+Do not reuse a published version number for different production images. During connected pre-release iteration under the same version, explicitly rebuild the intended tag before `upgrade`: on Ubuntu or macOS, use `OSCAR_VERSION=3.9.1 docker compose build oscar`; in PowerShell, set `$env:OSCAR_VERSION = '3.9.1'` before running `docker compose build oscar`. Building without the explicit override before `upgrade` can reuse the previous version from `.env` and produce the wrong tag. If an image must be removed instead, first run `docker compose down` without `--volumes`, then run `docker image rm oscar:3.9.1`; a running or stopped Compose container can otherwise keep the image referenced.
+
+Viewer builds require Node.js 22.12 or newer on a supported even-numbered release line (22, 24, or 26). For isolated Viewer development, `cd web/oscar-viewer`, run `npm ci`, `npm run audit:dependencies`, and then `npm run dev`. This is useful for UI iteration against reachable OSCAR nodes, but it does not validate the packaged Viewer, FFmpeg camera telemetry, PostgreSQL filtering, container configuration, or the upgrade path. Use the release ZIP for final system testing.
+
 ## Developer documentation
 
 The [translation system guide](docs/TRANSLATION_SYSTEM.md) documents language selection and persistence, admin and viewer resource lookup, sensor and Lane System form metadata, localized README help, and the complete procedure and validation checklist for adding or restoring a supported language.
+
+The [operational views guide](docs/OPERATIONAL_VIEWS.md) explains how to assign lanes to workstation views, use view-specific URLs, and import or export assignments in lane spreadsheets.
+
+The [Status of Health guide](docs/STATUS_OF_HEALTH.md) documents lane-level RPM and camera connectivity, detector and tamper faults, extended occupancy, operational-view scoping, and the acceptance checklist.
+
+The [live-video guide](docs/LIVE_VIDEO.md) documents keyframe requirements, the Viewer's preparing and recovery states, emulator expectations, troubleshooting, and end-to-end playback acceptance tests.
 
 ## Build Windows offline media
 
@@ -68,10 +84,11 @@ The offline deployment CLI performs no downloads.
 Before tagging a release:
 
 1. Run `node tools/update-version.js <version>` to update `build.gradle`, the deployment name in `dist/config/standard/config.json`, and `OSCAR_VERSION` in `dist/release/.env.example`.
-2. Confirm `dist/release/postgis/pgdata` does not exist.
-3. Run the appropriate canonical build script.
-4. Run hardware and platform validation in their designated environments.
+2. Update the parent and Viewer changelog headings plus the localized operator-manual titles and wrapper.
+3. Run `node tools/validate-release-metadata.js <version>` and confirm `dist/release/postgis/pgdata` does not exist.
+4. Run the appropriate canonical build script.
+5. Run hardware and platform validation in their designated environments.
 
-Tags matching `v*` trigger the release workflow. The workflow validates the tag and version metadata, invokes `build-all.sh`, and publishes the connected release ZIP and source archive.
+Tags matching `v*` trigger the release workflow. The workflow validates the tag and version metadata, invokes `build-all.sh`, and publishes the connected release ZIP, localized operator-manual PDFs, and source archive. The connected ZIP also contains the current Markdown guides and localized manuals; obsolete legacy manuals are excluded.
 
 Offline Windows media is built and validated separately because it contains platform-specific installers and container images.

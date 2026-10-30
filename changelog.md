@@ -7,15 +7,45 @@ All notable changes to this project will be documented in this file.
 - Add individual detector charting to historical events
 - Fix Rapiscan neutron chart not showing first point in occupancy
 
-## 3.10.0 2026-10-25
+## 3.9.1
+## Upgrade notes
+- This release changes operator-facing navigation and adds operational-view URL scoping; train operators and validate workstation URLs before production rollout
+- Build or import the versioned `oscar:3.9.1` image and run `oscar upgrade`; `oscar restart` alone continues to use the previously installed image
+- The upgrade retains the existing `oscar_state` and `postgres_data` volumes and does not require a database reset
 ## Changes
-- Add custom disposition codes configurable in admin page
-- Sort alarms by priority: Gamma-Neutron > Neutron > Gamma
-- Update daily file format to use expected format with UTC and local timestamps
-- Set camera reconnect attempts to infinite (-1 in config)
-- Add ability to share links to specific occupancies, referencing the occupancy's observation ID
-- Add daily file output to historical occupancies and live lane view
-- Add ability to chart individual detectors instead of the sum in live lane view
+- Add exact Event UUID lookup from the Events page and durable, node-qualified Event Details links that retain operational-view scope and fail closed for inaccessible lanes
+- Show the canonical occupancy observation identifier in Event Details and browser-generated PDFs, and include/display it in compact QR and portable alarm transfers while retaining legacy version-1 import compatibility
+- Add a localized Status of Health page showing every visible lane, RPM and camera connectivity, gamma high/low, neutron high, tamper, and configurable extended-occupancy faults
+- Add compact dashboard lane indicators for independent RPM and camera connectivity plus gamma high/low, neutron high, tamper, and extended-occupancy state, reusing the bounded health snapshot without adding per-lane health feeds
+- Publish a canonical lane occupancy-status stream so extended occupancy works consistently with Rapiscan, Aspect, and RS350 RPMs
+- Publish FFmpeg camera connection-state telemetry on lifecycle transitions and every 30 seconds, keeping healthy camera state current through hourly database cleanup while allowing a stopped publisher's stale value to age out
+- Produce valid FFmpeg MP4/HLS recordings from H.264 cameras by requiring discovered video dimensions and preserving packet PTS, DTS, duration, stream index, and time base during remuxing
+- Make FFmpeg transcoder queues thread-safe and blocking, preserve native packet ownership and delayed-output flushing, surface worker failures, and prevent overlapping pipeline generations during stop, restart, or reinitialization
+- Keep MP4 packet delivery ordered with recording close so healthy occupancy clips cannot finalize before queued video packets are written
+- Reject and remove incomplete video recordings instead of retaining zero-byte or unfinalized clips, with live-camera recording/HLS coverage plus reconnect and failure-cleanup regression tests
+- Start live HLS output on the first decodable H.264 keyframe and withhold unavailable playlists instead of serving an empty manifest or a segment that begins mid-GOP
+- Treat rapid lane switches before the first HLS keyframe as successful cancellations while preventing queued packets from leaking into a restart and preserving real write or cleanup failures
+- Show localized live-video preparation, terminal failure, and retry states in the Viewer, with bounded recovery for transient playlist, network, and media errors
+- Document a one-to-two-second camera keyframe interval and provide a one-second closed-GOP preparation path for the 50-camera emulator while retaining low-CPU stream-copy publishing
+- Make video-retention compaction fail-safe by validating a decoded frame and durably replacing the original only after the compacted clip is complete, while preserving the source clip on every failure path
+- Refresh Status of Health in globally limited batches of at most 50 streams on entry and every 30 seconds, with 10-second request deadlines, replacing per-stream real-time MQTT feeds while avoiding oversized requests, recovering from stalled nodes, and bounding CPU and server load at large sites
+- Resolve each eligible batched latest-health read with one indexed PostgreSQL lookup per stream so query cost does not grow with retained observation history
+- Keep Rapiscan tamper status Unknown until an explicit `TT` or `TC` transition is observed; an online RPM connection is not treated as proof of tamper clear
+- Apply event filters across the full database result set and add PostgreSQL indexes for OSCAR event-filter queries
+- Add URL-scoped operational views so one OSCAR deployment can present different lane groups to different workstations
+- Scope viewer subscriptions, statistics, reports, navigation, health monitoring, and alarm notifications to the active operational view
+- Add backward-compatible lane CSV import/export for operational-view assignments
+- Export alarms from the dashboard or Event Details as compact QR codes, PNG images, or portable alarm files for air-gapped transfer
+- Preserve chart endpoints, extrema, and gamma threshold crossings while adaptively downsampling gamma, neutron, and threshold data to fit reliable single-code QR capacity
+- Scan alarms with a camera or saved image, import portable files, verify transfer integrity, redraw charts, and download or share the received package
+- Add complete English, Spanish, French, and Greek interface and operator-manual coverage for alarm transfer
+- Package the maintained release guides and all four localized operator manuals in the connected ZIP while excluding obsolete legacy manuals
+- Validate changelog, deployment, and localized manual version labels against the release tag
+- Migrate the Viewer to Next.js 16, React 19, Cypress 16, and Vite 8; remove obsolete vulnerable tooling, eliminate all known npm audit advisories and deprecated locked packages, and enforce both checks in release builds
+- Update the Bnd and Java build configuration so Gradle 8.5 emits no Gradle feature deprecations and remains compatible with the Gradle 9 migration path
+- Normalize the persisted SensorHub configuration to owner-only writable permissions (`0600`), repairing overly restrictive copies created by earlier releases
+- Document that CSV imports remain in memory until the global Save action completes and require restart verification before acceptance
+- Stamp and validate the OSCAR semantic version in the container image's OCI metadata instead of inheriting the base operating-system version label
 
 ## 3.9.0 2026-09-23
 ## Changes

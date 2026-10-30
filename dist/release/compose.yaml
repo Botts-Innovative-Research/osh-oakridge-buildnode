@@ -37,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: docker/oscar/Dockerfile
+      args:
+        OSCAR_VERSION: "${OSCAR_VERSION:-local}"
     image: "oscar:${OSCAR_VERSION:-local}"
     restart: unless-stopped
     init: true
