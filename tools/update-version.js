@@ -39,6 +39,11 @@ const updates = [
         pattern: /(^OSCAR_VERSION=).*$/m,
         replacement: `$1${version}`,
     },
+    {
+        file: '.github/workflows/release.yml',
+        pattern: /(^\s*RELEASE_VERSION:\s*')[^']+('\s*$)/m,
+        replacement: `$1${version}$2`,
+    },
 ];
 
 const preparedUpdates = updates.map((update) => {

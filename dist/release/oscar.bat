@@ -41,6 +41,7 @@ echo.
 echo Enter a command and any options. Examples:
 echo   init
 echo   init -Hostname oscar.local -Port 443
+echo   init -Hostname oscar.local -TlsSan oscar-site.example.org
 echo   start
 echo   stop
 echo   restart
@@ -48,8 +49,20 @@ echo   status
 echo   logs -Service oscar -Tail 200
 echo   logs -Service postgres -Follow
 echo   check
+echo   host-check
+echo   prepare-host
 echo   verify
 echo   upgrade
+echo   backup
+echo   backup-verify -BackupId BACKUP_ID
+echo   restore -BackupId BACKUP_ID -Confirm BACKUP_ID
+echo   archive status
+echo   archive verify
+echo   archive hold list
+echo   archive hold create -StoreKey KEY -IdScope INT -Generation UUID -Reason "legal hold"
+echo   archive hold release -HoldId UUID
+echo   archive dry-run -StoreKey KEY -IdScope INT -Before 2026-01-01T00:00:00Z
+echo   archive purge -StoreKey KEY -IdScope INT -Plan UUID -Token TOKEN
 echo   help
 echo.
 echo Enter exit to close this window.

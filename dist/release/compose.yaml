@@ -32,11 +32,18 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   oscar:
     build:
       context: .
       dockerfile: docker/oscar/Dockerfile
+      args:
+        OSCAR_VERSION: "${OSCAR_VERSION:-local}"
     image: "oscar:${OSCAR_VERSION:-local}"
     restart: unless-stopped
     init: true
@@ -58,27 +65,41 @@ services:
       JAVA_OPTS: "${OSCAR_JAVA_OPTS:--Xms1g -Xmx6g -Xss256k -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError}"
     volumes:
       - oscar_state:/var/lib/oscar
+      - type: bind
+        source: ${OSCAR_ARCHIVE_DIR:-../oscar-storage/archive}
+        target: /var/lib/oscar/archive
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:rw,noexec,nosuid,nodev
+      # DuckDB JDBC and the other JVM JNI loaders must map their extracted
+      # libraries. Keep that narrowly scoped exception private and bounded;
+      # the general-purpose temporary directory remains non-executable.
+      - /run/oscar-native:rw,exec,nosuid,nodev,size=256m,mode=0700,uid=10001,gid=10001
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "curl --silent --show-error --output /dev/null http://127.0.0.1:8282/"]
+      test: ["CMD-SHELL", "test -f /tmp/oscar-ready && curl --silent --show-error --output /dev/null http://127.0.0.1:8282/"]
       start_period: 90s
       interval: 30s
       timeout: 5s
       retries: 5
     stop_grace_period: 45s
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "8"
 
   postgres:
     platform: "${OSCAR_POSTGIS_PLATFORM:-linux/amd64}"
     build:
       context: ./postgis
       dockerfile: Dockerfile
-    image: "oscar-postgis:${OSCAR_POSTGIS_VERSION:-16-3.5}"
+      args:
+        OSCAR_VERSION: "${OSCAR_VERSION:-local}"
+    image: "oscar-postgis:${OSCAR_VERSION:-local}"
     restart: unless-stopped
     user: postgres
     networks:
@@ -93,12 +114,27 @@ services:
       POSTGRES_USER: oscar_bootstrap
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_bootstrap_password
       OSCAR_DB_PASSWORD_FILE: /run/secrets/oscar_db_password
+      POSTGRES_INITDB_ARGS: --data-checksums --auth-local=scram-sha-256 --auth-host=scram-sha-256 -c max_parallel_workers_per_gather=0 -c max_parallel_workers=0
     command:
       - postgres
       - -c
       - password_encryption=scram-sha-256
       - -c
       - max_connections=100
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - wal_compression=on
+      - -c
+      - archive_mode=off
+      - -c
+      - track_io_timing=on
+      - -c
+      - shared_preload_libraries=pg_stat_statements
     volumes:
       - postgres_data:/var/lib/postgresql/data
     read_only: true
@@ -116,6 +152,11 @@ services:
       timeout: 5s
       retries: 10
     stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "8"
 
 networks:
   frontend:
@@ -124,7 +165,11 @@ networks:
 
 volumes:
   oscar_state:
+    external: true
+    name: oscar_oscar_state
   postgres_data:
+    external: true
+    name: oscar_postgres_data
 
 secrets:
   oscar_admin_password:

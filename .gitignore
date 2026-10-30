@@ -26,6 +26,16 @@ dist/release/postgis/pgdata
 dist/release/secrets/
 dist/release/tls/
 dist/release/.env
+dist/release/.env.tmp.*
+dist/release/.bundle-verified*
+dist/release/.oscar-init-state*
+dist/release/.oscar-volume-adoption*
+dist/release/.oscar-storage.lock
+dist/release/.restore-secrets.*
+dist/release/pre-restore-*/
+dist/release/data/
+dist/release/backups/
+dist/oscar-storage/
 dist/release/offline-images.tar
 dist/release/SHA256SUMS
 dist/release/installers/**/*.exe
