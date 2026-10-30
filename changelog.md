@@ -7,15 +7,18 @@ All notable changes to this project will be documented in this file.
 - Add individual detector charting to historical events
 - Fix Rapiscan neutron chart not showing first point in occupancy
 
-## 3.10.0 2026-10-25
+## 3.9.1 2026-09-24
 ## Changes
-- Add custom disposition codes configurable in admin page
-- Sort alarms by priority: Gamma-Neutron > Neutron > Gamma
-- Update daily file format to use expected format with UTC and local timestamps
-- Set camera reconnect attempts to infinite (-1 in config)
-- Add ability to share links to specific occupancies, referencing the occupancy's observation ID
-- Add daily file output to historical occupancies and live lane view
-- Add ability to chart individual detectors instead of the sum in live lane view
+- Add a localized Status of Health page showing every visible lane, RPM and camera connectivity, gamma high/low, neutron high, tamper, and configurable extended-occupancy faults
+- Publish FFmpeg camera connection-state telemetry for live health monitoring
+- Apply event filters across the full database result set and add PostgreSQL indexes for OSCAR event-filter queries
+- Add URL-scoped operational views so one OSCAR deployment can present different lane groups to different workstations
+- Scope viewer subscriptions, statistics, reports, navigation, health monitoring, and alarm notifications to the active operational view
+- Add backward-compatible lane CSV import/export for operational-view assignments
+- Export alarms from the dashboard or Event Details as compact QR codes, PNG images, or portable alarm files for air-gapped transfer
+- Preserve chart endpoints, extrema, and gamma threshold crossings while adaptively downsampling gamma, neutron, and threshold data to fit reliable single-code QR capacity
+- Scan alarms with a camera or saved image, import portable files, verify transfer integrity, redraw charts, and download or share the received package
+- Add complete English, Spanish, French, and Greek interface and operator-manual coverage for alarm transfer
 
 ## 3.9.0 2026-09-23
 ## Changes

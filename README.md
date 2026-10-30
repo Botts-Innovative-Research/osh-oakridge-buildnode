@@ -47,6 +47,8 @@ Hardware-dependent tests remain outside these packaging scripts and must be run 
 
 The [translation system guide](docs/TRANSLATION_SYSTEM.md) documents language selection and persistence, admin and viewer resource lookup, sensor and Lane System form metadata, localized README help, and the complete procedure and validation checklist for adding or restoring a supported language.
 
+The [operational views guide](docs/OPERATIONAL_VIEWS.md) explains how to assign lanes to workstation views, use view-specific URLs, and import or export assignments in lane spreadsheets.
+
 ## Build Windows offline media
 
 On a connected Windows x86-64 build workstation with Docker available:
