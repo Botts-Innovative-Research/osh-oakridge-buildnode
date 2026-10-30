@@ -1,6 +1,5 @@
 apply plugin: 'java'
 description = 'Main Test Project'
-targetCompatibility = 11
 
 dependencies {
     implementation 'org.sensorhub:sensorhub-core:' + oshCoreVersion
